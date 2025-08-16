@@ -6,6 +6,7 @@ import { SuccessPage } from './components/subscription/SuccessPage';
 import { Header } from './components/Header';
 import { StatsOverview } from './components/StatsOverview';
 import { SearchBar } from './components/SearchBar';
+import { ConnectionStatus } from './components/ConnectionStatus';
 import { FilterPanel } from './components/FilterPanel';
 import { ActivityFeed } from './components/ActivityFeed';
 import { useOptionsData } from './hooks/useOptionsData';
@@ -117,6 +118,8 @@ function App() {
         </div>
         
         <StatsOverview activities={filteredActivities} />
+        
+        <ConnectionStatus />
         
         <SearchBar
           searchSymbol={filters.searchSymbol}
