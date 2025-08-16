@@ -59,7 +59,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       <div className="text-center mb-8">
         <UserPlus className="w-12 h-12 text-blue-600 mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-gray-900">Create Account</h2>
-        <p className="text-gray-600 mt-2">Join SnoopOptions today</p>
+        <p className="text-gray-600 mt-2">Join SnoopFlow today</p>
       </div>
 
       {error && (

@@ -25,7 +25,7 @@ export function SuccessPage({ onContinue }: SuccessPageProps) {
         </h1>
         
         <p className="text-gray-600 mb-6">
-          Thank you for subscribing to SnoopOptions Scanner. Your account has been activated and you now have access to all premium features.
+          Thank you for subscribing to SnoopFlow Scanner. Your account has been activated and you now have access to all premium features.
         </p>
         
         <div className="space-y-3 mb-8 text-left">

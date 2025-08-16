@@ -13,7 +13,7 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
   {
     id: 'prod_SsbPo4VmaAziVi',
     priceId: 'mmpub-snoopoptions',
-    name: 'SnoopOptions Scanner - Monthly',
+    name: 'SnoopFlow Scanner - Monthly',
     description: 'Get access to real-time unusual options activity alerts and advanced filtering capabilities.',
     mode: 'subscription',
     price: 37.00,
@@ -23,7 +23,7 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
   {
     id: 'prod_Ssba0qfTE4uTF8',
     priceId: 'price_1RwqMw4gvT1xDWNkhMDFhQvU',
-    name: 'SnoopOptions Scanner - Annual',
+    name: 'SnoopFlow Scanner - Annual',
     description: 'Get access to real-time unusual options activity alerts and advanced filtering capabilities with annual savings.',
     mode: 'subscription',
     price: 199.00,
