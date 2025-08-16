@@ -63,7 +63,12 @@ function App() {
   }
 
   if (currentView === 'subscription') {
-    return <SubscriptionPage userToken={session?.access_token || ''} />;
+    return (
+      <div>
+        <Header onShowSubscription={() => setCurrentView('subscription')} />
+        <SubscriptionPage userToken={session?.access_token || ''} />
+      </div>
+    );
   }
 
   // Filter activities based on favorites

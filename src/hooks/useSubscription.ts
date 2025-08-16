@@ -27,18 +27,31 @@ export function useSubscription() {
       setLoading(true);
       setError(null);
 
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setSubscription(null);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('stripe_user_subscriptions')
         .select('*')
         .maybeSingle();
 
       if (error) {
-        setError(error.message);
+        // If no subscription found, that's okay - user just doesn't have one yet
+        if (error.code === 'PGRST116') {
+          setSubscription(null);
+        } else {
+          setError(error.message);
+        }
       } else {
         setSubscription(data);
       }
     } catch (err) {
-      setError('Failed to fetch subscription data');
+      console.error('Subscription fetch error:', err);
+      setSubscription(null);
     } finally {
       setLoading(false);
     }
