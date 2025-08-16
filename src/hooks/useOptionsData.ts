@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { OptionsActivity, FilterOptions } from '../types/options';
+import { usePolygonData } from './usePolygonData';
 import { generateMockData } from '../data/mockData';
 
 export function useOptionsData() {
   const [allActivities, setAllActivities] = useState<OptionsActivity[]>([]);
+  const [useRealData, setUseRealData] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     minVolume: 1000,
     minPremium: 10000,
@@ -17,24 +19,56 @@ export function useOptionsData() {
     showFavoritesOnly: false,
   });
 
+  // Get Polygon API key from environment
+  const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY || '';
+  
+  // Use Polygon data if API key is available
+  const { 
+    activities: polygonActivities, 
+    isConnected, 
+    error: polygonError,
+    fetchSymbolData 
+  } = usePolygonData({ 
+    apiKey: polygonApiKey,
+    symbols: filters.symbols 
+  });
+
   useEffect(() => {
-    // Initial data load
-    setAllActivities(generateMockData());
+    if (polygonApiKey && polygonActivities.length > 0) {
+      setUseRealData(true);
+      setAllActivities(polygonActivities);
+    } else {
+      // Fall back to mock data if no API key or no real data
+      setUseRealData(false);
+      setAllActivities(generateMockData());
 
-    // Simulate real-time updates every 5 seconds
-    const interval = setInterval(() => {
-      setAllActivities(prev => {
-        const newData = generateMockData();
-        // Keep only the most recent 100 activities
-        return newData.slice(0, 100);
-      });
-    }, 5000);
+      // Update mock data every 5 seconds
+      const interval = setInterval(() => {
+        setAllActivities(generateMockData());
+      }, 5000);
 
-    return () => clearInterval(interval);
-  }, []);
+      return () => clearInterval(interval);
+    }
+  }, [polygonApiKey, polygonActivities]);
+
+  // Fetch data for specific symbol when search changes
+  useEffect(() => {
+    if (useRealData && filters.searchSymbol && fetchSymbolData) {
+      fetchSymbolData(filters.searchSymbol);
+    }
+  }, [useRealData, filters.searchSymbol, fetchSymbolData]);
 
   const filteredActivities = useMemo(() => {
-    return allActivities.filter(activity => {
+    let filtered = allActivities;
+
+    // Apply search symbol filter first
+    if (filters.searchSymbol) {
+      filtered = filtered.filter(activity => 
+        activity.symbol.toLowerCase().includes(filters.searchSymbol.toLowerCase())
+      );
+    }
+
+    return filtered.filter(activity => {
       // Volume filter
       if (activity.volume < filters.minVolume) return false;
 
@@ -70,5 +104,8 @@ export function useOptionsData() {
     activities: filteredActivities,
     filters,
     setFilters,
+    isConnected: useRealData ? isConnected : true,
+    isUsingRealData: useRealData,
+    error: polygonError,
   };
 }
