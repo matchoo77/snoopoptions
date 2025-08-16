@@ -13,12 +13,32 @@ import { FilterPanel } from './components/FilterPanel';
 import { ActivityFeed } from './components/ActivityFeed';
 import { useOptionsData } from './hooks/useOptionsData';
 import { useFavorites } from './hooks/useFavorites';
-import { useSubscription } from './hooks/useSubscription';
 
 function App() {
-  const { user, session, loading: authLoading } = useAuth();
-  const { subscription, loading: subscriptionLoading } = useSubscription();
+  const { user, loading: authLoading } = useAuth();
   
+  // Show loading spinner while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading SnoopFlow...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth page if not logged in
+  if (!user) {
+    return <AuthPage onSuccess={() => window.location.reload()} />;
+  }
+
+  // User is logged in - show the main dashboard
+  return <Dashboard />;
+}
+
+function Dashboard() {
   const { activities, filters, setFilters, isConnected, isUsingRealData, error } = useOptionsData();
   const { 
     favorites, 
@@ -28,21 +48,6 @@ function App() {
     getFavoriteNote, 
     updateFavoriteNote 
   } = useFavorites();
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <AuthPage onSuccess={() => {}} />;
-  }
 
   // Filter activities based on favorites
   const filteredActivities = React.useMemo(() => {
