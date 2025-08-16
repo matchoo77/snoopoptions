@@ -7,6 +7,10 @@ import { Header } from './components/Header';
 import { StatsOverview } from './components/StatsOverview';
 import { SearchBar } from './components/SearchBar';
 import { ConnectionStatus } from './components/ConnectionStatus';
+import { AlertsPanel } from './components/AlertsPanel';
+import { MarketOverview } from './components/MarketOverview';
+import { TopMovers } from './components/TopMovers';
+import { WatchlistPanel } from './components/WatchlistPanel';
 import { FilterPanel } from './components/FilterPanel';
 import { ActivityFeed } from './components/ActivityFeed';
 import { useOptionsData } from './hooks/useOptionsData';
@@ -87,6 +91,10 @@ function App() {
     setFilters({ ...filters, showFavoritesOnly: show });
   };
 
+  const handleSymbolSelect = (symbol: string) => {
+    setFilters({ ...filters, searchSymbol: symbol });
+  };
+
   const favoriteActivityIds = favorites.map(fav => fav.activityId);
 
   return (
@@ -117,7 +125,20 @@ function App() {
           </button>
         </div>
         
-        <StatsOverview activities={filteredActivities} />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+          <div className="lg:col-span-3">
+            <StatsOverview activities={filteredActivities} />
+            <MarketOverview />
+            <AlertsPanel activities={filteredActivities} />
+            <TopMovers activities={filteredActivities} />
+          </div>
+          <div className="lg:col-span-1">
+            <WatchlistPanel 
+              activities={activities}
+              onSymbolSelect={handleSymbolSelect}
+            />
+          </div>
+        </div>
         
         <ConnectionStatus />
         
@@ -128,19 +149,23 @@ function App() {
           onToggleFavorites={handleToggleFavorites}
           favoriteCount={favorites.length}
         />
-        
-        <FilterPanel 
-          filters={filters} 
-          onFiltersChange={setFilters}
-        />
-        
-        <ActivityFeed 
-          activities={filteredActivities}
-          favoriteActivityIds={favoriteActivityIds}
-          onToggleFavorite={handleToggleFavorite}
-          onUpdateNote={updateFavoriteNote}
-          getFavoriteNote={getFavoriteNote}
-        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-4">
+            <FilterPanel 
+              filters={filters} 
+              onFiltersChange={setFilters}
+            />
+            
+            <ActivityFeed 
+              activities={filteredActivities}
+              favoriteActivityIds={favoriteActivityIds}
+              onToggleFavorite={handleToggleFavorite}
+              onUpdateNote={updateFavoriteNote}
+              getFavoriteNote={getFavoriteNote}
+            />
+          </div>
+        </div>
         
         {filteredActivities.length === 0 && (
           <div className="text-center py-12">
