@@ -1,18 +1,9 @@
 import React from 'react';
 import { BarChart3, Zap, TrendingUp, User, LogOut, CreditCard } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useSubscription } from '../hooks/useSubscription';
-import { getProductByPriceId } from '../stripe-config';
 
-interface HeaderProps {
-  onShowSubscription?: () => void;
-}
-
-export function Header({ onShowSubscription }: HeaderProps) {
+export function Header() {
   const { user, signOut } = useAuth();
-  const { subscription } = useSubscription();
-
-  const currentProduct = subscription?.price_id ? getProductByPriceId(subscription.price_id) : null;
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -48,29 +39,10 @@ export function Header({ onShowSubscription }: HeaderProps) {
             
             {user && (
               <div className="flex items-center space-x-4">
-                {currentProduct && subscription?.subscription_status === 'active' && (
-                  <div className="flex items-center space-x-2 bg-green-50 px-3 py-1 rounded-full">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-green-700 font-medium">
-                      {currentProduct.interval === 'year' ? 'Annual Plan' : 'Monthly Plan'}
-                    </span>
-                  </div>
-                )}
-                
                 <div className="flex items-center space-x-2">
                   <User className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-gray-600">{user.email}</span>
                 </div>
-                
-                {onShowSubscription && (
-                  <button
-                    onClick={onShowSubscription}
-                    className="flex items-center space-x-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    <span>Subscription</span>
-                  </button>
-                )}
                 
                 <button
                   onClick={signOut}

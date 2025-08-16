@@ -1,12 +1,10 @@
 import React from 'react';
 import { useAuth } from './hooks/useAuth';
 import { AuthPage } from './components/auth/AuthPage';
-import { SubscriptionPage } from './components/subscription/SubscriptionPage';
-import { SuccessPage } from './components/subscription/SuccessPage';
 import { Header } from './components/Header';
 import { StatsOverview } from './components/StatsOverview';
 import { SearchBar } from './components/SearchBar';
-import { ConnectionStatus } from './components/ConnectionStatus';
+import { DataSourceIndicator } from './components/DataSourceIndicator';
 import { AlertsPanel } from './components/AlertsPanel';
 import { MarketOverview } from './components/MarketOverview';
 import { TopMovers } from './components/TopMovers';
@@ -15,12 +13,13 @@ import { FilterPanel } from './components/FilterPanel';
 import { ActivityFeed } from './components/ActivityFeed';
 import { useOptionsData } from './hooks/useOptionsData';
 import { useFavorites } from './hooks/useFavorites';
+import { useSubscription } from './hooks/useSubscription';
 
 function App() {
   const { user, session, loading: authLoading } = useAuth();
-  const [currentView, setCurrentView] = React.useState<'dashboard' | 'subscription' | 'success'>('dashboard');
+  const { subscription, loading: subscriptionLoading } = useSubscription();
   
-  const { activities, filters, setFilters } = useOptionsData();
+  const { activities, filters, setFilters, isConnected, isUsingRealData, error } = useOptionsData();
   const { 
     favorites, 
     addToFavorites, 
@@ -29,19 +28,6 @@ function App() {
     getFavoriteNote, 
     updateFavoriteNote 
   } = useFavorites();
-
-  // Check URL parameters for success/cancel states
-  React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success') === 'true') {
-      setCurrentView('success');
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (urlParams.get('canceled') === 'true') {
-      // Handle canceled checkout if needed
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
 
   if (authLoading) {
     return (
@@ -55,20 +41,7 @@ function App() {
   }
 
   if (!user) {
-    return <AuthPage onSuccess={() => setCurrentView('dashboard')} />;
-  }
-
-  if (currentView === 'success') {
-    return <SuccessPage onContinue={() => setCurrentView('dashboard')} />;
-  }
-
-  if (currentView === 'subscription') {
-    return (
-      <div>
-        <Header onShowSubscription={() => setCurrentView('subscription')} />
-        <SubscriptionPage userToken={session?.access_token || ''} />
-      </div>
-    );
+    return <AuthPage onSuccess={() => {}} />;
   }
 
   // Filter activities based on favorites
@@ -92,44 +65,13 @@ function App() {
     setFilters({ ...filters, searchSymbol: symbol });
   };
 
-  const handleToggleFavorites = (show: boolean) => {
-    setFilters({ ...filters, showFavoritesOnly: show });
-  };
-
-  const handleSymbolSelect = (symbol: string) => {
-    setFilters({ ...filters, searchSymbol: symbol });
-  };
-
   const favoriteActivityIds = favorites.map(fav => fav.activityId);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header onShowSubscription={() => setCurrentView('subscription')} />
+      <Header />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="mb-6">
-          <button
-            onClick={() => setCurrentView('dashboard')}
-            className={`mr-4 px-4 py-2 rounded-md transition-colors ${
-              currentView === 'dashboard'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-            }`}
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={() => setCurrentView('subscription')}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              currentView === 'subscription'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-            }`}
-          >
-            Subscription
-          </button>
-        </div>
-        
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
           <div className="lg:col-span-3">
             <StatsOverview activities={filteredActivities} />
@@ -140,18 +82,22 @@ function App() {
           <div className="lg:col-span-1">
             <WatchlistPanel 
               activities={activities}
-              onSymbolSelect={handleSymbolSelect}
+              onSymbolSelect={(symbol) => setFilters({ ...filters, searchSymbol: symbol })}
             />
           </div>
         </div>
         
-        <ConnectionStatus />
+        <DataSourceIndicator 
+          isConnected={isConnected}
+          isUsingRealData={isUsingRealData}
+          error={error}
+        />
         
         <SearchBar
           searchSymbol={filters.searchSymbol}
           onSearchChange={handleSearchChange}
           showFavoritesOnly={filters.showFavoritesOnly}
-          onToggleFavorites={handleToggleFavorites}
+          onToggleFavorites={(show) => setFilters({ ...filters, showFavoritesOnly: show })}
           favoriteCount={favorites.length}
         />
 
