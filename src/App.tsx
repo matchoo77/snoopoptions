@@ -1,24 +1,13 @@
 import React from 'react';
 import { useAuth } from './hooks/useAuth';
 import { AuthPage } from './components/auth/AuthPage';
-import { Header } from './components/Header';
-import { StatsOverview } from './components/StatsOverview';
-import { SearchBar } from './components/SearchBar';
-import { DataSourceIndicator } from './components/DataSourceIndicator';
-import { AlertsPanel } from './components/AlertsPanel';
-import { MarketOverview } from './components/MarketOverview';
-import { TopMovers } from './components/TopMovers';
-import { WatchlistPanel } from './components/WatchlistPanel';
-import { FilterPanel } from './components/FilterPanel';
-import { ActivityFeed } from './components/ActivityFeed';
-import { useOptionsData } from './hooks/useOptionsData';
-import { useFavorites } from './hooks/useFavorites';
 
 function App() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading } = useAuth();
   
-  // Show loading spinner while checking auth
-  if (authLoading) {
+  console.log('App render - user:', user, 'loading:', loading);
+  
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -29,118 +18,53 @@ function App() {
     );
   }
 
-  // Show auth page if not logged in
   if (!user) {
+    console.log('No user, showing auth page');
     return <AuthPage onSuccess={() => window.location.reload()} />;
   }
 
-  // User is logged in - show the main dashboard
-  return <Dashboard />;
-}
-
-function Dashboard() {
-  const { activities, filters, setFilters, isConnected, isUsingRealData, error } = useOptionsData();
-  const { 
-    favorites, 
-    addToFavorites, 
-    removeFromFavorites, 
-    isFavorite, 
-    getFavoriteNote, 
-    updateFavoriteNote 
-  } = useFavorites();
-
-  // Filter activities based on favorites
-  const filteredActivities = React.useMemo(() => {
-    if (filters.showFavoritesOnly) {
-      const favoriteActivityIds = favorites.map(fav => fav.activityId);
-      return activities.filter(activity => favoriteActivityIds.includes(activity.id));
-    }
-    return activities;
-  }, [activities, filters.showFavoritesOnly, favorites]);
-
-  const handleToggleFavorite = (activityId: string, note?: string) => {
-    if (isFavorite(activityId)) {
-      removeFromFavorites(activityId);
-    } else {
-      addToFavorites(activityId, note);
-    }
-  };
-
-  const handleSearchChange = (symbol: string) => {
-    setFilters({ ...filters, searchSymbol: symbol });
-  };
-
-  const favoriteActivityIds = favorites.map(fav => fav.activityId);
-
+  console.log('User authenticated, showing dashboard');
+  
+  // Simple dashboard for now
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <h1 className="text-xl font-bold text-gray-900">SnoopFlow</h1>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">{user.email}</span>
+              <button
+                onClick={() => {
+                  import('./lib/supabase').then(({ supabase }) => {
+                    supabase.auth.signOut();
+                  });
+                }}
+                className="text-sm text-red-600 hover:text-red-700"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-          <div className="lg:col-span-3">
-            <StatsOverview activities={filteredActivities} />
-            <MarketOverview />
-            <AlertsPanel activities={filteredActivities} />
-            <TopMovers activities={filteredActivities} />
-          </div>
-          <div className="lg:col-span-1">
-            <WatchlistPanel 
-              activities={activities}
-              onSymbolSelect={(symbol) => setFilters({ ...filters, searchSymbol: symbol })}
-            />
-          </div>
-        </div>
-        
-        <DataSourceIndicator 
-          isConnected={isConnected}
-          isUsingRealData={isUsingRealData}
-          error={error}
-        />
-        
-        <SearchBar
-          searchSymbol={filters.searchSymbol}
-          onSearchChange={handleSearchChange}
-          showFavoritesOnly={filters.showFavoritesOnly}
-          onToggleFavorites={(show) => setFilters({ ...filters, showFavoritesOnly: show })}
-          favoriteCount={favorites.length}
-        />
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-4">
-            <FilterPanel 
-              filters={filters} 
-              onFiltersChange={setFilters}
-            />
-            
-            <ActivityFeed 
-              activities={filteredActivities}
-              favoriteActivityIds={favoriteActivityIds}
-              onToggleFavorite={handleToggleFavorite}
-              onUpdateNote={updateFavoriteNote}
-              getFavoriteNote={getFavoriteNote}
-            />
-          </div>
-        </div>
-        
-        {filteredActivities.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-lg">
-              {filters.showFavoritesOnly 
-                ? "No favorited alerts found." 
-                : filters.searchSymbol 
-                  ? `No unusual options activity found for ${filters.searchSymbol}.`
-                  : "No unusual options activity found matching your filters."
-              }
-            </div>
-            <p className="text-gray-500 text-sm mt-2">
-              {filters.showFavoritesOnly 
-                ? "Start favoriting alerts to see them here." 
-                : "Try adjusting your filter criteria to see more results."
-              }
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Welcome to SnoopFlow Scanner
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Your account is set up and ready! The options scanner is loading...
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-blue-800 text-sm">
+              ✅ Authentication working<br/>
+              ✅ User logged in: {user.email}<br/>
+              🔄 Loading scanner components...
             </p>
           </div>
-        )}
+        </div>
       </main>
     </div>
   );
