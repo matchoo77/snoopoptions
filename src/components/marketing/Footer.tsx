@@ -134,7 +134,7 @@ export function Footer({ onNavigate, onLogin }: FooterProps) {
         <div className="mt-16 border-t border-gray-900/10 pt-8 sm:mt-20 lg:mt-24">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs leading-5 text-gray-400">
-              &copy; 2025 SnoopFlow, Inc. All rights reserved.
+              &copy; 2025 MM Publishing Inc. All rights reserved.
             </p>
             <div className="mt-4 sm:mt-0">
               <button
