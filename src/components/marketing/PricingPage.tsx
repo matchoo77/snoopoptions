@@ -4,8 +4,8 @@ import { PageProps } from '../../types/navigation';
 
 const plans = [
   {
-    name: 'Starter',
-    id: 'starter',
+    name: 'Monthly',
+    id: 'monthly',
     price: 37,
     interval: 'month',
     description: 'Perfect for individual traders getting started with options scanning.',
@@ -21,21 +21,20 @@ const plans = [
     popular: false,
   },
   {
-    name: 'Professional',
-    id: 'professional',
+    name: 'Annual',
+    id: 'annual',
     price: 199,
     interval: 'year',
     originalPrice: 444,
     description: 'Advanced features for serious traders and professionals.',
     features: [
-      'Everything in Starter',
+      'Everything in Monthly',
       'Advanced filtering & Greeks analysis',
       'Unlimited watchlist symbols',
       'Block trade detection',
       'Custom alert thresholds',
       'Historical data access',
       'Priority support',
-      'API access',
       'Export capabilities',
     ],
     cta: 'Start Free Trial',
