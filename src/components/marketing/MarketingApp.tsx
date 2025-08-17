@@ -7,6 +7,8 @@ import { AboutPage } from './AboutPage';
 import { ContactPage } from './ContactPage';
 import { Footer } from './Footer';
 import { AuthPage } from '../auth/AuthPage';
+import { DisclaimerPage } from './DisclaimerPage';
+import { PrivacyPage } from './PrivacyPage';
 
 interface MarketingAppProps {
   onLogin: () => void;
@@ -48,6 +50,10 @@ export function MarketingApp({ onLogin }: MarketingAppProps) {
         return <AboutPage onNavigate={handleNavigate} currentPage={currentPage} />;
       case 'contact':
         return <ContactPage onNavigate={handleNavigate} currentPage={currentPage} />;
+      case 'disclaimer':
+        return <DisclaimerPage onNavigate={handleNavigate} currentPage={currentPage} />;
+      case 'privacy':
+        return <PrivacyPage onNavigate={handleNavigate} currentPage={currentPage} />;
       default:
         return <HomePage onNavigate={handleNavigate} currentPage={currentPage} />;
     }
