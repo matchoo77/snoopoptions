@@ -4,22 +4,22 @@ import { PageProps } from '../../types/navigation';
 
 const team = [
   {
-    name: 'Alex Chen',
-    role: 'CEO & Founder',
-    bio: 'Former Goldman Sachs quantitative trader with 15+ years in options markets. Built algorithmic trading systems managing $2B+ in assets.',
-    avatar: 'AC',
+    name: 'Leadership Team',
+    role: 'Executive Leadership',
+    bio: 'Our leadership team brings decades of combined experience from top-tier financial institutions and technology companies.',
+    avatar: 'LT',
   },
   {
-    name: 'Sarah Rodriguez',
-    role: 'CTO',
-    bio: 'Ex-Google engineer specializing in real-time data systems. Led development of high-frequency trading platforms at Two Sigma.',
-    avatar: 'SR',
+    name: 'Engineering Team',
+    role: 'Technology & Development',
+    bio: 'World-class engineers with expertise in real-time data processing, financial systems, and scalable platform architecture.',
+    avatar: 'ET',
   },
   {
-    name: 'Michael Kim',
-    role: 'Head of Product',
-    bio: 'Former Bloomberg Terminal product manager. Deep expertise in financial data visualization and trader workflow optimization.',
-    avatar: 'MK',
+    name: 'Trading Experts',
+    role: 'Market Intelligence',
+    bio: 'Professional traders and quantitative analysts who ensure our algorithms detect the most relevant market opportunities.',
+    avatar: 'TE',
   },
 ];
 
