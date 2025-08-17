@@ -69,7 +69,7 @@ function App() {
     return <DashboardApp />;
   }
 
-  // Show marketing site by default for visitors who haven't clicked login
+  // Show marketing site for unauthenticated users
   return <MarketingApp onLogin={() => setShowAuthPage(true)} />;
 }
 
