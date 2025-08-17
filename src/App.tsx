@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { MarketingApp } from './components/marketing/MarketingApp';
 import { DashboardApp } from './components/dashboard/DashboardApp';
 import { AuthPage } from './components/auth/AuthPage';
 import { SuccessPage } from './components/subscription/SuccessPage';
-import { useState, useEffect } from 'react';
 
 function App() {
   const { user, loading } = useAuth();
@@ -37,7 +36,7 @@ function App() {
     return <SuccessPage onContinue={() => setShowSuccessPage(false)} />;
   }
 
-  // Show auth page only if user clicked login AND is not authenticated
+  // Show auth page only when explicitly requested
   if (showAuthPage && !user) {
     return <AuthPage onSuccess={() => setShowAuthPage(false)} />;
   }
@@ -47,7 +46,7 @@ function App() {
     return <DashboardApp />;
   }
 
-  // Show marketing site for non-authenticated visitors (default)
+  // Show marketing site by default for non-authenticated visitors
   return <MarketingApp onLogin={() => setShowAuthPage(true)} />;
 }
 
