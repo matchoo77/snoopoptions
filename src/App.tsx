@@ -39,8 +39,9 @@ function App() {
   if (!user) {
     return <MarketingApp onLogin={() => window.location.reload()} />;
   }
-}
 
   // Show dashboard for authenticated users
   return <DashboardApp />;
+}
+
 export default App;
