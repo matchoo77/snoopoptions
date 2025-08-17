@@ -2,12 +2,14 @@ import React from 'react';
 import { useAuth } from './hooks/useAuth';
 import { MarketingApp } from './components/marketing/MarketingApp';
 import { DashboardApp } from './components/dashboard/DashboardApp';
+import { AuthPage } from './components/auth/AuthPage';
 import { SuccessPage } from './components/subscription/SuccessPage';
 import { useState, useEffect } from 'react';
 
 function App() {
   const { user, loading } = useAuth();
   const [showSuccessPage, setShowSuccessPage] = useState(false);
+  const [showAuthPage, setShowAuthPage] = useState(false);
 
   // Check for success parameter in URL
   useEffect(() => {
@@ -35,9 +37,14 @@ function App() {
     return <SuccessPage onContinue={() => setShowSuccessPage(false)} />;
   }
 
-  // Show marketing site for non-authenticated users
+  // Show auth page if user clicked login
+  if (!user && showAuthPage) {
+    return <AuthPage onSuccess={() => setShowAuthPage(false)} />;
+  }
+
+  // Show marketing site for non-authenticated visitors
   if (!user) {
-    return <MarketingApp onLogin={() => window.location.reload()} />;
+    return <MarketingApp onLogin={() => setShowAuthPage(true)} />;
   }
 
   // Show dashboard for authenticated users
