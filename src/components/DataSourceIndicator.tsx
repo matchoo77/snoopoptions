@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wifi, WifiOff, AlertCircle, ExternalLink } from 'lucide-react';
+import { Wifi, WifiOff, AlertCircle, ExternalLink, Clock } from 'lucide-react';
 
 interface DataSourceIndicatorProps {
   isConnected: boolean;
@@ -8,6 +8,40 @@ interface DataSourceIndicatorProps {
 }
 
 export function DataSourceIndicator({ isConnected, isUsingRealData, error }: DataSourceIndicatorProps) {
+  const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY;
+  const hasValidApiKey = polygonApiKey && polygonApiKey !== 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X' && polygonApiKey.length > 10;
+  
+  // Check if market is likely closed (weekend or outside trading hours)
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+  const hour = now.getHours();
+  const isWeekend = day === 0 || day === 6;
+  const isOutsideTradingHours = hour < 4 || hour > 20; // Pre-market starts at 4 AM ET, after-hours ends at 8 PM ET
+  const isMarketClosed = isWeekend || isOutsideTradingHours;
+
+  // If we have a valid API key but market is closed, show market closed message
+  if (hasValidApiKey && isMarketClosed) {
+    return (
+      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start space-x-3">
+          <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-blue-800 mb-1">
+              Market Closed - API Key Configured
+            </h3>
+            <p className="text-sm text-blue-700 mb-2">
+              Your Polygon.io API key is properly configured. Currently showing demo data because 
+              {isWeekend ? ' the market is closed for the weekend' : ' the market is outside trading hours'}.
+            </p>
+            <p className="text-xs text-blue-600">
+              Real-time data will automatically activate during market hours (4:00 AM - 8:00 PM ET, Monday-Friday)
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!isUsingRealData) {
     return (
       <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
