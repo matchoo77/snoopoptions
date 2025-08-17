@@ -37,18 +37,18 @@ function App() {
     return <SuccessPage onContinue={() => setShowSuccessPage(false)} />;
   }
 
-  // Show auth page if user clicked login
-  if (!user && showAuthPage) {
+  // Show auth page only if user clicked login AND is not authenticated
+  if (showAuthPage && !user) {
     return <AuthPage onSuccess={() => setShowAuthPage(false)} />;
   }
 
-  // Show marketing site for non-authenticated visitors
-  if (!user) {
-    return <MarketingApp onLogin={() => setShowAuthPage(true)} />;
+  // Show dashboard for authenticated users
+  if (user) {
+    return <DashboardApp />;
   }
 
-  // Show dashboard for authenticated users
-  return <DashboardApp />;
+  // Show marketing site for non-authenticated visitors (default)
+  return <MarketingApp onLogin={() => setShowAuthPage(true)} />;
 }
 
 export default App;
