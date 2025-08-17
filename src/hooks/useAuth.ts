@@ -28,7 +28,20 @@ export function useAuth() {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.warn('Logout error:', error.message);
+      }
+      // Always clear local state regardless of server response
+      setSession(null);
+      setUser(null);
+    } catch (error) {
+      console.warn('Logout failed:', error);
+      // Clear local state even if logout request fails
+      setSession(null);
+      setUser(null);
+    }
   };
 
   return {
