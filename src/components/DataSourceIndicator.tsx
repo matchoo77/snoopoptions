@@ -52,7 +52,7 @@ export function DataSourceIndicator({ isConnected, isUsingRealData, error }: Dat
               Demo Mode Active
             </h3>
             <p className="text-sm text-yellow-700 mb-3">
-              You're currently viewing simulated options activity data. To access real-time market data, 
+              Your trading dog is practicing with toy bones! 🦴 To start the real hunt for unusual options activity, 
               you'll need to add your Polygon.io API key to the environment variables.
             </p>
             <div className="flex items-center space-x-4 text-xs">

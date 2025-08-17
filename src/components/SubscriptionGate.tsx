@@ -14,11 +14,12 @@ export function SubscriptionGate({ onUpgrade }: SubscriptionGateProps) {
         </div>
         
         <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          Trial Expired
+          🐕 Your Trading Pup Needs Food!
         </h1>
         
         <p className="text-gray-600 mb-6">
-          Your 7-day free trial has ended. Subscribe now to continue accessing real-time unusual options activity and all premium features.
+          Your 7-day free trial has ended and your trading dog is getting hungry! 
+          Subscribe now to keep your loyal companion sniffing out profitable opportunities.
         </p>
         
         <div className="space-y-3 mb-8 text-left">

@@ -1,6 +1,7 @@
 import React from 'react';
-import { BarChart3, Twitter, Linkedin, Github } from 'lucide-react';
+import { Twitter, Linkedin, Github } from 'lucide-react';
 import { PageProps } from '../../types/navigation';
+import { DogIcon } from '../DogIcon';
 
 interface FooterProps extends PageProps {
   onLogin: () => void;
@@ -43,17 +44,17 @@ export function Footer({ onNavigate, onLogin }: FooterProps) {
         <div className="xl:grid xl:grid-cols-3 xl:gap-8">
           <div className="space-y-8">
             <div className="flex items-center space-x-2">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-white" />
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
+                <DogIcon className="w-6 h-6 text-white" />
               </div>
               <div>
-                <span className="text-xl font-bold text-white">SnoopFlow</span>
-                <p className="text-xs text-gray-400">Options Scanner</p>
+                <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">SnoopFlow</span>
+                <p className="text-xs text-gray-400">🐕 Sniffing Out Options</p>
               </div>
             </div>
             <p className="text-sm leading-6 text-gray-300">
-              Professional-grade options intelligence for serious traders. 
-              Identify unusual activity and institutional money flow in real-time.
+              Your loyal trading companion that sniffs out unusual options activity and helps you 
+              track down profitable opportunities in real-time.
             </p>
             <div className="flex space-x-6">
               <a href="#" className="text-gray-400 hover:text-gray-300">

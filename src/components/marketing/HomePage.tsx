@@ -14,12 +14,12 @@ export function HomePage({ onNavigate }: PageProps) {
         <div className="mx-auto max-w-4xl py-32 sm:py-48 lg:py-56">
           <div className="text-center">
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-              Spot Unusual Options Activity
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"> Before Everyone Else</span>
+              Your Trading Dog is on the Hunt 🐕
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600"> Sniffing Out Big Moves</span>
             </h1>
             <p className="mt-6 text-lg leading-8 text-gray-600 max-w-2xl mx-auto">
-              Get real-time alerts on unusual options activity, block trades, and institutional money flow. 
-              Make informed trading decisions with professional-grade market intelligence.
+              SnoopFlow is your loyal trading companion that sniffs out unusual options activity, 
+              tracks down block trades, and helps you follow the scent of profitable opportunities.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <button
@@ -55,39 +55,39 @@ export function HomePage({ onNavigate }: PageProps) {
             <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
               <div className="flex flex-col">
                 <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                  <Zap className="h-5 w-5 flex-none text-blue-600" />
-                  Real-Time Alerts
+                  <Zap className="h-5 w-5 flex-none text-orange-600" />
+                  Lightning-Fast Sniffing
                 </dt>
                 <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
                   <p className="flex-auto">
-                    Get instant notifications when unusual options activity occurs. Our algorithms detect 
-                    high-volume trades, block transactions, and institutional money flow in real-time.
+                    Our trading dog's nose detects unusual options activity instantly. Get alerts 
+                    the moment big trades happen - faster than you can say "woof!"
                   </p>
                 </dd>
               </div>
               
               <div className="flex flex-col">
                 <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                  <TrendingUp className="h-5 w-5 flex-none text-blue-600" />
-                  Smart Filtering
+                  <TrendingUp className="h-5 w-5 flex-none text-orange-600" />
+                  Trained to Hunt
                 </dt>
                 <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
                   <p className="flex-auto">
-                    Advanced filters let you focus on what matters. Filter by volume, premium, sentiment, 
-                    days to expiration, and more to find the exact opportunities you're looking for.
+                    Like a well-trained hunting dog, SnoopFlow knows exactly what to look for. 
+                    Filter by volume, premium, sentiment, and more to track down your perfect trades.
                   </p>
                 </dd>
               </div>
               
               <div className="flex flex-col">
                 <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
-                  <Shield className="h-5 w-5 flex-none text-blue-600" />
-                  Institutional Tracking
+                  <Shield className="h-5 w-5 flex-none text-orange-600" />
+                  Following the Big Dogs
                 </dt>
                 <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
                   <p className="flex-auto">
-                    Identify block trades and institutional activity. Track where the smart money is moving 
-                    and follow professional traders' strategies.
+                    Follow the scent of institutional money! Our dog tracks where the big players 
+                    are making moves so you can follow the pack leaders.
                   </p>
                 </dd>
               </div>

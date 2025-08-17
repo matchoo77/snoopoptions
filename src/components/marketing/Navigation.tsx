@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { BarChart3, Menu, X, LogIn } from 'lucide-react';
+import { Menu, X, LogIn } from 'lucide-react';
 import { NavigationItem } from '../../types/navigation';
+import { DogIcon } from '../DogIcon';
 
 interface NavigationProps {
   currentPage: string;
@@ -25,12 +26,12 @@ export function Navigation({ currentPage, onNavigate, onLogin }: NavigationProps
         <div className="flex w-full items-center justify-between border-b border-gray-200 py-6 lg:border-none">
           <div className="flex items-center">
             <button onClick={() => onNavigate('home')} className="flex items-center space-x-2">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-white" />
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
+                <DogIcon className="w-6 h-6 text-white" />
               </div>
               <div>
-                <span className="text-xl font-bold text-gray-900">SnoopFlow</span>
-                <p className="text-xs text-gray-500">Options Scanner</p>
+                <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">SnoopFlow</span>
+                <p className="text-xs text-gray-500">🐕 Sniffing Out Options</p>
               </div>
             </button>
           </div>
@@ -96,10 +97,10 @@ export function Navigation({ currentPage, onNavigate, onLogin }: NavigationProps
             <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
               <div className="flex items-center justify-between">
                 <button onClick={() => onNavigate('home')} className="flex items-center space-x-2">
-                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                    <BarChart3 className="w-6 h-6 text-white" />
+                  <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
+                    <DogIcon className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xl font-bold text-gray-900">SnoopFlow</span>
+                  <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">SnoopFlow</span>
                 </button>
                 <button
                   type="button"

@@ -1,6 +1,7 @@
 import React from 'react';
-import { BarChart3, Zap, TrendingUp, User, LogOut, CreditCard } from 'lucide-react';
+import { Zap, TrendingUp, User, LogOut, CreditCard } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { DogIcon } from './DogIcon';
 
 export function Header() {
   const { user, signOut } = useAuth();
@@ -11,12 +12,12 @@ export function Header() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <div className="flex items-center space-x-2">
-              <div className="bg-blue-600 p-2 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-white" />
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
+                <DogIcon className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">SnoopFlow</h1>
-                <p className="text-xs text-gray-500">Unusual Activity Scanner</p>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">SnoopFlow</h1>
+                <p className="text-xs text-gray-500">🐕 Sniffing Out Options</p>
               </div>
             </div>
           </div>

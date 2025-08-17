@@ -27,16 +27,16 @@ export function TrialBanner({ daysRemaining, onUpgrade }: TrialBannerProps) {
           <div>
             <h3 className="font-semibold">
               {daysRemaining > 0 ? (
-                <>Free Trial - {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} remaining</>
+                <>🐕 Free Trial - {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} of sniffing left!</>
               ) : (
-                'Free Trial Expired'
+                '🐕 Your pup needs a subscription to keep hunting!'
               )}
             </h3>
             <p className="text-sm opacity-90">
               {daysRemaining > 0 ? (
-                'Upgrade to continue accessing real-time options intelligence after your trial ends.'
+                'Keep your trading dog well-fed with a subscription to continue the hunt for big trades!'
               ) : (
-                'Subscribe now to regain access to all premium features.'
+                'Subscribe now to get your trading companion back on the scent trail!'
               )}
             </p>
           </div>
