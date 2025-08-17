@@ -11,13 +11,11 @@ const navigation = {
   product: [
     { name: 'Features', href: 'features' },
     { name: 'Pricing', href: 'pricing' },
-    { name: 'API Documentation', href: '#' },
     { name: 'Integrations', href: '#' },
   ],
   company: [
     { name: 'About', href: 'about' },
     { name: 'Blog', href: '#' },
-    { name: 'Careers', href: '#' },
     { name: 'Press', href: '#' },
   ],
   support: [
