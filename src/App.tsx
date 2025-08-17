@@ -59,7 +59,7 @@ function App() {
     return <SuccessPage onContinue={() => setShowSuccessPage(false)} />;
   }
 
-  // Show auth page when explicitly requested and no user
+  // Show auth page only when explicitly requested
   if (showAuthPage) {
     return <AuthPage onSuccess={() => setShowAuthPage(false)} />;
   }
@@ -69,7 +69,7 @@ function App() {
     return <DashboardApp />;
   }
 
-  // Show marketing site for unauthenticated users
+  // Default: Show marketing site for unauthenticated users
   return <MarketingApp onLogin={() => setShowAuthPage(true)} />;
 }
 
