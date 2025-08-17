@@ -181,7 +181,7 @@ export function AboutPage({ onNavigate }: PageProps) {
             </p>
             <div className="mt-10">
               <button
-                onClick={() => onNavigate('pricing')}
+                onClick={() => onNavigate('signup')}
                 className="rounded-md bg-white px-6 py-3 text-sm font-semibold text-blue-600 shadow-sm hover:bg-gray-50 transition-all transform hover:scale-105"
               >
                 Start Free Trial

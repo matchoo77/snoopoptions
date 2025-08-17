@@ -122,7 +122,7 @@ export function PricingPage({ onNavigate }: PageProps) {
               )}
               
               <button
-                onClick={() => onNavigate('pricing')}
+                onClick={() => onNavigate('signup')}
                 className={`mt-10 block w-full rounded-md px-3 py-2 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 transition-all transform hover:scale-105 ${
                   plan.popular
                     ? 'bg-white text-gray-900 hover:bg-gray-100 focus-visible:outline-white'
@@ -216,7 +216,7 @@ export function PricingPage({ onNavigate }: PageProps) {
               Join thousands of traders who rely on SnoopFlow for their options intelligence
             </p>
             <button
-              onClick={() => onNavigate('pricing')}
+              onClick={() => onNavigate('signup')}
               className="bg-white text-blue-600 px-8 py-3 rounded-md font-semibold hover:bg-gray-50 transition-all transform hover:scale-105"
             >
               Start Your Free Trial

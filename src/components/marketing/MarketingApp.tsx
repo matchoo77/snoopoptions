@@ -6,6 +6,7 @@ import { PricingPage } from './PricingPage';
 import { AboutPage } from './AboutPage';
 import { ContactPage } from './ContactPage';
 import { Footer } from './Footer';
+import { AuthPage } from '../auth/AuthPage';
 
 interface MarketingAppProps {
   onLogin: () => void;
@@ -13,21 +14,42 @@ interface MarketingAppProps {
 
 export function MarketingApp({ onLogin }: MarketingAppProps) {
   const [currentPage, setCurrentPage] = useState('home');
+  const [showSignup, setShowSignup] = useState(false);
+
+  // Handle signup navigation
+  const handleNavigate = (page: string) => {
+    if (page === 'signup') {
+      setShowSignup(true);
+    } else {
+      setCurrentPage(page);
+    }
+  };
+
+  // Show signup page when requested
+  if (showSignup) {
+    return (
+      <AuthPage 
+        onSuccess={onLogin}
+        initialMode="signup"
+        onBack={() => setShowSignup(false)}
+      />
+    );
+  }
 
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <HomePage onNavigate={setCurrentPage} currentPage={currentPage} />;
+        return <HomePage onNavigate={handleNavigate} currentPage={currentPage} />;
       case 'features':
-        return <FeaturesPage onNavigate={setCurrentPage} currentPage={currentPage} />;
+        return <FeaturesPage onNavigate={handleNavigate} currentPage={currentPage} />;
       case 'pricing':
-        return <PricingPage onNavigate={setCurrentPage} currentPage={currentPage} />;
+        return <PricingPage onNavigate={handleNavigate} currentPage={currentPage} />;
       case 'about':
-        return <AboutPage onNavigate={setCurrentPage} currentPage={currentPage} />;
+        return <AboutPage onNavigate={handleNavigate} currentPage={currentPage} />;
       case 'contact':
-        return <ContactPage onNavigate={setCurrentPage} currentPage={currentPage} />;
+        return <ContactPage onNavigate={handleNavigate} currentPage={currentPage} />;
       default:
-        return <HomePage onNavigate={setCurrentPage} currentPage={currentPage} />;
+        return <HomePage onNavigate={handleNavigate} currentPage={currentPage} />;
     }
   };
 
@@ -35,14 +57,14 @@ export function MarketingApp({ onLogin }: MarketingAppProps) {
     <div className="min-h-screen bg-white">
       <Navigation 
         currentPage={currentPage} 
-        onNavigate={setCurrentPage} 
+        onNavigate={handleNavigate} 
         onLogin={onLogin}
       />
       <main className="pt-16">
         {renderPage()}
       </main>
       <Footer 
-        onNavigate={setCurrentPage} 
+        onNavigate={handleNavigate} 
         currentPage={currentPage}
         onLogin={onLogin}
       />
