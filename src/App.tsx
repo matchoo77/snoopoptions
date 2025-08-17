@@ -43,6 +43,7 @@ function App() {
     }
   }, []);
 
+  // Show loading spinner while checking auth
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -54,14 +55,25 @@ function App() {
     );
   }
 
-  // Show success page after payment
-  if (showSuccessPage) {
+  // Show success page after payment (only if user is authenticated)
+  if (showSuccessPage && user) {
     return <SuccessPage onContinue={() => setShowSuccessPage(false)} />;
   }
 
   // Show auth page only when explicitly requested
   if (showAuthPage) {
-    return <AuthPage onSuccess={() => setShowAuthPage(false)} />;
+    return (
+      <AuthPage 
+        onSuccess={() => {
+          setShowAuthPage(false);
+          // If there was a success parameter, show success page after login
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.get('success') === 'true') {
+            setShowSuccessPage(true);
+          }
+        }} 
+      />
+    );
   }
 
   // Show dashboard for authenticated users
@@ -69,7 +81,8 @@ function App() {
     return <DashboardApp />;
   }
 
-  // Default: Show marketing site for unauthenticated users
+  // DEFAULT: Show marketing site for unauthenticated users
+  console.log('Showing marketing app - user:', user, 'showAuthPage:', showAuthPage);
   return <MarketingApp onLogin={() => setShowAuthPage(true)} />;
 }
 
