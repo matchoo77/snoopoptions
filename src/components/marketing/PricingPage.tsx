@@ -52,7 +52,7 @@ export function PricingPage({ onNavigate }: PageProps) {
             Choose Your Trading Edge
           </p>
           <p className="mt-6 text-lg leading-8 text-gray-600">
-            Start with a 7-day free trial. No credit card required. Cancel anytime.
+            Start with a 7-day free trial. No credit card required until trial ends. Cancel anytime.
           </p>
         </div>
         

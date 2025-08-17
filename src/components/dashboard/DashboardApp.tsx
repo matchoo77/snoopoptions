@@ -1,5 +1,6 @@
 import React from 'react';
 import { Header } from '../Header';
+import { TrialBanner } from '../TrialBanner';
 import { useOptionsData } from '../../hooks/useOptionsData';
 import { useFavorites } from '../../hooks/useFavorites';
 import { SearchBar } from '../SearchBar';
@@ -12,7 +13,17 @@ import { MarketOverview } from '../MarketOverview';
 import { TopMovers } from '../TopMovers';
 import { WatchlistPanel } from '../WatchlistPanel';
 
-export function DashboardApp() {
+interface DashboardAppProps {
+  trialStatus?: {
+    hasActiveTrial: boolean;
+    hasActiveSubscription: boolean;
+    accessType: 'trial' | 'subscription' | 'expired';
+    trialDaysRemaining: number;
+  };
+  onUpgrade?: () => void;
+}
+
+export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
   const { 
     activities, 
     filters, 
@@ -54,6 +65,14 @@ export function DashboardApp() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Show trial banner if user is on trial */}
+        {trialStatus && trialStatus.hasActiveTrial && onUpgrade && (
+          <TrialBanner 
+            daysRemaining={trialStatus.trialDaysRemaining}
+            onUpgrade={onUpgrade}
+          />
+        )}
+        
         <DataSourceIndicator 
           isConnected={isConnected} 
           isUsingRealData={isUsingRealData} 

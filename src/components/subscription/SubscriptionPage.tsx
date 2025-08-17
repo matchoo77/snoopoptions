@@ -5,9 +5,10 @@ import { useSubscription } from '../../hooks/useSubscription';
 
 interface SubscriptionPageProps {
   userToken: string;
+  onBack?: () => void;
 }
 
-export function SubscriptionPage({ userToken }: SubscriptionPageProps) {
+export function SubscriptionPage({ userToken, onBack }: SubscriptionPageProps) {
   const { subscription, loading } = useSubscription();
 
   if (loading) {
@@ -24,6 +25,15 @@ export function SubscriptionPage({ userToken }: SubscriptionPageProps) {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 pt-20">
       <div className="max-w-4xl mx-auto">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="mb-6 text-blue-600 hover:text-blue-700 font-medium flex items-center"
+          >
+            ← Back to Dashboard
+          </button>
+        )}
+        
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
             SnoopFlow Scanner Plans

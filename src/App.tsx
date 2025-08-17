@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
+import { useTrialStatus } from './hooks/useTrialStatus';
 import { supabase } from './lib/supabase';
 import { MarketingApp } from './components/marketing/MarketingApp';
 import { DashboardApp } from './components/dashboard/DashboardApp';
 import { AuthPage } from './components/auth/AuthPage';
 import { SuccessPage } from './components/subscription/SuccessPage';
+import { SubscriptionPage } from './components/subscription/SubscriptionPage';
+import { SubscriptionGate } from './components/SubscriptionGate';
 
 function App() {
   const { user, loading, signOut } = useAuth();
+  const { trialStatus, loading: trialLoading } = useTrialStatus();
   const [showSuccessPage, setShowSuccessPage] = useState(false);
   const [showAuthPage, setShowAuthPage] = useState(false);
+  const [showSubscriptionPage, setShowSubscriptionPage] = useState(false);
 
   // Clear any invalid sessions on mount
   useEffect(() => {
@@ -44,7 +49,7 @@ function App() {
   }, []);
 
   // Show loading spinner while checking auth
-  if (loading) {
+  if (loading || (user && trialLoading)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -58,6 +63,16 @@ function App() {
   // Show success page after payment (only if user is authenticated)
   if (showSuccessPage && user) {
     return <SuccessPage onContinue={() => setShowSuccessPage(false)} />;
+  }
+
+  // Show subscription page when requested
+  if (showSubscriptionPage && user) {
+    return (
+      <SubscriptionPage 
+        userToken={user.access_token || ''}
+        onBack={() => setShowSubscriptionPage(false)}
+      />
+    );
   }
 
   // Show auth page only when explicitly requested
@@ -78,6 +93,22 @@ function App() {
 
   // Show dashboard for authenticated users
   if (user) {
+    // Check if user has access (active trial or subscription)
+    if (trialStatus) {
+      if (trialStatus.accessType === 'expired') {
+        return <SubscriptionGate onUpgrade={() => setShowSubscriptionPage(true)} />;
+      }
+      
+      // User has access, show dashboard
+      return (
+        <DashboardApp 
+          trialStatus={trialStatus}
+          onUpgrade={() => setShowSubscriptionPage(true)}
+        />
+      );
+    }
+    
+    // Fallback while trial status is loading
     return <DashboardApp />;
   }
 

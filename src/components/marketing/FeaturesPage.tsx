@@ -150,7 +150,7 @@ export function FeaturesPage({ onNavigate }: PageProps) {
             onClick={() => onNavigate('pricing')}
             className="rounded-md bg-blue-600 px-8 py-4 text-lg font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-all transform hover:scale-105"
           >
-            Start Your Free Trial Today
+            Start 7-Day Free Trial
           </button>
           <p className="mt-4 text-sm text-gray-600">
             No credit card required • Cancel anytime • 7-day free trial
