@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, MessageSquare, Clock } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageSquare, Clock, TrendingUp, Award } from 'lucide-react';
 import { PageProps } from '../../types/navigation';
 
 export function ContactPage({ onNavigate }: PageProps) {
