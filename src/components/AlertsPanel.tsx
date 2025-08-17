@@ -82,6 +82,7 @@ export function AlertsPanel({ activities }: AlertsPanelProps) {
             <Bell className="w-5 h-5 text-gray-400" />
           )}
           <h3 className="text-lg font-semibold text-gray-900">Smart Alerts</h3>
+          <span className="text-sm">🐕 Woof when something's up!</span>
           <div className={`px-2 py-1 rounded-full text-xs font-medium ${
             qualifyingAlerts.length > 0 
               ? 'bg-red-100 text-red-800' 

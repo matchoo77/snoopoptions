@@ -64,6 +64,7 @@ export function WatchlistPanel({ activities, onSymbolSelect }: WatchlistPanelPro
       <div className="flex items-center mb-4">
         <Star className="w-5 h-5 text-yellow-500 mr-2" />
         <h3 className="text-lg font-semibold text-gray-900">Watchlist</h3>
+        <span className="text-sm">🦴 Favorite hunting spots</span>
         <div className="ml-2 px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
           {watchlist.length}
         </div>
