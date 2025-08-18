@@ -67,6 +67,19 @@ export function useTrialStatus() {
   const createTrialForUser = async (userId: string) => {
     try {
       console.log('Creating trial for user:', userId);
+      
+      // First check if trial already exists
+      const { data: existingTrial } = await supabase
+        .from('user_trials')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (existingTrial) {
+        console.log('Trial already exists for user:', userId);
+        return;
+      }
+      
       const { error } = await supabase
         .from('user_trials')
         .insert({

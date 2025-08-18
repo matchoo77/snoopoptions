@@ -95,9 +95,11 @@ function App() {
   if (user) {
     // Check if user has access (active trial or subscription)
     if (trialStatus) {
-      // Only show subscription gate if user explicitly has expired access
-      // For new users or users with active access, show dashboard
-      if (trialStatus.accessType === 'expired' && !trialStatus.hasActiveTrial && !trialStatus.hasActiveSubscription) {
+      // Show subscription gate ONLY if:
+      // 1. User has NO active trial AND
+      // 2. User has NO active subscription AND  
+      // 3. Access type is explicitly 'expired'
+      if (!trialStatus.hasActiveTrial && !trialStatus.hasActiveSubscription && trialStatus.accessType === 'expired') {
         return <SubscriptionGate onUpgrade={() => setShowSubscriptionPage(true)} />;
       }
       
@@ -110,7 +112,7 @@ function App() {
       );
     }
     
-    // Fallback while trial status is loading - show dashboard with no trial info
+    // Fallback while trial status is loading - show dashboard with default trial
     return (
       <DashboardApp 
         trialStatus={{
