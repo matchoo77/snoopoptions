@@ -28,9 +28,10 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       const finalSymbols = symbolsToFetch.length > 0 ? symbolsToFetch : defaultSymbols;
 
       console.log('Fetching EOD options data for symbols:', finalSymbols);
+      console.log('API Key configured:', apiKey ? `Yes (${apiKey.substring(0, 8)}...)` : 'No');
 
-      const today = new Date().toISOString().split('T')[0];
-      const unusualActivities = await eodService.getUnusualActivityMultiSymbol(finalSymbols, today);
+      // Get previous trading day data
+      const unusualActivities = await eodService.getUnusualActivityMultiSymbol(finalSymbols);
 
       setActivities(unusualActivities);
       setLastUpdated(new Date().toISOString());
@@ -49,8 +50,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
 
     try {
       setError(null);
-      const today = new Date().toISOString().split('T')[0];
-      const symbolActivities = await eodService.getMostActiveOptions(symbol, today, 20);
+      const symbolActivities = await eodService.getMostActiveOptions(symbol, undefined, 20);
       
       // Update activities, replacing any existing data for this symbol
       setActivities(prev => {

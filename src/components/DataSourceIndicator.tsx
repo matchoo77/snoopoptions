@@ -47,6 +47,18 @@ export function DataSourceIndicator({
   }
 
   const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10;
+  
+  // Add debug info
+  console.log('DataSourceIndicator debug:', {
+    hasValidApiKey,
+    dataSource,
+    isUsingRealData,
+    isConnected,
+    loading,
+    error,
+    apiKeyLength: polygonApiKey?.length || 0
+  });
+  
   if (hasValidApiKey && isMarketClosed) {
     return (
       <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -62,6 +74,9 @@ export function DataSourceIndicator({
             </p>
             <p className="text-xs text-blue-600">
               Real-time data will automatically activate during market hours (4:00 AM - 8:00 PM ET, Monday-Friday)
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Debug: API Key ends with ...{polygonApiKey?.slice(-4)} | Data Source: {dataSource}
             </p>
           </div>
         </div>

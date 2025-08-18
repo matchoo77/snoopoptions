@@ -236,6 +236,12 @@ export function BacktestingPanel() {
             : '⚠️ Using mock data (configure VITE_POLYGON_API_KEY for real data)'
           }
         </p>
+        <p className="text-xs text-gray-500 mt-1">
+          API Key Status: {import.meta.env.VITE_POLYGON_API_KEY ? 
+            `Configured (${import.meta.env.VITE_POLYGON_API_KEY.length} chars, ends with ...${import.meta.env.VITE_POLYGON_API_KEY.slice(-4)})` : 
+            'Not configured'
+          }
+        </p>
       </div>
     </div>
   );

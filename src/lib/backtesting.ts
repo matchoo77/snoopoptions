@@ -17,6 +17,7 @@ export class BacktestingEngine {
   }> {
     try {
       console.log('Starting backtest with real EOD data...');
+      console.log('Backtest parameters:', params);
       
       // Step 1: Get historical block trades using EOD service
       const blockTrades = await this.eodService.getHistoricalBlockTrades(
@@ -43,9 +44,6 @@ export class BacktestingEngine {
         
         // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 100));
-        if (result) {
-          results.push(result);
-        }
       }
       
       console.log(`Analyzed ${results.length} trades`);

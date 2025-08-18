@@ -44,14 +44,19 @@ export function useOptionsData() {
 
   useEffect(() => {
     // Determine which data source to use
-    if (polygonApiKey && polygonActivities.length > 0) {
+    if (polygonApiKey && polygonApiKey.length > 10 && polygonActivities.length > 0) {
       setDataSource('realtime');
       setAllActivities(polygonActivities);
-    } else if (polygonApiKey && eodActivities.length > 0) {
+    } else if (polygonApiKey && polygonApiKey.length > 10 && eodActivities.length > 0) {
       setDataSource('eod');
       setAllActivities(eodActivities);
+    } else if (polygonApiKey && polygonApiKey.length > 10) {
+      // API key is configured but no data yet - keep trying EOD
+      setDataSource('eod');
+      setAllActivities(eodActivities); // May be empty initially
     } else {
       // Fall back to mock data
+      console.log('Using mock data - API key not configured or invalid');
       setDataSource('mock');
       setAllActivities(generateMockData());
 

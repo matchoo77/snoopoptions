@@ -71,6 +71,7 @@ export class PolygonEODService {
   // Get all options contracts for a symbol
   async getOptionsContracts(symbol: string, expiredGte?: string, expiredLte?: string): Promise<PolygonOptionsContract[]> {
     try {
+      console.log(`Fetching options contracts for ${symbol}...`);
       const params = new URLSearchParams({
         'underlying_ticker': symbol,
         'limit': '1000',
@@ -80,13 +81,19 @@ export class PolygonEODService {
       if (expiredGte) params.append('expired.gte', expiredGte);
       if (expiredLte) params.append('expired.lte', expiredLte);
 
+      const url = `${this.baseUrl}/v3/reference/options/contracts?${params}`;
+      console.log(`Polygon contracts URL: ${url.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
+      
       const response = await fetch(`${this.baseUrl}/v3/reference/options/contracts?${params}`);
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Polygon contracts API error: ${response.status} ${response.statusText}`, errorText);
         throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log(`Found ${data.results?.length || 0} contracts for ${symbol}`);
       return data.results || [];
     } catch (error) {
       console.error('Error fetching options contracts:', error);
@@ -101,19 +108,26 @@ export class PolygonEODService {
     endDate: string = startDate
   ): Promise<PolygonOptionsAgg[]> {
     try {
+      const url = `${this.baseUrl}/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${this.apiKey}`;
+      console.log(`Fetching aggregates for ${ticker}: ${url.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
+      
       const response = await fetch(
         `${this.baseUrl}/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${this.apiKey}`
       );
       
       if (!response.ok) {
         if (response.status === 404) {
+          console.log(`No data available for ${ticker} on ${startDate}`);
           // No data available for this contract
           return [];
         }
+        const errorText = await response.text();
+        console.error(`Polygon aggregates API error for ${ticker}: ${response.status} ${response.statusText}`, errorText);
         throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log(`Found ${data.results?.length || 0} aggregates for ${ticker}`);
       return data.results || [];
     } catch (error) {
       console.error(`Error fetching options aggregates for ${ticker}:`, error);
@@ -171,8 +185,27 @@ export class PolygonEODService {
   // Scan for unusual EOD options activity
   async scanUnusualEODActivity(
     symbols: string[] = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'SPY', 'QQQ'],
-    date: string = new Date().toISOString().split('T')[0]
+    date?: string
   ): Promise<OptionsActivity[]> {
+    // Use previous trading day if no date specified
+    if (!date) {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+      
+      // If today is Monday, go back to Friday
+      if (today.getDay() === 1) {
+        yesterday.setDate(today.getDate() - 3);
+      }
+      // If today is Sunday, go back to Friday  
+      else if (today.getDay() === 0) {
+        yesterday.setDate(today.getDate() - 2);
+      }
+      
+      date = yesterday.toISOString().split('T')[0];
+    }
+    
+    console.log(`Scanning EOD options activity for date: ${date}`);
     const activities: OptionsActivity[] = [];
     
     for (const symbol of symbols) {
@@ -181,6 +214,7 @@ export class PolygonEODService {
         
         // Get options contracts for this symbol
         const contracts = await this.getOptionsContracts(symbol);
+        console.log(`Found ${contracts.length} total contracts for ${symbol}`);
         
         // Filter to active contracts (not expired, reasonable expiration dates)
         const activeContracts = contracts.filter(contract => {
@@ -189,13 +223,16 @@ export class PolygonEODService {
           const daysToExp = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
           return daysToExp > 0 && daysToExp <= 60; // 0-60 days to expiration
         });
+        
+        console.log(`Found ${activeContracts.length} active contracts for ${symbol}`);
 
         // Limit to most liquid contracts for API efficiency
-        const contractsToCheck = activeContracts.slice(0, 50);
+        const contractsToCheck = activeContracts.slice(0, 20); // Reduce to avoid rate limits
         
         // Get EOD data for each contract
         for (const contract of contractsToCheck) {
           const ticker = this.buildOptionsTicker(contract);
+          console.log(`Checking contract: ${ticker}`);
           const aggregates = await this.getOptionsAggregates(ticker, date);
           
           if (aggregates.length > 0) {
@@ -203,12 +240,13 @@ export class PolygonEODService {
             const activity = this.convertAggregateToActivity(agg, contract, date);
             
             if (activity && this.isUnusualActivity(activity)) {
+              console.log(`Found unusual activity: ${ticker} - Volume: ${activity.volume}, Premium: $${activity.premium.toFixed(0)}`);
               activities.push(activity);
             }
           }
           
           // Add small delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise(resolve => setTimeout(resolve, 100)); // Increase delay
         }
       } catch (error) {
         console.error(`Error scanning ${symbol}:`, error);
@@ -216,6 +254,7 @@ export class PolygonEODService {
       }
     }
     
+    console.log(`Total unusual activities found: ${activities.length}`);
     return activities.sort((a, b) => b.premium - a.premium);
   }
 
@@ -284,7 +323,12 @@ export class PolygonEODService {
   // Build Polygon options ticker format
   private buildOptionsTicker(contract: PolygonOptionsContract): string {
     // Format: O:AAPL240216C00150000
-    const dateStr = contract.expiration_date.replace(/-/g, '').substring(2); // YYMMDD
+    const expDate = new Date(contract.expiration_date);
+    const year = expDate.getFullYear().toString().substring(2);
+    const month = (expDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = expDate.getDate().toString().padStart(2, '0');
+    const dateStr = year + month + day;
+    
     const callPut = contract.contract_type === 'call' ? 'C' : 'P';
     const strikeStr = Math.round(contract.strike_price * 1000).toString().padStart(8, '0');
     
@@ -343,12 +387,12 @@ export class PolygonEODService {
 
   // Detect unusual activity based on volume and premium
   private detectUnusualActivity(volume: number, premium: number): boolean {
-    return volume >= 1000 || premium >= 50000;
+    return volume >= 500 || premium >= 25000; // Lower thresholds to catch more activity
   }
 
   // Detect block trades
   private isBlockTrade(volume: number, premium: number): boolean {
-    return volume >= 1000 || premium >= 100000;
+    return volume >= 500 || premium >= 50000; // Lower thresholds
   }
 
   // Calculate sentiment
@@ -409,16 +453,19 @@ export class PolygonEODService {
   // Get unusual activity for multiple symbols
   async getUnusualActivityMultiSymbol(
     symbols: string[],
-    date: string = new Date().toISOString().split('T')[0]
+    date?: string
   ): Promise<OptionsActivity[]> {
+    console.log('Starting multi-symbol unusual activity scan...');
     const allActivities: OptionsActivity[] = [];
     
     for (const symbol of symbols) {
       const activities = await this.getMostActiveOptions(symbol, date, 10);
       const unusualActivities = activities.filter(activity => activity.unusual);
+      console.log(`${symbol}: Found ${activities.length} activities, ${unusualActivities.length} unusual`);
       allActivities.push(...unusualActivities);
     }
     
+    console.log(`Total unusual activities across all symbols: ${allActivities.length}`);
     return allActivities.sort((a, b) => b.premium - a.premium);
   }
 }
