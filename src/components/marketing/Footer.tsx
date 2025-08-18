@@ -119,25 +119,12 @@ export function Footer({ onNavigate, onLogin }: FooterProps) {
                 <ul role="list" className="mt-6 space-y-4">
                   {navigation.legal.map((item) => (
                     <li key={item.name}>
-                      {item.href === '#' ? (
-                        <a href={item.href} className="text-sm leading-6 text-gray-300 hover:text-white transition-colors">
-                          {item.name}
-                        </a>
-                      ) : item.name === 'Privacy Policy' ? (
-                        <button
-                          onClick={() => onNavigate('privacy')}
-                          className="text-sm leading-6 text-gray-300 hover:text-white transition-colors text-left"
-                        >
-                          {item.name}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => onNavigate(item.href)}
-                          className="text-sm leading-6 text-gray-300 hover:text-white transition-colors text-left"
-                        >
-                          {item.name}
-                        </button>
-                      )}
+                      <button
+                        onClick={() => onNavigate(item.href)}
+                        className="text-sm leading-6 text-gray-300 hover:text-white transition-colors text-left"
+                      >
+                        {item.name}
+                      </button>
                     </li>
                   ))}
                 </ul>
