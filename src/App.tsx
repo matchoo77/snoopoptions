@@ -1,42 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
-import { useTrialStatus } from './hooks/useTrialStatus';
 import { supabase } from './lib/supabase';
 import { MarketingApp } from './components/marketing/MarketingApp';
 import { DashboardApp } from './components/dashboard/DashboardApp';
 import { AuthPage } from './components/auth/AuthPage';
 import { SuccessPage } from './components/subscription/SuccessPage';
 import { SubscriptionPage } from './components/subscription/SubscriptionPage';
-import { SubscriptionGate } from './components/SubscriptionGate';
 
 function App() {
-  const { user, loading, signOut } = useAuth();
-  const { trialStatus, loading: trialLoading } = useTrialStatus();
+  const { user, loading } = useAuth();
   const [showSuccessPage, setShowSuccessPage] = useState(false);
   const [showAuthPage, setShowAuthPage] = useState(false);
   const [showSubscriptionPage, setShowSubscriptionPage] = useState(false);
-
-  // Clear any invalid sessions on mount
-  useEffect(() => {
-    const clearInvalidSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          // Try to get user to validate session
-          const { error } = await supabase.auth.getUser();
-          if (error) {
-            // Session is invalid, clear it
-            await signOut();
-          }
-        }
-      } catch (error) {
-        // If any error occurs, clear the session
-        await signOut();
-      }
-    };
-    
-    clearInvalidSession();
-  }, [signOut]);
 
   // Check for success parameter in URL
   useEffect(() => {
@@ -91,21 +66,9 @@ function App() {
     );
   }
 
-  // Show dashboard for authenticated users
+  // Show dashboard for authenticated users - ALWAYS allow access for now
   if (user) {
-    // SIMPLIFIED LOGIC: Always show dashboard for authenticated users
-    // Only block if we have definitive data showing expired access
-    const shouldBlockAccess = trialStatus && 
-      !trialLoading && 
-      !trialStatus.hasActiveTrial && 
-      !trialStatus.hasActiveSubscription && 
-      trialStatus.accessType === 'expired';
-
-    if (shouldBlockAccess) {
-      return <SubscriptionGate onUpgrade={() => setShowSubscriptionPage(true)} />;
-    }
-    
-    // Show dashboard with trial status (or default trial while loading)
+    // Default trial status for all authenticated users
     const defaultTrialStatus = {
       hasActiveTrial: true,
       hasActiveSubscription: false,
@@ -115,7 +78,7 @@ function App() {
     
     return (
       <DashboardApp 
-        trialStatus={trialStatus || defaultTrialStatus}
+        trialStatus={defaultTrialStatus}
         onUpgrade={() => setShowSubscriptionPage(true)}
       />
     );
