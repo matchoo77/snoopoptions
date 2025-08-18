@@ -9,7 +9,7 @@ interface DataSourceIndicatorProps {
 
 export function DataSourceIndicator({ isConnected, isUsingRealData, error }: DataSourceIndicatorProps) {
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY;
-  const hasValidApiKey = polygonApiKey && polygonApiKey !== 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X' && polygonApiKey.length > 10;
+  const hasApiKey = polygonApiKey && polygonApiKey.length > 10;
   
   // Check if market is likely closed (weekend or outside trading hours)
   const now = new Date();
@@ -19,7 +19,7 @@ export function DataSourceIndicator({ isConnected, isUsingRealData, error }: Dat
   const isOutsideTradingHours = hour < 4 || hour > 20; // Pre-market starts at 4 AM ET, after-hours ends at 8 PM ET
   const isMarketClosed = isWeekend || isOutsideTradingHours;
 
-  // If we have a valid API key but market is closed, show market closed message
+  const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10;
   if (hasValidApiKey && isMarketClosed) {
     return (
       <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">

@@ -15,7 +15,7 @@ export function useBacktesting() {
     try {
       const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY;
       
-      if (polygonApiKey && polygonApiKey !== 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X') {
+      if (polygonApiKey && polygonApiKey.length > 10) {
         // Use real data if API key is available
         const engine = new BacktestingEngine(polygonApiKey);
         const { results: backtestResults, summary: backtestSummary } = await engine.runBacktest(params);
