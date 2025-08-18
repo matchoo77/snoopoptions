@@ -359,7 +359,7 @@ export function BacktestResults({ results, summary, params }: BacktestResultsPro
             <h4 className="font-medium text-blue-800 mb-2">Trading Strategy</h4>
             <ul className="space-y-1 text-blue-700">
               <li>• Target movement of {formatPercentage(params.targetMovement)} within {params.timeHorizon} days</li>
-              <li>• Focus on trades with premium > {formatCurrency(params.minPremium)}</li>
+              <li>• Focus on trades with premium &gt; {formatCurrency(params.minPremium)}</li>
               <li>• {summary.averageDaysToTarget < params.timeHorizon ? 'Targets typically hit early' : 'Full time horizon usually needed'}</li>
             </ul>
           </div>
