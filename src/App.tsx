@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { MarketingApp } from './components/marketing/MarketingApp';
-import { AuthPage } from './components/auth/AuthPage';
+import { LoginForm } from './components/auth/LoginForm';
+import { SignupForm } from './components/auth/SignupForm';
 import { DashboardApp } from './components/dashboard/DashboardApp';
 import { SubscriptionPage } from './components/subscription/SubscriptionPage';
 import { SuccessPage } from './components/subscription/SuccessPage';
 
 function App() {
   const { user, loading: authLoading } = useAuth();
-  const [currentView, setCurrentView] = useState<'marketing' | 'auth' | 'dashboard' | 'subscription' | 'success'>('marketing');
+  const [currentView, setCurrentView] = useState<'marketing' | 'login' | 'signup' | 'dashboard' | 'subscription' | 'success'>('marketing');
 
   // Check URL parameters for payment success/cancel
   useEffect(() => {
@@ -37,7 +38,7 @@ function App() {
   }, [user, authLoading, currentView]);
 
   const handleLogin = () => {
-    setCurrentView('auth');
+    setCurrentView('login');
   };
 
   const handleAuthSuccess = () => {
@@ -67,12 +68,36 @@ function App() {
 
   // Handle different views
   switch (currentView) {
-    case 'auth':
+    case 'login':
       return (
-        <AuthPage 
-          onSuccess={handleAuthSuccess}
-          onBack={() => setCurrentView('marketing')}
-        />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+          <button
+            onClick={() => setCurrentView('marketing')}
+            className="absolute top-6 left-6 text-gray-600 hover:text-gray-900 font-medium"
+          >
+            ← Back to Home
+          </button>
+          <LoginForm
+            onSuccess={handleAuthSuccess}
+            onSwitchToSignup={() => setCurrentView('signup')}
+          />
+        </div>
+      );
+
+    case 'signup':
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+          <button
+            onClick={() => setCurrentView('marketing')}
+            className="absolute top-6 left-6 text-gray-600 hover:text-gray-900 font-medium"
+          >
+            ← Back to Home
+          </button>
+          <SignupForm
+            onSuccess={handleAuthSuccess}
+            onSwitchToLogin={() => setCurrentView('login')}
+          />
+        </div>
       );
 
     case 'subscription':

@@ -6,7 +6,6 @@ import { PricingPage } from './PricingPage';
 import { AboutPage } from './AboutPage';
 import { ContactPage } from './ContactPage';
 import { Footer } from './Footer';
-import { AuthPage } from '../auth/AuthPage';
 import { DisclaimerPage } from './DisclaimerPage';
 import { PrivacyPage } from './PrivacyPage';
 
@@ -16,27 +15,15 @@ interface MarketingAppProps {
 
 export function MarketingApp({ onLogin }: MarketingAppProps) {
   const [currentPage, setCurrentPage] = useState('home');
-  const [showSignup, setShowSignup] = useState(false);
 
   // Handle signup navigation
   const handleNavigate = (page: string) => {
     if (page === 'signup') {
-      setShowSignup(true);
+      onLogin(); // Just redirect to login for now
     } else {
       setCurrentPage(page);
     }
   };
-
-  // Show signup page when requested
-  if (showSignup) {
-    return (
-      <AuthPage 
-        onSuccess={onLogin}
-        initialMode="signup"
-        onBack={() => setShowSignup(false)}
-      />
-    );
-  }
 
   const renderPage = () => {
     switch (currentPage) {
