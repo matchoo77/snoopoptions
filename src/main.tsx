@@ -3,12 +3,9 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Add error boundary for better debugging
+// Error boundary using class component syntax
 class ErrorBoundary extends React.Component {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+  state = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: any) {
     return { hasError: true, error };
@@ -19,15 +16,13 @@ class ErrorBoundary extends React.Component {
   }
 
   render() {
-    const state = this.state as { hasError: boolean; error: any };
-    
-    if (state.hasError) {
+    if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
             <h1 className="text-xl font-bold text-red-600 mb-4">Application Error</h1>
             <p className="text-gray-600 mb-4">
-              {state.error?.message || 'An unexpected error occurred'}
+              {this.state.error?.message || 'An unexpected error occurred'}
             </p>
             <button
               onClick={() => window.location.reload()}
