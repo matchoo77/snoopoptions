@@ -53,8 +53,8 @@ export function useTrialStatus() {
       } else {
         // If no data found, create a trial for the user
         await createTrialForUser(user.id);
-        // Refetch after creating trial
-        setTimeout(fetchTrialStatus, 1000);
+        // Refetch after creating trial with a longer delay
+        setTimeout(fetchTrialStatus, 2000);
       }
     } catch (err) {
       console.error('Trial status fetch error:', err);
@@ -66,6 +66,7 @@ export function useTrialStatus() {
 
   const createTrialForUser = async (userId: string) => {
     try {
+      console.log('Creating trial for user:', userId);
       const { error } = await supabase
         .from('user_trials')
         .insert({
@@ -75,6 +76,8 @@ export function useTrialStatus() {
 
       if (error) {
         console.error('Error creating trial:', error);
+      } else {
+        console.log('Trial created successfully for user:', userId);
       }
     } catch (err) {
       console.error('Failed to create trial:', err);

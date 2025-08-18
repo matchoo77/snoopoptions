@@ -95,7 +95,9 @@ function App() {
   if (user) {
     // Check if user has access (active trial or subscription)
     if (trialStatus) {
-      if (trialStatus.accessType === 'expired') {
+      // Only show subscription gate if user explicitly has expired access
+      // For new users or users with active access, show dashboard
+      if (trialStatus.accessType === 'expired' && !trialStatus.hasActiveTrial && !trialStatus.hasActiveSubscription) {
         return <SubscriptionGate onUpgrade={() => setShowSubscriptionPage(true)} />;
       }
       
@@ -108,8 +110,18 @@ function App() {
       );
     }
     
-    // Fallback while trial status is loading
-    return <DashboardApp />;
+    // Fallback while trial status is loading - show dashboard with no trial info
+    return (
+      <DashboardApp 
+        trialStatus={{
+          hasActiveTrial: true, // Assume trial while loading
+          hasActiveSubscription: false,
+          accessType: 'trial',
+          trialDaysRemaining: 7,
+        }}
+        onUpgrade={() => setShowSubscriptionPage(true)}
+      />
+    );
   }
 
   // DEFAULT: Show marketing site for unauthenticated users
