@@ -210,9 +210,8 @@ export function PrivacyPage({ onNavigate }: PageProps) {
             
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-gray-700 mb-2"><strong>MM Publishing Inc.</strong></p>
-              <p className="text-gray-700 mb-1">Email: privacy@snoopflow.com</p>
-              <p className="text-gray-700 mb-1">Support: support@snoopflow.com</p>
-              <p className="text-gray-700">Phone: +1 (555) SNOOP-01</p>
+              <p className="text-gray-700 mb-1">Email: matt@mmpublishinginc.net</p>
+              <p className="text-gray-700">Support: matt@mmpublishinginc.net</p>
             </div>
           </section>
         </div>

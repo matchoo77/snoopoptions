@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, MessageSquare, Clock, TrendingUp, Award } from 'lucide-react';
+import { Mail, MapPin, Send, MessageSquare, Clock, TrendingUp, Award } from 'lucide-react';
 import { PageProps } from '../../types/navigation';
 
 export function ContactPage({ onNavigate }: PageProps) {
@@ -54,18 +54,8 @@ export function ContactPage({ onNavigate }: PageProps) {
                     <Mail className="h-7 w-6 text-blue-600" aria-hidden="true" />
                   </dt>
                   <dd>
-                    <a className="hover:text-gray-900" href="mailto:support@snoopflow.com">
-                      support@snoopflow.com
-                    </a>
-                  </dd>
-                </div>
-                <div className="flex gap-x-4">
-                  <dt className="flex-none">
-                    <Phone className="h-7 w-6 text-blue-600" aria-hidden="true" />
-                  </dt>
-                  <dd>
-                    <a className="hover:text-gray-900" href="tel:+1-555-SNOOP-01">
-                      +1 (555) SNOOP-01
+                    <a className="hover:text-gray-900" href="mailto:matt@mmpublishinginc.net">
+                      matt@mmpublishinginc.net
                     </a>
                   </dd>
                 </div>
