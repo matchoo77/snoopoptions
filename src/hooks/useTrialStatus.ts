@@ -27,9 +27,16 @@ export function useTrialStatus() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setTrialStatus(null);
+        setLoading(false);
         return;
       }
 
+      console.log('Fetching trial status for user:', user.id);
+
+      // First, ensure user has a trial record
+      await ensureUserHasTrial(user.id);
+
+      // Then fetch the access status
       const { data, error } = await supabase
         .from('user_access_status')
         .select('*')
@@ -38,62 +45,94 @@ export function useTrialStatus() {
 
       if (error) {
         console.error('Error fetching trial status:', error);
+        // Don't block access on database errors - default to trial access
+        setTrialStatus({
+          hasActiveTrial: true,
+          hasActiveSubscription: false,
+          accessType: 'trial',
+          trialDaysRemaining: 7,
+          trialEndDate: null,
+        });
         setError(error.message);
         return;
       }
 
       if (data) {
+        console.log('Trial status data:', data);
         setTrialStatus({
           hasActiveTrial: data.has_active_trial || false,
           hasActiveSubscription: data.has_active_subscription || false,
-          accessType: data.access_type || 'expired',
-          trialDaysRemaining: data.trial_days_remaining || 0,
+          accessType: data.access_type || 'trial',
+          trialDaysRemaining: Math.max(0, data.trial_days_remaining || 0),
           trialEndDate: data.trial_end_date,
         });
       } else {
-        // If no data found, create a trial for the user
-        await createTrialForUser(user.id);
-        // Refetch after creating trial with a longer delay
-        setTimeout(fetchTrialStatus, 2000);
+        console.log('No trial status data found, defaulting to active trial');
+        // Default to active trial if no data found
+        setTrialStatus({
+          hasActiveTrial: true,
+          hasActiveSubscription: false,
+          accessType: 'trial',
+          trialDaysRemaining: 7,
+          trialEndDate: null,
+        });
       }
     } catch (err) {
       console.error('Trial status fetch error:', err);
+      // On any error, default to allowing access with trial
+      setTrialStatus({
+        hasActiveTrial: true,
+        hasActiveSubscription: false,
+        accessType: 'trial',
+        trialDaysRemaining: 7,
+        trialEndDate: null,
+      });
       setError('Failed to fetch trial status');
     } finally {
       setLoading(false);
     }
   };
 
-  const createTrialForUser = async (userId: string) => {
+  const ensureUserHasTrial = async (userId: string) => {
     try {
-      console.log('Creating trial for user:', userId);
+      console.log('Ensuring trial exists for user:', userId);
       
-      // First check if trial already exists
-      const { data: existingTrial } = await supabase
+      // Check if trial already exists
+      const { data: existingTrial, error: checkError } = await supabase
         .from('user_trials')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
       
-      if (existingTrial) {
-        console.log('Trial already exists for user:', userId);
+      if (checkError) {
+        console.error('Error checking existing trial:', checkError);
         return;
       }
       
-      const { error } = await supabase
+      if (existingTrial) {
+        console.log('Trial already exists for user:', userId, existingTrial);
+        return;
+      }
+      
+      console.log('Creating new trial for user:', userId);
+      
+      // Create trial record
+      const { data: newTrial, error: createError } = await supabase
         .from('user_trials')
         .insert({
           user_id: userId,
           trial_used: false,
-        });
+        })
+        .select()
+        .single();
 
-      if (error) {
-        console.error('Error creating trial:', error);
+      if (createError) {
+        console.error('Error creating trial:', createError);
       } else {
-        console.log('Trial created successfully for user:', userId);
+        console.log('Trial created successfully:', newTrial);
       }
     } catch (err) {
-      console.error('Failed to create trial:', err);
+      console.error('Failed to ensure trial exists:', err);
     }
   };
 

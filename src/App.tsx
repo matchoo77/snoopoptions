@@ -49,7 +49,7 @@ function App() {
   }, []);
 
   // Show loading spinner while checking auth
-  if (loading || (user && trialLoading)) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -93,42 +93,35 @@ function App() {
 
   // Show dashboard for authenticated users
   if (user) {
-    // Check if user has access (active trial or subscription)
-    if (trialStatus) {
-      // Show subscription gate ONLY if:
-      // 1. User has NO active trial AND
-      // 2. User has NO active subscription AND  
-      // 3. Access type is explicitly 'expired'
-      if (!trialStatus.hasActiveTrial && !trialStatus.hasActiveSubscription && trialStatus.accessType === 'expired') {
-        return <SubscriptionGate onUpgrade={() => setShowSubscriptionPage(true)} />;
-      }
-      
-      // User has access, show dashboard
-      return (
-        <DashboardApp 
-          trialStatus={trialStatus}
-          onUpgrade={() => setShowSubscriptionPage(true)}
-        />
-      );
+    // SIMPLIFIED LOGIC: Always show dashboard for authenticated users
+    // Only block if we have definitive data showing expired access
+    const shouldBlockAccess = trialStatus && 
+      !trialLoading && 
+      !trialStatus.hasActiveTrial && 
+      !trialStatus.hasActiveSubscription && 
+      trialStatus.accessType === 'expired';
+
+    if (shouldBlockAccess) {
+      return <SubscriptionGate onUpgrade={() => setShowSubscriptionPage(true)} />;
     }
     
-    // Fallback while trial status is loading - show dashboard with default trial
+    // Show dashboard with trial status (or default trial while loading)
+    const defaultTrialStatus = {
+      hasActiveTrial: true,
+      hasActiveSubscription: false,
+      accessType: 'trial' as const,
+      trialDaysRemaining: 7,
+    };
+    
     return (
       <DashboardApp 
-        trialStatus={{
-          hasActiveTrial: true, // Assume trial while loading
-          hasActiveSubscription: false,
-          accessType: 'trial',
-          trialDaysRemaining: 7,
-        }}
+        trialStatus={trialStatus || defaultTrialStatus}
         onUpgrade={() => setShowSubscriptionPage(true)}
       />
     );
   }
 
   // DEFAULT: Show marketing site for unauthenticated users
-  
-  // Show marketing site by default for non-authenticated users
   return <MarketingApp onLogin={() => setShowAuthPage(true)} />;
 }
 
