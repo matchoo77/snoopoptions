@@ -143,7 +143,7 @@ export function BacktestResults({ results, summary, params }: BacktestResultsPro
             <div className="flex items-center justify-between p-3 bg-white rounded border">
               <div>
                 <span className="font-medium text-gray-900">Small</span>
-                <div className="text-xs text-gray-600">< $100K</div>
+                <div className="text-xs text-gray-600">{"< $100K"}</div>
               </div>
               <div className="text-right">
                 <div className="text-lg font-bold text-gray-900">
@@ -173,7 +173,7 @@ export function BacktestResults({ results, summary, params }: BacktestResultsPro
             <div className="flex items-center justify-between p-3 bg-white rounded border">
               <div>
                 <span className="font-medium text-gray-900">Large</span>
-                <div className="text-xs text-gray-600">> $500K</div>
+                <div className="text-xs text-gray-600">{"> $500K"}</div>
               </div>
               <div className="text-right">
                 <div className="text-lg font-bold text-gray-900">
