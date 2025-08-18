@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
-import { supabase } from './lib/supabase';
 import { MarketingApp } from './components/marketing/MarketingApp';
 import { DashboardApp } from './components/dashboard/DashboardApp';
 import { AuthPage } from './components/auth/AuthPage';
@@ -66,19 +65,19 @@ function App() {
     );
   }
 
-  // Show dashboard for authenticated users - ALWAYS allow access for now
+  // Show dashboard for authenticated users - ALWAYS allow access
   if (user) {
-    // Default trial status for all authenticated users
-    const defaultTrialStatus = {
+    // Give all authenticated users full access with a generous trial
+    const trialStatus = {
       hasActiveTrial: true,
       hasActiveSubscription: false,
       accessType: 'trial' as const,
-      trialDaysRemaining: 7,
+      trialDaysRemaining: 30, // Give 30 days for demo
     };
     
     return (
       <DashboardApp 
-        trialStatus={defaultTrialStatus}
+        trialStatus={trialStatus}
         onUpgrade={() => setShowSubscriptionPage(true)}
       />
     );
