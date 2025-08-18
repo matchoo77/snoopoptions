@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { OptionsActivity, FilterOptions } from '../types/options';
 import { usePolygonData } from './usePolygonData';
+import { useEODData } from './useEODData';
 import { generateMockData } from '../data/mockData';
 
 export function useOptionsData() {
   const [allActivities, setAllActivities] = useState<OptionsActivity[]>([]);
-  const [useRealData, setUseRealData] = useState(false);
+  const [dataSource, setDataSource] = useState<'mock' | 'realtime' | 'eod'>('mock');
   const [filters, setFilters] = useState<FilterOptions>({
     minVolume: 1000,
     minPremium: 10000,
@@ -22,7 +23,7 @@ export function useOptionsData() {
   // Get Polygon API key from environment
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY || '';
   
-  // Use Polygon data if API key is available
+  // Use real-time Polygon WebSocket data
   const { 
     activities: polygonActivities, 
     isConnected, 
@@ -33,13 +34,25 @@ export function useOptionsData() {
     symbols: filters.symbols 
   });
 
+  // Use EOD data from Polygon
+  const {
+    activities: eodActivities,
+    loading: eodLoading,
+    error: eodError,
+    fetchSymbolData: fetchEODSymbolData
+  } = useEODData({ apiKey: polygonApiKey, symbols: filters.symbols });
+
   useEffect(() => {
+    // Determine which data source to use
     if (polygonApiKey && polygonActivities.length > 0) {
-      setUseRealData(true);
+      setDataSource('realtime');
       setAllActivities(polygonActivities);
+    } else if (polygonApiKey && eodActivities.length > 0) {
+      setDataSource('eod');
+      setAllActivities(eodActivities);
     } else {
-      // Fall back to mock data if no API key or no real data
-      setUseRealData(false);
+      // Fall back to mock data
+      setDataSource('mock');
       setAllActivities(generateMockData());
 
       // Update mock data every 5 seconds
@@ -49,14 +62,16 @@ export function useOptionsData() {
 
       return () => clearInterval(interval);
     }
-  }, [polygonApiKey, polygonActivities]);
+  }, [polygonApiKey, polygonActivities, eodActivities]);
 
   // Fetch data for specific symbol when search changes
   useEffect(() => {
-    if (useRealData && filters.searchSymbol && fetchSymbolData) {
+    if (dataSource === 'realtime' && filters.searchSymbol && fetchSymbolData) {
       fetchSymbolData(filters.searchSymbol);
+    } else if (dataSource === 'eod' && filters.searchSymbol && fetchEODSymbolData) {
+      fetchEODSymbolData(filters.searchSymbol);
     }
-  }, [useRealData, filters.searchSymbol, fetchSymbolData]);
+  }, [dataSource, filters.searchSymbol, fetchSymbolData, fetchEODSymbolData]);
 
   const filteredActivities = useMemo(() => {
     let filtered = allActivities;
@@ -104,8 +119,10 @@ export function useOptionsData() {
     activities: filteredActivities,
     filters,
     setFilters,
-    isConnected: useRealData ? isConnected : true,
-    isUsingRealData: useRealData,
-    error: polygonError,
+    isConnected: dataSource === 'realtime' ? isConnected : true,
+    isUsingRealData: dataSource !== 'mock',
+    dataSource,
+    error: polygonError || eodError,
+    loading: eodLoading,
   };
 }

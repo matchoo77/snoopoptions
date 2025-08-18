@@ -223,12 +223,18 @@ export function BacktestingPanel() {
       {/* Info Box */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <h3 className="text-sm font-medium text-blue-800 mb-2">
-          How Backtesting Works
+          How EOD Backtesting Works
         </h3>
         <p className="text-sm text-blue-700">
-          This analysis looks at historical block trades (large volume options trades) and measures 
-          whether the underlying stock moved in the predicted direction by your target percentage 
+          This analysis uses real end-of-day options data from Polygon.io to identify historical block trades, 
+          then measures whether the underlying stock moved in the predicted direction by your target percentage 
           within your specified time horizon. For calls, we measure upward moves; for puts, downward moves.
+        </p>
+        <p className="text-xs text-blue-600 mt-2">
+          {import.meta.env.VITE_POLYGON_API_KEY && import.meta.env.VITE_POLYGON_API_KEY.length > 10 
+            ? '✓ Using real Polygon.io data' 
+            : '⚠️ Using mock data (configure VITE_POLYGON_API_KEY for real data)'
+          }
         </p>
       </div>
     </div>

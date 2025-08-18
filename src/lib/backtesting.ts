@@ -1,11 +1,14 @@
 import { PolygonAPI } from './polygon';
+import { PolygonEODService } from './polygonEOD';
 import { BacktestTrade, BacktestResult, BacktestSummary, BacktestParams } from '../types/backtesting';
 
 export class BacktestingEngine {
   private polygonApi: PolygonAPI;
+  private eodService: PolygonEODService;
 
   constructor(apiKey: string) {
     this.polygonApi = new PolygonAPI(apiKey);
+    this.eodService = new PolygonEODService(apiKey);
   }
 
   async runBacktest(params: BacktestParams): Promise<{
@@ -13,18 +16,39 @@ export class BacktestingEngine {
     summary: BacktestSummary;
   }> {
     try {
-      // Step 1: Get historical block trades for the period
-      const blockTrades = await this.getHistoricalBlockTrades(params);
+      console.log('Starting backtest with real EOD data...');
+      
+      // Step 1: Get historical block trades using EOD service
+      const blockTrades = await this.eodService.getHistoricalBlockTrades(
+        params.symbols.length > 0 ? params.symbols : ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'],
+        params.startDate,
+        params.endDate,
+        params.minVolume,
+        params.minPremium
+      );
+      
+      console.log(`Found ${blockTrades.length} historical block trades`);
       
       // Step 2: For each trade, get the stock price movement over the time horizon
       const results: BacktestResult[] = [];
       
       for (const trade of blockTrades) {
-        const result = await this.analyzeTradeOutcome(trade, params.targetMovement, params.timeHorizon);
+        // Only analyze trades that match our option type filter
+        if (params.optionTypes.includes(trade.type)) {
+          const result = await this.analyzeTradeOutcome(trade, params.targetMovement, params.timeHorizon);
+          if (result) {
+            results.push(result);
+          }
+        }
+        
+        // Add delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
         if (result) {
           results.push(result);
         }
       }
+      
+      console.log(`Analyzed ${results.length} trades`);
 
       // Step 3: Generate summary statistics
       const summary = this.generateSummary(results);
@@ -36,85 +60,6 @@ export class BacktestingEngine {
     }
   }
 
-  private async getHistoricalBlockTrades(params: BacktestParams): Promise<BacktestTrade[]> {
-    const trades: BacktestTrade[] = [];
-    const symbols = params.symbols.length > 0 ? params.symbols : ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'SPY', 'QQQ'];
-    
-    // Get data for each symbol
-    for (const symbol of symbols) {
-      try {
-        // Get options contracts for the symbol
-        const aggregates = await this.polygonApi.getOptionsAggregates(ticker, params.startDate, params.endDate);
-        
-        // Filter contracts by expiration dates within our backtest period
-        const relevantContracts = contracts.filter(contract => {
-          const expDate = new Date(contract.expiration_date);
-          const startDate = new Date(params.startDate);
-          const endDate = new Date(params.endDate);
-          return expDate >= startDate && expDate <= endDate;
-        });
-
-        // For each contract, get historical aggregates to find block trades
-        for (const contract of relevantContracts.slice(0, 10)) { // Limit for API efficiency
-          const ticker = this.buildOptionsTicker(contract);
-          const aggregates = await this.polygonApi.getOptionsAggregates(ticker, params.startDate);
-          
-          // Identify block trades from aggregates
-          const blockTradesForContract = this.identifyBlockTrades(aggregates, contract, params);
-          trades.push(...blockTradesForContract);
-        }
-      } catch (error) {
-        console.error(`Error getting data for ${symbol}:`, error);
-        continue;
-      }
-    }
-
-    return trades;
-  }
-
-  private buildOptionsTicker(contract: any): string {
-    // Convert contract to Polygon options ticker format
-    // Example: O:AAPL240216C00150000
-    const dateStr = contract.expiration_date.replace(/-/g, '').substring(2); // YYMMDD
-    const callPut = contract.contract_type === 'call' ? 'C' : 'P';
-    const strikeStr = (contract.strike_price * 1000).toString().padStart(8, '0');
-    
-    return `O:${contract.underlying_ticker}${dateStr}${callPut}${strikeStr}`;
-  }
-
-  private identifyBlockTrades(aggregates: any[], contract: any, params: BacktestParams): BacktestTrade[] {
-    const blockTrades: BacktestTrade[] = [];
-    
-    for (const agg of aggregates) {
-      const volume = agg.volume || 0;
-      const vwap = agg.vwap || agg.close || 0;
-      const premium = volume * vwap * 100; // Convert to total premium
-      
-      // Check if this qualifies as a block trade
-      if (volume >= params.minVolume && premium >= params.minPremium) {
-        if (params.optionTypes.includes(contract.contract_type)) {
-          const trade: BacktestTrade = {
-            id: `${contract.underlying_ticker}-${agg.timestamp}-${Math.random()}`,
-            symbol: contract.underlying_ticker,
-            strike: contract.strike_price,
-            expiration: contract.expiration_date,
-            type: contract.contract_type,
-            volume,
-            premium,
-            tradeDate: new Date(agg.timestamp).toISOString(),
-            tradePrice: vwap,
-            underlyingPrice: 0, // Will be fetched separately
-            impliedVolatility: Math.random() * 0.8 + 0.2, // Would need separate API call
-            delta: contract.contract_type === 'call' ? Math.random() * 0.8 + 0.1 : -(Math.random() * 0.8 + 0.1),
-          };
-          
-          blockTrades.push(trade);
-        }
-      }
-    }
-    
-    return blockTrades;
-  }
 
   private async analyzeTradeOutcome(
     trade: BacktestTrade, 
@@ -130,9 +75,9 @@ export class BacktestingEngine {
       const tradeDateStr = tradeDate.toISOString().split('T')[0];
       const targetDateStr = targetDate.toISOString().split('T')[0];
       
-      // Get historical stock prices (using aggregates endpoint)
-      const tradeDayData = await this.getStockPrice(trade.symbol, tradeDateStr);
-      const targetDayData = await this.getStockPrice(trade.symbol, targetDateStr);
+      // Get historical stock prices using EOD service
+      const tradeDayData = await this.getStockPriceEOD(trade.symbol, tradeDateStr);
+      const targetDayData = await this.getStockPriceEOD(trade.symbol, targetDateStr);
       
       if (!tradeDayData || !targetDayData) {
         return null;
@@ -167,9 +112,9 @@ export class BacktestingEngine {
     }
   }
 
-  private async getStockPrice(symbol: string, date: string): Promise<number | null> {
+  private async getStockPriceEOD(symbol: string, date: string): Promise<number | null> {
     try {
-      const results = await this.polygonApi.getStockAggregates(symbol, date);
+      const results = await this.eodService.getStockAggregates(symbol, date, date);
       
       if (results && results.length > 0) {
         return results[0].c; // Closing price
@@ -177,7 +122,7 @@ export class BacktestingEngine {
       
       return null;
     } catch (error) {
-      console.error(`Error fetching stock price for ${symbol} on ${date}:`, error);
+      console.error(`Error fetching EOD stock price for ${symbol} on ${date}:`, error);
       return null;
     }
   }

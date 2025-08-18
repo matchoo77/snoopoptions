@@ -1,13 +1,21 @@
 import React from 'react';
-import { Wifi, WifiOff, AlertCircle, ExternalLink, Clock } from 'lucide-react';
+import { Wifi, WifiOff, AlertCircle, ExternalLink, Clock, Database, BarChart3 } from 'lucide-react';
 
 interface DataSourceIndicatorProps {
   isConnected: boolean;
   isUsingRealData: boolean;
+  dataSource?: 'mock' | 'realtime' | 'eod';
+  loading?: boolean;
   error?: string | null;
 }
 
-export function DataSourceIndicator({ isConnected, isUsingRealData, error }: DataSourceIndicatorProps) {
+export function DataSourceIndicator({ 
+  isConnected, 
+  isUsingRealData, 
+  dataSource = 'mock',
+  loading = false,
+  error 
+}: DataSourceIndicatorProps) {
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY;
   const hasApiKey = polygonApiKey && polygonApiKey.length > 10;
   
@@ -19,6 +27,25 @@ export function DataSourceIndicator({ isConnected, isUsingRealData, error }: Dat
   const isOutsideTradingHours = hour < 4 || hour > 20; // Pre-market starts at 4 AM ET, after-hours ends at 8 PM ET
   const isMarketClosed = isWeekend || isOutsideTradingHours;
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start space-x-3">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mt-0.5"></div>
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-blue-800 mb-1">
+              Loading EOD Options Data
+            </h3>
+            <p className="text-sm text-blue-700">
+              Fetching unusual options activity from Polygon.io...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10;
   if (hasValidApiKey && isMarketClosed) {
     return (
@@ -27,14 +54,33 @@ export function DataSourceIndicator({ isConnected, isUsingRealData, error }: Dat
           <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
           <div className="flex-1">
             <h3 className="text-sm font-medium text-blue-800 mb-1">
-              Market Closed - API Key Configured
+              Market Closed - Using {dataSource === 'eod' ? 'EOD' : 'Real-time'} Data
             </h3>
             <p className="text-sm text-blue-700 mb-2">
-              Your Polygon.io API key is properly configured. Currently showing demo data because 
+              Your Polygon.io API key is properly configured. Currently showing {dataSource === 'eod' ? 'end-of-day' : 'demo'} data because 
               {isWeekend ? ' the market is closed for the weekend' : ' the market is outside trading hours'}.
             </p>
             <p className="text-xs text-blue-600">
               Real-time data will automatically activate during market hours (4:00 AM - 8:00 PM ET, Monday-Friday)
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show EOD data indicator
+  if (dataSource === 'eod') {
+    return (
+      <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-start space-x-3">
+          <Database className="w-5 h-5 text-green-600 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-green-800 mb-1">
+              Real-time Market Data Connected
+            </h3>
+            <p className="text-sm text-green-700">
+              Displaying real end-of-day unusual options activity from Polygon.io
             </p>
           </div>
         </div>

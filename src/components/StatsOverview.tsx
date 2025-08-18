@@ -4,9 +4,10 @@ import { OptionsActivity } from '../types/options';
 
 interface StatsOverviewProps {
   activities: OptionsActivity[];
+  dataSource?: 'mock' | 'realtime' | 'eod';
 }
 
-export function StatsOverview({ activities }: StatsOverviewProps) {
+export function StatsOverview({ activities, dataSource = 'mock' }: StatsOverviewProps) {
   const stats = React.useMemo(() => {
     const totalVolume = activities.reduce((sum, activity) => sum + activity.volume, 0);
     const totalPremium = activities.reduce((sum, activity) => sum + activity.premium, 0);
@@ -45,7 +46,10 @@ export function StatsOverview({ activities }: StatsOverviewProps) {
       <div className="bg-white rounded-lg shadow-sm p-4 border">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600">Total Volume</p>
+            <p className="text-sm text-gray-600">
+              Total Volume
+              {dataSource === 'eod' && <span className="text-xs text-blue-600 block">EOD</span>}
+            </p>
             <p className="text-lg font-semibold text-gray-900">
               {formatNumber(stats.totalVolume)}
             </p>
@@ -57,7 +61,10 @@ export function StatsOverview({ activities }: StatsOverviewProps) {
       <div className="bg-white rounded-lg shadow-sm p-4 border">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600">Total Premium</p>
+            <p className="text-sm text-gray-600">
+              Total Premium
+              {dataSource === 'eod' && <span className="text-xs text-blue-600 block">EOD</span>}
+            </p>
             <p className="text-lg font-semibold text-gray-900">
               {formatCurrency(stats.totalPremium)}
             </p>

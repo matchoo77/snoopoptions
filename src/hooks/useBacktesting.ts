@@ -15,14 +15,16 @@ export function useBacktesting() {
     try {
       const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY;
       
-      if (polygonApiKey && polygonApiKey.length > 10) {
-        // Use real data if API key is available
+      if (polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here') {
+        // Use real EOD data if API key is available
+        console.log('Running backtest with real Polygon.io data...');
         const engine = new BacktestingEngine(polygonApiKey);
         const { results: backtestResults, summary: backtestSummary } = await engine.runBacktest(params);
         setResults(backtestResults);
         setSummary(backtestSummary);
       } else {
-        // Use mock data for demonstration
+        // Use mock data for demonstration when no API key
+        console.log('Running backtest with mock data (no API key configured)...');
         const { results: mockResults, summary: mockSummary } = generateMockBacktestData(params);
         setResults(mockResults);
         setSummary(mockSummary);

@@ -31,6 +31,8 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
     setFilters, 
     isConnected, 
     isUsingRealData, 
+    dataSource,
+    loading: dataLoading,
     error 
   } = useOptionsData();
   
@@ -79,6 +81,8 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
         <DataSourceIndicator 
           isConnected={isConnected} 
           isUsingRealData={isUsingRealData} 
+          dataSource={dataSource}
+          loading={dataLoading}
           error={error} 
         />
         
@@ -125,6 +129,7 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
             <FilterPanel filters={filters} onFiltersChange={setFilters} />
             
             <StatsOverview activities={displayActivities} />
+            <StatsOverview activities={displayActivities} dataSource={dataSource} />
             
             <MarketOverview />
             
