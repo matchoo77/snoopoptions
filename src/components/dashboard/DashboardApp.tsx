@@ -12,6 +12,7 @@ import { AlertsPanel } from '../AlertsPanel';
 import { MarketOverview } from '../MarketOverview';
 import { TopMovers } from '../TopMovers';
 import { WatchlistPanel } from '../WatchlistPanel';
+import { BacktestingPanel } from '../backtesting/BacktestingPanel';
 
 interface DashboardAppProps {
   trialStatus?: {
@@ -61,6 +62,8 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
     setFilters(prev => ({ ...prev, searchSymbol: symbol }));
   };
 
+  const [showBacktesting, setShowBacktesting] = useState(false);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -79,7 +82,36 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
           error={error} 
         />
         
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-lg shadow-sm p-1 mb-6 border">
+          <div className="flex space-x-1">
+            <button
+              onClick={() => setShowBacktesting(false)}
+              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                !showBacktesting
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              Live Scanner
+            </button>
+            <button
+              onClick={() => setShowBacktesting(true)}
+              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                showBacktesting
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              Backtesting Lab
+            </button>
+          </div>
+        </div>
+        
+        {showBacktesting ? (
+          <BacktestingPanel />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
             <SearchBar
@@ -117,6 +149,7 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
             />
           </div>
         </div>
+        )}
       </main>
     </div>
   );

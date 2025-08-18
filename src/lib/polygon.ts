@@ -97,10 +97,11 @@ export class PolygonAPI {
   }
 
   // Get aggregated options data (volume, etc.)
-  async getOptionsAggregates(ticker: string, date: string): Promise<OptionsAgg[]> {
+  async getOptionsAggregates(ticker: string, startDate: string, endDate?: string): Promise<OptionsAgg[]> {
+    const toDate = endDate || startDate;
     try {
       const response = await fetch(
-        `${this.config.baseUrl}/v2/aggs/ticker/${ticker}/range/1/minute/${date}/${date}?adjusted=true&sort=asc&apikey=${this.config.apiKey}`
+        `${this.config.baseUrl}/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${toDate}?adjusted=true&sort=asc&apikey=${this.config.apiKey}`
       );
       
       if (!response.ok) {
@@ -111,6 +112,26 @@ export class PolygonAPI {
       return data.results || [];
     } catch (error) {
       console.error('Error fetching options aggregates:', error);
+      return [];
+    }
+  }
+
+  // Get historical stock price data
+  async getStockAggregates(symbol: string, startDate: string, endDate?: string): Promise<any[]> {
+    const toDate = endDate || startDate;
+    try {
+      const response = await fetch(
+        `${this.config.baseUrl}/v2/aggs/ticker/${symbol}/range/1/day/${startDate}/${toDate}?adjusted=true&sort=asc&apikey=${this.config.apiKey}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Polygon API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.results || [];
+    } catch (error) {
+      console.error('Error fetching stock aggregates:', error);
       return [];
     }
   }
