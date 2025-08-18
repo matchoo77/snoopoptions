@@ -113,7 +113,6 @@ function App() {
   }
 
   // DEFAULT: Show marketing site for unauthenticated users
-  console.log('App state - user:', !!user, 'showAuthPage:', showAuthPage, 'showSuccessPage:', showSuccessPage);
   
   // Show marketing site by default for non-authenticated users
   return <MarketingApp onLogin={() => setShowAuthPage(true)} />;

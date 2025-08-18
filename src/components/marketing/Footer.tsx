@@ -25,7 +25,7 @@ const navigation = {
     { name: 'Community', href: '#' },
   ],
   legal: [
-    { name: 'Privacy Policy', href: '#' },
+    { name: 'Privacy Policy', href: 'privacy' },
     { name: 'Terms of Service', href: '#' },
     { name: 'Risk Disclaimer', href: 'disclaimer' },
   ],
