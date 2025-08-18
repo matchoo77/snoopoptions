@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
-import { useTrialStatus } from './hooks/useTrialStatus';
 import { MarketingApp } from './components/marketing/MarketingApp';
 import { AuthPage } from './components/auth/AuthPage';
 import { DashboardApp } from './components/dashboard/DashboardApp';
 import { SubscriptionPage } from './components/subscription/SubscriptionPage';
-import { SubscriptionGate } from './components/SubscriptionGate';
 import { SuccessPage } from './components/subscription/SuccessPage';
 
 function App() {
   const { user, loading: authLoading } = useAuth();
-  const { trialStatus, loading: trialLoading } = useTrialStatus();
   const [currentView, setCurrentView] = useState<'marketing' | 'auth' | 'dashboard' | 'subscription' | 'success'>('marketing');
 
   // Check URL parameters for payment success/cancel
@@ -19,7 +16,6 @@ function App() {
     if (urlParams.get('success') === 'true') {
       setCurrentView('success');
     } else if (urlParams.get('canceled') === 'true') {
-      // Handle canceled payment - could show a message or redirect
       console.log('Payment was canceled');
     }
   }, []);
@@ -28,18 +24,17 @@ function App() {
   useEffect(() => {
     if (!authLoading) {
       if (user) {
-        // User is authenticated, check if we should show success page
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('success') === 'true') {
           setCurrentView('success');
-        } else {
+        } else if (currentView === 'auth') {
           setCurrentView('dashboard');
         }
-      } else {
+      } else if (currentView === 'dashboard') {
         setCurrentView('marketing');
       }
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, currentView]);
 
   const handleLogin = () => {
     setCurrentView('auth');
@@ -55,12 +50,11 @@ function App() {
 
   const handleBackToDashboard = () => {
     setCurrentView('dashboard');
-    // Clear URL parameters
     window.history.replaceState({}, document.title, window.location.pathname);
   };
 
-  // Show loading state
-  if (authLoading || trialLoading) {
+  // Show loading state only briefly
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -101,20 +95,15 @@ function App() {
         return <AuthPage onSuccess={handleAuthSuccess} />;
       }
 
-      // Check if user has access (trial or subscription)
-      const hasAccess = trialStatus && (
-        trialStatus.hasActiveTrial || 
-        trialStatus.hasActiveSubscription ||
-        trialStatus.accessType === 'trial'
-      );
-
-      if (!hasAccess && trialStatus?.accessType === 'expired') {
-        return <SubscriptionGate onUpgrade={handleUpgrade} />;
-      }
-
+      // For now, always allow dashboard access (simplified trial logic)
       return (
         <DashboardApp 
-          trialStatus={trialStatus || undefined}
+          trialStatus={{
+            hasActiveTrial: true,
+            hasActiveSubscription: false,
+            accessType: 'trial',
+            trialDaysRemaining: 7,
+          }}
           onUpgrade={handleUpgrade}
         />
       );

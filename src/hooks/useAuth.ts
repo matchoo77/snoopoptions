@@ -8,28 +8,46 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    }).catch(() => {
-      // Handle case where Supabase is not configured
-      setSession(null);
-      setUser(null);
-      setLoading(false);
-    });
+    // Get initial session with error handling
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('Auth session error:', error);
+        }
+        setSession(session);
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.warn('Auth initialization error:', error);
+        setSession(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    getInitialSession();
 
-    return () => subscription.unsubscribe();
+    // Listen for auth changes with error handling
+    let subscription: any;
+    try {
+      const {
+        data: { subscription: authSubscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      });
+      subscription = authSubscription;
+    } catch (error) {
+      console.warn('Auth state change listener error:', error);
+    }
+
+    return () => {
+      if (subscription?.unsubscribe) {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
 
   const signOut = async () => {
@@ -38,12 +56,10 @@ export function useAuth() {
       if (error) {
         console.warn('Logout error:', error.message);
       }
-      // Always clear local state regardless of server response
-      setSession(null);
-      setUser(null);
     } catch (error) {
       console.warn('Logout failed:', error);
-      // Clear local state even if logout request fails
+    } finally {
+      // Always clear local state
       setSession(null);
       setUser(null);
     }
