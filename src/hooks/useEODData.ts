@@ -15,10 +15,12 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const eodService = new PolygonEODService(apiKey);
-      console.log('EOD fetch skipped - no API key');
 
   const fetchEODData = async (targetSymbols?: string[]) => {
-    if (!apiKey || !enabled) return;
+    if (!apiKey || !enabled) {
+      console.log('EOD fetch skipped - no API key');
+      return;
+    }
 
     if (!enabled) {
       console.log('EOD fetch skipped - not enabled');
@@ -53,7 +55,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
     } finally {
       setLoading(false);
     }
-  }, [apiKey, enabled, symbols]);
+  };
 
   const fetchSymbolData = async (symbol: string) => {
     if (!apiKey || !enabled) return;
@@ -78,33 +80,12 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
 
   // Auto-fetch data on mount and when symbols change
   useEffect(() => {
-    console.log('useEODData - Mount effect triggered:', { 
-      enabled, 
-      hasApiKey: !!apiKey,
-      apiKeyLength: apiKey?.length || 0 
-    });
-    
+    console.log('useEODData - Effect triggered:', { enabled, apiKey: !!apiKey });
     if (enabled && apiKey) {
       console.log('Starting initial EOD data fetch...');
       fetchEODData();
-    } else {
-      console.log('EOD fetch skipped:', { enabled, hasApiKey: !!apiKey });
     }
-  }, []);
-
-  // Separate effect for when API key or enabled status changes
-  useEffect(() => {
-    console.log('useEODData - API key/enabled changed:', { 
-      enabled, 
-      hasApiKey: !!apiKey,
-      apiKeyLength: apiKey?.length || 0 
-    });
-    
-    if (enabled && apiKey) {
-      console.log('Fetching EOD data due to API key/enabled change...');
-      fetchEODData();
-    }
-  }, [apiKey, enabled]);
+  }, [apiKey, enabled, fetchEODData]);
 
   // Refresh data every 5 minutes during market hours
   useEffect(() => {
