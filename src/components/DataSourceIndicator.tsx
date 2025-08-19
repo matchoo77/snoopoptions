@@ -72,9 +72,6 @@ export function DataSourceIndicator({
               Your Polygon.io API key is properly configured. Currently showing {dataSource === 'eod' ? 'end-of-day' : 'demo'} data because 
               {isWeekend ? ' the market is closed for the weekend' : ' the market is outside trading hours'}.
             </p>
-            <p className="text-xs text-blue-600">
-  if (!hasValidApiKey) {
-            </p>
             <p className="text-xs text-gray-500 mt-1">
               Debug: API Key ends with ...{polygonApiKey?.slice(-4)} | Data Source: {dataSource}
             </p>
@@ -108,11 +105,12 @@ export function DataSourceIndicator({
           <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
           <div className="flex-1">
             <h3 className="text-sm font-medium text-yellow-800 mb-1">
+              API Key Not Configured
+            </h3>
             <p className="text-sm text-yellow-700">
               Please set a valid Polygon.io API key. Current key length: {polygonApiKey?.length || 0} characters
               {polygonApiKey && polygonApiKey.length <= 10 && ' (too short)'}
             </p>
-            </h3>
             <p className="text-sm text-yellow-700 mb-3">
               Your trading dog is practicing with toy bones! 🦴 To start the real hunt for unusual options activity, 
               you'll need to add your Polygon.io API key to the environment variables.
@@ -190,5 +188,3 @@ export function DataSourceIndicator({
       </div>
     </div>
   );
-}
-}
