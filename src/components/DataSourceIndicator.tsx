@@ -101,6 +101,8 @@ export function DataSourceIndicator({
   }
 
   if (!isUsingRealData) {
+      }
+    )
     return (
       <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <div className="flex items-start space-x-3">
@@ -190,4 +192,5 @@ export function DataSourceIndicator({
       </div>
     </div>
   );
+}
 }
