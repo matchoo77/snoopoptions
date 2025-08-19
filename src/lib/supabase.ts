@@ -3,32 +3,42 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Debug environment variables
-console.log('Supabase environment check:', {
-  url: supabaseUrl,
-  anonKey: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'not set',
-  urlValid: !!(supabaseUrl && supabaseUrl.startsWith('https://')),
-  keyValid: !!(supabaseAnonKey && supabaseAnonKey.length > 20)
+// Detailed debug environment variables
+console.log('=== SUPABASE ENVIRONMENT DEBUG ===');
+console.log('Raw VITE_SUPABASE_URL:', supabaseUrl);
+console.log('Raw VITE_SUPABASE_ANON_KEY:', supabaseAnonKey);
+console.log('All environment variables:', import.meta.env);
+console.log('URL validation:', {
+  exists: !!supabaseUrl,
+  isString: typeof supabaseUrl === 'string',
+  startsWithHttps: supabaseUrl?.startsWith('https://'),
+  includesSupabase: supabaseUrl?.includes('supabase'),
+  length: supabaseUrl?.length || 0
 });
+console.log('Key validation:', {
+  exists: !!supabaseAnonKey,
+  isString: typeof supabaseAnonKey === 'string',
+  length: supabaseAnonKey?.length || 0,
+  preview: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'not set'
+});
+console.log('=== END SUPABASE DEBUG ===');
 
 const createSupabaseClient = () => {
-  // Check if Supabase is properly configured
-  const isConfigured = supabaseUrl && 
-                      supabaseAnonKey && 
-                      supabaseUrl.startsWith('https://') && 
-                      supabaseUrl.includes('.supabase.co') &&
-                      supabaseAnonKey.length > 20 &&
-                      !supabaseUrl.includes('placeholder') &&
-                      !supabaseAnonKey.includes('placeholder');
+  // More lenient check for Supabase configuration
+  const hasUrl = supabaseUrl && typeof supabaseUrl === 'string' && supabaseUrl.length > 10;
+  const hasKey = supabaseAnonKey && typeof supabaseAnonKey === 'string' && supabaseAnonKey.length > 20;
+  const isConfigured = hasUrl && hasKey;
+
+  console.log('Supabase configuration check:', {
+    hasUrl,
+    hasKey,
+    isConfigured,
+    urlLength: supabaseUrl?.length || 0,
+    keyLength: supabaseAnonKey?.length || 0
+  });
 
   if (!isConfigured) {
-    console.warn('Supabase environment variables not configured - some features may be limited');
-    console.log('Supabase config details:', {
-      hasUrl: !!supabaseUrl,
-      hasKey: !!supabaseAnonKey,
-      urlFormat: supabaseUrl ? 'set' : 'missing',
-      keyLength: supabaseAnonKey?.length || 0
-    });
+    console.warn('Supabase not properly configured - using mock client');
     // Return a mock client for development
     return {
       auth: {
