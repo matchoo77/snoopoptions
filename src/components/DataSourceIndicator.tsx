@@ -78,6 +78,7 @@ export function DataSourceIndicator({
             <p className="text-xs text-gray-500 mt-1">
               Debug: API Key ends with ...{polygonApiKey?.slice(-4)} | Data Source: {dataSource}
             </p>
+      }
     );
   }
 
@@ -189,4 +190,5 @@ export function DataSourceIndicator({
       </div>
     </div>
   );
+}
 }
