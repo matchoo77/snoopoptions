@@ -75,21 +75,21 @@ export function DataSourceIndicator({
             <p className="text-xs text-gray-500 mt-1">
               Debug: API Key ends with ...{polygonApiKey?.slice(-4)} | Data Source: {dataSource}
             </p>
-      }
+          </div>
+        </div>
+      </div>
     );
   }
 
   // Show EOD data indicator
   if (dataSource === 'eod') {
-      }
-    )
     return (
       <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
         <div className="flex items-start space-x-3">
           <Database className="w-5 h-5 text-green-600 mt-0.5" />
           <div className="flex-1">
             <h3 className="text-sm font-medium text-green-800 mb-1">
-              Real-time Market Data Connected
+              EOD Market Data Connected
             </h3>
             <p className="text-sm text-green-700">
               EOD Market Data Connected
@@ -98,11 +98,13 @@ export function DataSourceIndicator({
         </div>
       </div>
     );
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!isUsingRealData) {
-      }
-    )
     return (
       <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <div className="flex items-start space-x-3">
@@ -192,5 +194,4 @@ export function DataSourceIndicator({
       </div>
     </div>
   );
-}
 }
