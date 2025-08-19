@@ -80,12 +80,33 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
 
   // Auto-fetch data on mount and when symbols change
   useEffect(() => {
-    console.log('useEODData - Effect triggered:', { enabled, apiKey: !!apiKey });
+    console.log('useEODData - Mount effect triggered:', { 
+      enabled, 
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0 
+    });
+    
     if (enabled && apiKey) {
       console.log('Starting initial EOD data fetch...');
       fetchEODData();
+    } else {
+      console.log('EOD fetch skipped:', { enabled, hasApiKey: !!apiKey });
     }
-  }, [apiKey, enabled, fetchEODData]);
+  }, []);
+
+  // Separate effect for when API key or enabled status changes
+  useEffect(() => {
+    console.log('useEODData - API key/enabled changed:', { 
+      enabled, 
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0 
+    });
+    
+    if (enabled && apiKey) {
+      console.log('Fetching EOD data due to API key/enabled change...');
+      fetchEODData();
+    }
+  }, [apiKey, enabled]);
 
   // Refresh data every 5 minutes during market hours
   useEffect(() => {
