@@ -145,17 +145,20 @@ export class PolygonAPI {
         console.log('Connected to Polygon WebSocket');
         this.reconnectAttempts = 0;
         
-        // Authenticate
-        this.ws?.send(JSON.stringify({
-          action: 'auth',
-          params: this.config.apiKey
-        }));
-        
-        // Subscribe to options trades and quotes
-        this.ws?.send(JSON.stringify({
-          action: 'subscribe',
-          params: 'T.*, Q.*' // All options trades and quotes
-        }));
+        // Wait for connection to be fully established before sending messages
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          // Authenticate
+          this.ws.send(JSON.stringify({
+            action: 'auth',
+            params: this.config.apiKey
+          }));
+          
+          // Subscribe to options trades and quotes
+          this.ws.send(JSON.stringify({
+            action: 'subscribe',
+            params: 'T.*, Q.*' // All options trades and quotes
+          }));
+        }
       };
       
       this.ws.onmessage = (event) => {

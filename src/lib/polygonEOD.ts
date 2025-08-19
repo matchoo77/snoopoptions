@@ -254,7 +254,7 @@ export class PolygonEODService {
           }
           
           // Add small delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 100)); // Increase delay
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Increase delay to 1 second
         }
       } catch (error) {
         console.error(`Error scanning ${symbol}:`, error);
@@ -317,7 +317,7 @@ export class PolygonEODService {
           }
           
           // Add delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       } catch (error) {
         console.error(`Error getting block trades for ${symbol}:`, error);
@@ -444,7 +444,7 @@ export class PolygonEODService {
         }
         
         // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
       // Sort by volume and return top activities
