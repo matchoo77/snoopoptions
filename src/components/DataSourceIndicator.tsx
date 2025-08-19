@@ -81,6 +81,8 @@ export function DataSourceIndicator({
 
   // Show EOD data indicator
   if (dataSource === 'eod') {
+      }
+    )
     return (
       <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
         <div className="flex items-start space-x-3">
@@ -188,3 +190,4 @@ export function DataSourceIndicator({
       </div>
     </div>
   );
+}
