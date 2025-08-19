@@ -16,16 +16,21 @@ export function DataSourceIndicator({
   loading = false,
   error 
 }: DataSourceIndicatorProps) {
-  const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY;
+  const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
   const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here';
   
-  // Debug environment variables
-  console.log('Environment variable debug:', {
-    VITE_POLYGON_API_KEY: import.meta.env.VITE_POLYGON_API_KEY,
-    allEnvVars: import.meta.env,
+  // Enhanced debug for environment variables
+  console.log('=== DATA SOURCE INDICATOR DEBUG ===');
+  console.log('Raw VITE_POLYGON_API_KEY:', import.meta.env.VITE_POLYGON_API_KEY);
+  console.log('Processed polygonApiKey:', polygonApiKey);
+  console.log('Environment debug:', {
     hasValidApiKey,
-    keyLength: polygonApiKey?.length || 0
+    keyLength: polygonApiKey?.length || 0,
+    keyType: typeof polygonApiKey,
+    keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'none',
+    allEnvKeys: Object.keys(import.meta.env)
   });
+  console.log('=== END DATA SOURCE DEBUG ===');
   
   // Check if market is likely closed (weekend or outside trading hours)
   const now = new Date();

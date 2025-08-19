@@ -21,17 +21,21 @@ export function useOptionsData() {
   });
 
   // Get Polygon API key from environment
-  const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY || '';
+  const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
   const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here';
   
-  console.log('useOptionsData - API Key Check (detailed):', {
+  console.log('=== POLYGON API KEY DEBUG ===');
+  console.log('Raw env var:', import.meta.env.VITE_POLYGON_API_KEY);
+  console.log('Processed key:', polygonApiKey);
+  console.log('Key details:', {
     hasKey: !!polygonApiKey,
     keyLength: polygonApiKey?.length || 0,
     isValid: hasValidApiKey,
     keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'none',
-    rawValue: polygonApiKey,
-    allEnvVars: Object.keys(import.meta.env)
+    keyEndsWithCorrectSuffix: polygonApiKey?.endsWith('Hp8X') || false
   });
+  console.log('All env vars:', Object.keys(import.meta.env));
+  console.log('=== END POLYGON DEBUG ===');
   
   // Use real-time Polygon WebSocket data
   const { 

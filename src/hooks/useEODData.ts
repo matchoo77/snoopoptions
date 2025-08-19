@@ -17,8 +17,17 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
   const eodService = new PolygonEODService(apiKey);
 
   const fetchEODData = async (targetSymbols?: string[]) => {
-    if (!apiKey || !enabled) {
-      console.log('EOD fetch skipped - no API key');
+    console.log('=== EOD FETCH START ===');
+    console.log('API Key check:', {
+      hasApiKey: !!apiKey,
+      keyLength: apiKey?.length || 0,
+      enabled,
+      keyPreview: apiKey ? `${apiKey.substring(0, 8)}...` : 'none'
+    });
+    
+    if (!apiKey || apiKey.length < 10) {
+      console.log('EOD fetch skipped - invalid API key');
+      setError('Polygon API key is required');
       return;
     }
 
