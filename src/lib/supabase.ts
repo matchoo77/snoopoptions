@@ -25,8 +25,15 @@ console.log('=== END SUPABASE DEBUG ===');
 
 const createSupabaseClient = () => {
   // More lenient check for Supabase configuration
-  const hasUrl = supabaseUrl && typeof supabaseUrl === 'string' && supabaseUrl.length > 10;
-  const hasKey = supabaseAnonKey && typeof supabaseAnonKey === 'string' && supabaseAnonKey.length > 20;
+  const hasUrl = supabaseUrl && 
+    typeof supabaseUrl === 'string' && 
+    supabaseUrl.length > 10 && 
+    supabaseUrl.startsWith('https://') &&
+    !supabaseUrl.includes('your_supabase_url');
+  const hasKey = supabaseAnonKey && 
+    typeof supabaseAnonKey === 'string' && 
+    supabaseAnonKey.length > 20 &&
+    !supabaseAnonKey.includes('your_supabase_anon_key');
   const isConfigured = hasUrl && hasKey;
 
   console.log('Supabase configuration check:', {
@@ -58,7 +65,19 @@ const createSupabaseClient = () => {
   }
   
   console.log('Creating real Supabase client...');
-  return createClient(supabaseUrl, supabaseAnonKey);
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      flowType: 'pkce'
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'snoopflow-web'
+      }
+    }
+  });
 };
 
 export const supabase = createSupabaseClient();
