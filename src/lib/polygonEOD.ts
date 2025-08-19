@@ -89,6 +89,14 @@ export class PolygonEODService {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`Polygon contracts API error: ${response.status} ${response.statusText}`, errorText);
+        
+        // Check for specific error types
+        if (response.status === 401) {
+          throw new Error('Invalid Polygon.io API key - please check your VITE_POLYGON_API_KEY');
+        } else if (response.status === 429) {
+          throw new Error('Polygon.io rate limit exceeded - please wait and try again');
+        }
+        
         throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
       }
       

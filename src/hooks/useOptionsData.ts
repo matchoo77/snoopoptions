@@ -22,6 +22,14 @@ export function useOptionsData() {
 
   // Get Polygon API key from environment
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY || '';
+  const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here';
+  
+  console.log('useOptionsData - API Key Check:', {
+    hasKey: !!polygonApiKey,
+    keyLength: polygonApiKey?.length || 0,
+    isValid: hasValidApiKey,
+    keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'none'
+  });
   
   // Use real-time Polygon WebSocket data
   const { 
@@ -31,7 +39,8 @@ export function useOptionsData() {
     fetchSymbolData 
   } = usePolygonData({ 
     apiKey: polygonApiKey,
-    symbols: filters.symbols 
+    symbols: filters.symbols,
+    enabled: hasValidApiKey
   });
 
   // Use EOD data from Polygon
@@ -43,15 +52,26 @@ export function useOptionsData() {
   } = useEODData({ apiKey: polygonApiKey, symbols: filters.symbols });
 
   useEffect(() => {
+    console.log('useOptionsData - Data Source Logic:', {
+      hasValidApiKey,
+      polygonActivitiesCount: polygonActivities.length,
+      eodActivitiesCount: eodActivities.length,
+      isConnected,
+      currentDataSource: dataSource
+    });
+    
     // Determine which data source to use
-    if (polygonApiKey && polygonApiKey.length > 10 && polygonActivities.length > 0) {
+    if (hasValidApiKey && polygonActivities.length > 0) {
+      console.log('Using real-time Polygon data');
       setDataSource('realtime');
       setAllActivities(polygonActivities);
-    } else if (polygonApiKey && polygonApiKey.length > 10 && eodActivities.length > 0) {
+    } else if (hasValidApiKey && eodActivities.length > 0) {
+      console.log('Using EOD Polygon data');
       setDataSource('eod');
       setAllActivities(eodActivities);
-    } else if (polygonApiKey && polygonApiKey.length > 10) {
+    } else if (hasValidApiKey) {
       // API key is configured but no data yet - keep trying EOD
+      console.log('API key configured, waiting for EOD data...');
       setDataSource('eod');
       setAllActivities(eodActivities); // May be empty initially
     } else {
@@ -67,7 +87,7 @@ export function useOptionsData() {
 
       return () => clearInterval(interval);
     }
-  }, [polygonApiKey, polygonActivities, eodActivities]);
+  }, [hasValidApiKey, polygonActivities, eodActivities]);
 
   // Fetch data for specific symbol when search changes
   useEffect(() => {

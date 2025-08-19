@@ -17,7 +17,7 @@ export function DataSourceIndicator({
   error 
 }: DataSourceIndicatorProps) {
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY;
-  const hasApiKey = polygonApiKey && polygonApiKey.length > 10;
+  const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here';
   
   // Check if market is likely closed (weekend or outside trading hours)
   const now = new Date();
@@ -46,17 +46,17 @@ export function DataSourceIndicator({
     );
   }
 
-  const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10;
-  
   // Add debug info
   console.log('DataSourceIndicator debug:', {
     hasValidApiKey,
+    polygonApiKey: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'none',
     dataSource,
     isUsingRealData,
     isConnected,
     loading,
     error,
-    apiKeyLength: polygonApiKey?.length || 0
+    apiKeyLength: polygonApiKey?.length || 0,
+    isMarketClosed
   });
   
   if (hasValidApiKey && isMarketClosed) {
@@ -73,14 +73,11 @@ export function DataSourceIndicator({
               {isWeekend ? ' the market is closed for the weekend' : ' the market is outside trading hours'}.
             </p>
             <p className="text-xs text-blue-600">
-              Real-time data will automatically activate during market hours (4:00 AM - 8:00 PM ET, Monday-Friday)
+  if (!hasValidApiKey) {
             </p>
             <p className="text-xs text-gray-500 mt-1">
               Debug: API Key ends with ...{polygonApiKey?.slice(-4)} | Data Source: {dataSource}
             </p>
-          </div>
-        </div>
-      </div>
     );
   }
 
@@ -95,7 +92,7 @@ export function DataSourceIndicator({
               Real-time Market Data Connected
             </h3>
             <p className="text-sm text-green-700">
-              Displaying real end-of-day unusual options activity from Polygon.io
+              EOD Market Data Connected
             </p>
           </div>
         </div>
@@ -110,11 +107,17 @@ export function DataSourceIndicator({
           <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
           <div className="flex-1">
             <h3 className="text-sm font-medium text-yellow-800 mb-1">
-              Demo Mode Active
+            <p className="text-sm text-yellow-700">
+              Please set a valid Polygon.io API key. Current key length: {polygonApiKey?.length || 0} characters
+              {polygonApiKey && polygonApiKey.length <= 10 && ' (too short)'}
+            </p>
             </h3>
             <p className="text-sm text-yellow-700 mb-3">
               Your trading dog is practicing with toy bones! 🦴 To start the real hunt for unusual options activity, 
               you'll need to add your Polygon.io API key to the environment variables.
+            </p>
+            <p className="text-xs text-gray-600 mb-2">
+              Debug: API Key = {polygonApiKey ? `"${polygonApiKey.substring(0, 8)}..." (${polygonApiKey.length} chars)` : 'not set'}
             </p>
             <div className="flex items-center space-x-4 text-xs">
               <a

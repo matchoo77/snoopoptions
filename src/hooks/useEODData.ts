@@ -15,9 +15,15 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const eodService = new PolygonEODService(apiKey);
+      console.log('EOD fetch skipped - no API key');
 
   const fetchEODData = async (targetSymbols?: string[]) => {
     if (!apiKey || !enabled) return;
+
+    if (!enabled) {
+      console.log('EOD fetch skipped - not enabled');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -27,23 +33,27 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       const defaultSymbols = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'SPY', 'QQQ'];
       const finalSymbols = symbolsToFetch.length > 0 ? symbolsToFetch : defaultSymbols;
 
-      console.log('Fetching EOD options data for symbols:', finalSymbols);
+      console.log('=== STARTING EOD DATA FETCH ===');
+      console.log('Symbols to fetch:', finalSymbols);
       console.log('API Key configured:', apiKey ? `Yes (${apiKey.substring(0, 8)}...)` : 'No');
+      console.log('API Key length:', apiKey?.length || 0);
 
       // Get previous trading day data
       const unusualActivities = await eodService.getUnusualActivityMultiSymbol(finalSymbols);
 
+      console.log('=== EOD DATA FETCH COMPLETE ===');
+      console.log('Total unusual activities found:', unusualActivities.length);
+      
       setActivities(unusualActivities);
       setLastUpdated(new Date().toISOString());
       
-      console.log(`Fetched ${unusualActivities.length} unusual options activities`);
     } catch (err) {
       console.error('Error fetching EOD data:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch EOD data');
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiKey, enabled, symbols]);
 
   const fetchSymbolData = async (symbol: string) => {
     if (!apiKey || !enabled) return;
@@ -68,7 +78,30 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
 
   // Auto-fetch data on mount and when symbols change
   useEffect(() => {
+    console.log('useEODData - Mount effect triggered:', { 
+      enabled, 
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0 
+    });
+    
     if (enabled && apiKey) {
+      console.log('Starting initial EOD data fetch...');
+      fetchEODData();
+    } else {
+      console.log('EOD fetch skipped:', { enabled, hasApiKey: !!apiKey });
+    }
+  }, []);
+
+  // Separate effect for when API key or enabled status changes
+  useEffect(() => {
+    console.log('useEODData - API key/enabled changed:', { 
+      enabled, 
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0 
+    });
+    
+    if (enabled && apiKey) {
+      console.log('Fetching EOD data due to API key/enabled change...');
       fetchEODData();
     }
   }, [apiKey, enabled]);
@@ -84,12 +117,13 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       
       // Only refresh during market hours (9 AM - 4 PM ET, Monday-Friday)
       if (day >= 1 && day <= 5 && hour >= 9 && hour <= 16) {
+        console.log('Auto-refreshing EOD data during market hours...');
         fetchEODData();
       }
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(interval);
-  }, [enabled, apiKey]);
+  }, [enabled, apiKey, fetchEODData]);
 
   return {
     activities,
