@@ -3,14 +3,32 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Only throw error if we're trying to use Supabase features
+// Debug environment variables
+console.log('Supabase environment check:', {
+  url: supabaseUrl,
+  anonKey: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'not set',
+  urlValid: !!(supabaseUrl && supabaseUrl.startsWith('https://')),
+  keyValid: !!(supabaseAnonKey && supabaseAnonKey.length > 20)
+});
+
 const createSupabaseClient = () => {
-  if (!supabaseUrl || !supabaseAnonKey || 
-      supabaseUrl === 'your_supabase_url' || 
-      supabaseUrl === 'https://placeholder.supabase.co' ||
-      supabaseAnonKey === 'your_supabase_anon_key' ||
-      supabaseAnonKey === 'placeholder_anon_key') {
+  // Check if Supabase is properly configured
+  const isConfigured = supabaseUrl && 
+                      supabaseAnonKey && 
+                      supabaseUrl.startsWith('https://') && 
+                      supabaseUrl.includes('.supabase.co') &&
+                      supabaseAnonKey.length > 20 &&
+                      !supabaseUrl.includes('placeholder') &&
+                      !supabaseAnonKey.includes('placeholder');
+
+  if (!isConfigured) {
     console.warn('Supabase environment variables not configured - some features may be limited');
+    console.log('Supabase config details:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseAnonKey,
+      urlFormat: supabaseUrl ? 'set' : 'missing',
+      keyLength: supabaseAnonKey?.length || 0
+    });
     // Return a mock client for development
     return {
       auth: {
@@ -28,6 +46,8 @@ const createSupabaseClient = () => {
       }),
     } as any;
   }
+  
+  console.log('Creating real Supabase client...');
   return createClient(supabaseUrl, supabaseAnonKey);
 };
 
