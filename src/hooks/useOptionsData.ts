@@ -24,11 +24,13 @@ export function useOptionsData() {
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY || '';
   const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here';
   
-  console.log('useOptionsData - API Key Check:', {
+  console.log('useOptionsData - API Key Check (detailed):', {
     hasKey: !!polygonApiKey,
     keyLength: polygonApiKey?.length || 0,
     isValid: hasValidApiKey,
-    keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'none'
+    keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'none',
+    rawValue: polygonApiKey,
+    allEnvVars: Object.keys(import.meta.env)
   });
   
   // Use real-time Polygon WebSocket data

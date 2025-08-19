@@ -19,6 +19,14 @@ export function DataSourceIndicator({
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY;
   const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here';
   
+  // Debug environment variables
+  console.log('Environment variable debug:', {
+    VITE_POLYGON_API_KEY: import.meta.env.VITE_POLYGON_API_KEY,
+    allEnvVars: import.meta.env,
+    hasValidApiKey,
+    keyLength: polygonApiKey?.length || 0
+  });
+  
   // Check if market is likely closed (weekend or outside trading hours)
   const now = new Date();
   const day = now.getDay(); // 0 = Sunday, 6 = Saturday
