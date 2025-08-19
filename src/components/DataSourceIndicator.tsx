@@ -98,10 +98,6 @@ export function DataSourceIndicator({
         </div>
       </div>
     );
-          </div>
-        </div>
-      </div>
-    );
   }
 
   if (!isUsingRealData) {
