@@ -12,13 +12,28 @@ export function useAuth() {
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
+        if (error && error.message.includes('refresh_token_not_found')) {
+          // Clear invalid session data
+          console.warn('Invalid refresh token detected, clearing session:', error);
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+        } else if (error) {
           console.warn('Auth session error:', error);
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
         }
-        setSession(session);
-        setUser(session?.user ?? null);
       } catch (error) {
         console.warn('Auth initialization error:', error);
+        // Clear any stale data on initialization error
+        try {
+          await supabase.auth.signOut();
+        } catch (signOutError) {
+          console.warn('Error clearing stale session:', signOutError);
+        }
         setSession(null);
         setUser(null);
       } finally {
@@ -33,7 +48,12 @@ export function useAuth() {
     try {
       const {
         data: { subscription: authSubscription },
-      } = supabase.auth.onAuthStateChange((_event, session) => {
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          // Token refresh failed, clear everything
+          console.warn('Token refresh failed, clearing session');
+          await supabase.auth.signOut();
+        }
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
