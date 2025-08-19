@@ -3,56 +3,35 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Detailed debug environment variables
-console.log('=== SUPABASE ENVIRONMENT DEBUG ===');
-console.log('Raw VITE_SUPABASE_URL:', supabaseUrl);
-console.log('Raw VITE_SUPABASE_ANON_KEY:', supabaseAnonKey);
-console.log('All environment variables:', import.meta.env);
-console.log('URL validation:', {
-  exists: !!supabaseUrl,
-  isString: typeof supabaseUrl === 'string',
-  startsWithHttps: supabaseUrl?.startsWith('https://'),
-  includesSupabase: supabaseUrl?.includes('supabase'),
-  length: supabaseUrl?.length || 0
+// Check if we're in development or production
+const isDevelopment = import.meta.env.DEV;
+
+console.log('Supabase config check:', {
+  isDevelopment,
+  hasUrl: !!supabaseUrl,
+  hasKey: !!supabaseAnonKey,
+  urlLength: supabaseUrl?.length || 0,
+  keyLength: supabaseAnonKey?.length || 0
 });
-console.log('Key validation:', {
-  exists: !!supabaseAnonKey,
-  isString: typeof supabaseAnonKey === 'string',
-  length: supabaseAnonKey?.length || 0,
-  preview: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'not set'
-});
-console.log('=== END SUPABASE DEBUG ===');
 
 const createSupabaseClient = () => {
-  // More lenient check for Supabase configuration
-  const hasUrl = supabaseUrl && 
-    typeof supabaseUrl === 'string' && 
-    supabaseUrl.length > 10 && 
-    supabaseUrl.startsWith('https://') &&
-    !supabaseUrl.includes('your_supabase_url');
-  const hasKey = supabaseAnonKey && 
-    typeof supabaseAnonKey === 'string' && 
-    supabaseAnonKey.length > 20 &&
-    !supabaseAnonKey.includes('your_supabase_anon_key');
-  const isConfigured = hasUrl && hasKey;
-
-  console.log('Supabase configuration check:', {
-    hasUrl,
-    hasKey,
-    isConfigured,
-    urlLength: supabaseUrl?.length || 0,
-    keyLength: supabaseAnonKey?.length || 0
-  });
-
-  if (!isConfigured) {
-    console.warn('Supabase not properly configured - using mock client');
-    // Return a mock client for development
+  // In production, if Supabase isn't configured, show a helpful message
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Supabase environment variables not found');
+    
+    // Return a mock client that provides helpful error messages
     return {
       auth: {
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
         getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-        signInWithPassword: () => Promise.resolve({ data: { user: null }, error: { message: 'Supabase not configured' } }),
-        signUp: () => Promise.resolve({ data: { user: null }, error: { message: 'Supabase not configured' } }),
+        signInWithPassword: () => Promise.resolve({ 
+          data: { user: null }, 
+          error: { message: 'Authentication requires Supabase connection. Please connect to Supabase in your project settings.' } 
+        }),
+        signUp: () => Promise.resolve({ 
+          data: { user: null }, 
+          error: { message: 'Account creation requires Supabase connection. Please connect to Supabase in your project settings.' } 
+        }),
         signOut: () => Promise.resolve({ error: null }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
       },
@@ -64,13 +43,15 @@ const createSupabaseClient = () => {
     } as any;
   }
   
-  console.log('Creating real Supabase client...');
+  console.log('Creating Supabase client with valid credentials');
   return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      flowType: 'pkce'
+      flowType: 'pkce',
+      storage: window.localStorage,
+      storageKey: 'snoopflow-auth-token',
     },
     global: {
       headers: {

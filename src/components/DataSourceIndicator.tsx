@@ -20,17 +20,11 @@ export function DataSourceIndicator({
   const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here';
   
   // Enhanced debug for environment variables
-  console.log('=== DATA SOURCE INDICATOR DEBUG ===');
-  console.log('Raw VITE_POLYGON_API_KEY:', import.meta.env.VITE_POLYGON_API_KEY);
-  console.log('Processed polygonApiKey:', polygonApiKey);
-  console.log('Environment debug:', {
-    hasValidApiKey,
+  console.log('Polygon API key status:', {
+    configured: hasValidApiKey,
     keyLength: polygonApiKey?.length || 0,
-    keyType: typeof polygonApiKey,
-    keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'none',
-    allEnvKeys: Object.keys(import.meta.env)
+    keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 4)}...${polygonApiKey.slice(-4)}` : 'none'
   });
-  console.log('=== END DATA SOURCE DEBUG ===');
   
   // Check if market is likely closed (weekend or outside trading hours)
   const now = new Date();
@@ -128,10 +122,7 @@ export function DataSourceIndicator({
             </p>
             <p className="text-sm text-yellow-700 mb-3">
               Your trading dog is practicing with toy bones! 🦴 To start the real hunt for unusual options activity, 
-              you'll need to add your Polygon.io API key to the environment variables.
-            </p>
-            <p className="text-xs text-gray-600 mb-2">
-              Debug: API Key = {polygonApiKey ? `"${polygonApiKey.substring(0, 8)}..." (${polygonApiKey.length} chars)` : 'not set'}
+              you'll need to configure your Polygon.io API key in the project settings.
             </p>
             <div className="flex items-center space-x-4 text-xs">
               <a
