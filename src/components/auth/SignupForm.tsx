@@ -43,7 +43,11 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       });
 
       if (error) {
-        setError(error.message);
+        if (error.message === 'Supabase not configured') {
+          setError('Please connect to Supabase using the "Connect to Supabase" button in the top right to enable authentication.');
+        } else {
+          setError(error.message);
+        }
       } else {
         onSuccess();
       }
