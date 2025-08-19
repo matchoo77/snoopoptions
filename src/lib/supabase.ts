@@ -5,7 +5,11 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Only throw error if we're trying to use Supabase features
 const createSupabaseClient = () => {
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !supabaseAnonKey || 
+      supabaseUrl === 'your_supabase_url' || 
+      supabaseUrl === 'https://placeholder.supabase.co' ||
+      supabaseAnonKey === 'your_supabase_anon_key' ||
+      supabaseAnonKey === 'placeholder_anon_key') {
     console.warn('Supabase environment variables not configured - some features may be limited');
     // Return a mock client for development
     return {
