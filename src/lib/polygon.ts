@@ -145,25 +145,45 @@ export class PolygonAPI {
         console.log('Connected to Polygon WebSocket');
         this.reconnectAttempts = 0;
         
-        // Wait for connection to be fully established before sending messages
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          // Authenticate
-          this.ws.send(JSON.stringify({
-            action: 'auth',
-            params: this.config.apiKey
-          }));
-          
-          // Subscribe to options trades and quotes
-          this.ws.send(JSON.stringify({
-            action: 'subscribe',
-            params: 'T.*, Q.*' // All options trades and quotes
-          }));
-        }
+        // Use setTimeout to ensure connection is fully established
+        setTimeout(() => {
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            // Authenticate
+            this.ws.send(JSON.stringify({
+              action: 'auth',
+              params: this.config.apiKey
+            }));
+            
+            // Subscribe to options trades and quotes after authentication
+            setTimeout(() => {
+              if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({
+                  action: 'subscribe',
+                  params: 'T.*, Q.*' // All options trades and quotes
+                }));
+              }
+            }, 100);
+          }
+        }, 100);
       };
       
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          
+          // Handle authentication response
+          if (data[0]?.ev === 'status' && data[0]?.status === 'auth_success') {
+            console.log('Polygon WebSocket authenticated successfully');
+            setIsConnected(true);
+            return;
+          }
+          
+          // Handle subscription confirmation
+          if (data[0]?.ev === 'status' && data[0]?.status === 'success') {
+            console.log('Polygon WebSocket subscription confirmed');
+            return;
+          }
+          
           onMessage(data);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
@@ -172,15 +192,19 @@ export class PolygonAPI {
       
       this.ws.onclose = () => {
         console.log('Polygon WebSocket disconnected');
+        setIsConnected(false);
         this.handleReconnect(onMessage, onError);
       };
       
       this.ws.onerror = (error) => {
-        console.error('Polygon WebSocket error:', error);
+        console.error('Polygon WebSocket connection failed - check API key and subscription');
+        setIsConnected(false);
+        setError('WebSocket connection failed. Please verify your Polygon.io API key and subscription.');
         if (onError) onError(error);
       };
     } catch (error) {
       console.error('Error connecting to Polygon WebSocket:', error);
+      setError('Failed to establish WebSocket connection');
       if (onError) onError(error as Event);
     }
   }

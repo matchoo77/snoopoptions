@@ -60,6 +60,18 @@ export function usePolygonData({ apiKey, symbols = [] }: UsePolygonDataProps) {
       const volume = trade.s || 0;
       const lastPrice = trade.p || 0;
       const premium = volume * lastPrice * 100; // Convert to total premium
+      
+      // Determine trade location based on bid/ask spread
+      const bid = lastPrice - 0.05; // Simplified - would get from separate quote
+      const ask = lastPrice + 0.05;
+      const midpoint = (bid + ask) / 2;
+      
+      let tradeLocation: 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask';
+      if (lastPrice < bid) tradeLocation = 'below-bid';
+      else if (lastPrice <= bid + 0.01) tradeLocation = 'at-bid';
+      else if (Math.abs(lastPrice - midpoint) <= 0.02) tradeLocation = 'midpoint';
+      else if (lastPrice >= ask - 0.01) tradeLocation = 'at-ask';
+      else tradeLocation = 'above-ask';
 
       // Estimate Greeks (in real implementation, you'd get these from separate API calls)
       const delta = type === 'call' ? Math.random() * 0.8 + 0.1 : -(Math.random() * 0.8 + 0.1);
@@ -85,6 +97,7 @@ export function usePolygonData({ apiKey, symbols = [] }: UsePolygonDataProps) {
         theta,
         vega,
         premium,
+        tradeLocation,
         timestamp: new Date(trade.t || Date.now()).toISOString(),
         unusual: detectUnusualActivity(volume, 500, 1000, premium), // Simplified detection
         blockTrade: isBlockTrade(volume, premium),
@@ -114,12 +127,10 @@ export function usePolygonData({ apiKey, symbols = [] }: UsePolygonDataProps) {
     
     polygonApi.connectWebSocket(
       (data) => {
-        setIsConnected(true);
         processWebSocketData(data);
       },
       (error) => {
-        setError('WebSocket connection error');
-        setIsConnected(false);
+        // Error handling is now done in polygon.ts
       }
     );
 
@@ -173,6 +184,18 @@ export function usePolygonData({ apiKey, symbols = [] }: UsePolygonDataProps) {
       const volume = Math.floor(Math.random() * 2000) + 100; // Would need separate volume API call
       const lastPrice = quote.last_trade?.price || (quote.last_quote ? (quote.last_quote.bid + quote.last_quote.ask) / 2 : 0);
       const premium = volume * lastPrice * 100;
+      
+      // Determine trade location
+      const bid = quote.last_quote?.bid || lastPrice - 0.05;
+      const ask = quote.last_quote?.ask || lastPrice + 0.05;
+      const midpoint = (bid + ask) / 2;
+      
+      let tradeLocation: 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask';
+      if (lastPrice < bid) tradeLocation = 'below-bid';
+      else if (lastPrice <= bid + 0.01) tradeLocation = 'at-bid';
+      else if (Math.abs(lastPrice - midpoint) <= 0.02) tradeLocation = 'midpoint';
+      else if (lastPrice >= ask - 0.01) tradeLocation = 'at-ask';
+      else tradeLocation = 'above-ask';
 
       const activity: OptionsActivity = {
         id: `${quote.ticker}-${Date.now()}-${Math.random()}`,
@@ -183,14 +206,15 @@ export function usePolygonData({ apiKey, symbols = [] }: UsePolygonDataProps) {
         volume,
         openInterest: quote.open_interest || Math.floor(Math.random() * 10000) + 100,
         lastPrice,
-        bid: quote.last_quote?.bid || lastPrice - 0.05,
-        ask: quote.last_quote?.ask || lastPrice + 0.05,
+        bid,
+        ask,
         impliedVolatility: quote.implied_volatility || Math.random() * 0.8 + 0.2,
         delta: quote.delta || (contract.contract_type === 'call' ? Math.random() * 0.8 + 0.1 : -(Math.random() * 0.8 + 0.1)),
         gamma: quote.gamma || Math.random() * 0.1,
         theta: quote.theta || -(Math.random() * 0.5),
         vega: quote.vega || Math.random() * 0.3,
         premium,
+        tradeLocation,
         timestamp: new Date(quote.last_trade?.timestamp || Date.now()).toISOString(),
         unusual: detectUnusualActivity(volume, 500, quote.open_interest || 1000, premium),
         blockTrade: isBlockTrade(volume, premium),
