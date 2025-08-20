@@ -18,11 +18,17 @@ export function DataSourceIndicator({
   error 
 }: DataSourceIndicatorProps) {
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
-  const hasValidApiKey = isValidPolygonApiKey(polygonApiKey);
+  
+  console.log('[DataSourceIndicator] API Key validation:', {
+    keyExists: !!polygonApiKey,
+    keyLength: polygonApiKey.length,
+    keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...${polygonApiKey.slice(-4)}` : 'none',
+    isValid: isValidPolygonApiKey(polygonApiKey)
+  });
   
   // Enhanced debug for environment variables
   console.log('Polygon API key status:', {
-    configured: hasValidApiKey,
+    configured: isValidPolygonApiKey(polygonApiKey),
     keyLength: polygonApiKey?.length || 0,
     keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 4)}...${polygonApiKey.slice(-4)}` : 'none'
   });
@@ -37,7 +43,7 @@ export function DataSourceIndicator({
 
   // Add debug info
   console.log('DataSourceIndicator debug:', {
-    hasValidApiKey,
+    hasValidApiKey: isValidPolygonApiKey(polygonApiKey),
     polygonApiKey: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'none',
     dataSource,
     isUsingRealData,
@@ -70,7 +76,7 @@ export function DataSourceIndicator({
     );
   }
   
-  if (hasValidApiKey && isMarketClosed) {
+  if (isValidPolygonApiKey(polygonApiKey) && isMarketClosed) {
     return (
       <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="flex items-start space-x-3">
@@ -103,7 +109,7 @@ export function DataSourceIndicator({
               EOD Market Data Connected
             </h3>
             <p className="text-sm text-green-700">
-              EOD Market Data Connected
+              Using end-of-day options data from Polygon.io with your API key
             </p>
           </div>
         </div>
@@ -121,7 +127,7 @@ export function DataSourceIndicator({
               API Key Not Configured
             </h3>
             <p className="text-sm text-yellow-700 mb-3">
-              Please configure a valid Polygon.io API key to access real market data. 
+              Please configure a valid Polygon.io API key to access real market data.
               Current key: {polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'Not set'}
             </p>
             <div className="flex items-center space-x-4 text-xs">

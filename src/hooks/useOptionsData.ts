@@ -20,7 +20,12 @@ export function useOptionsData() {
   });
 
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
-  const hasValidApiKey = isValidPolygonApiKey(polygonApiKey);
+  
+  console.log('[useOptionsData] API Key check:', {
+    hasKey: !!polygonApiKey,
+    keyLength: polygonApiKey.length,
+    keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...${polygonApiKey.slice(-4)}` : 'none'
+  });
 
   // Use EOD data hook for real data
   const { 
@@ -31,12 +36,14 @@ export function useOptionsData() {
   } = useEODData({
     apiKey: polygonApiKey,
     symbols: [],
-    enabled: hasValidApiKey
+    enabled: isValidPolygonApiKey(polygonApiKey)
   });
 
   // Determine data source and activities to use
   const { allActivities, dataSource, isConnected, loading, error } = useMemo(() => {
-    if (hasValidApiKey && eodActivities.length > 0) {
+    const hasValidKey = isValidPolygonApiKey(polygonApiKey);
+    
+    if (hasValidKey && eodActivities.length > 0) {
       console.log('[useOptionsData] Using real EOD data:', eodActivities.length, 'activities');
       return {
         allActivities: eodActivities,
@@ -45,7 +52,7 @@ export function useOptionsData() {
         loading: eodLoading,
         error: eodError
       };
-    } else if (hasValidApiKey && eodLoading) {
+    } else if (hasValidKey && eodLoading) {
       console.log('[useOptionsData] Loading real data...');
       return {
         allActivities: generateMockData(),
@@ -55,23 +62,23 @@ export function useOptionsData() {
         error: eodError
       };
     } else {
-      console.log('[useOptionsData] Using mock data');
+      console.log('[useOptionsData] Using mock data - hasValidKey:', hasValidKey, 'eodActivities:', eodActivities.length);
       return {
         allActivities: generateMockData(),
         dataSource: 'mock' as const,
         isConnected: false,
         loading: false,
-        error: hasValidApiKey ? eodError : null
+        error: hasValidKey ? eodError : null
       };
     }
-  }, [hasValidApiKey, eodActivities, eodLoading, eodError]);
+  }, [polygonApiKey, eodActivities, eodLoading, eodError]);
 
   // Update mock data every 5 seconds when using mock data
   useEffect(() => {
     if (dataSource === 'mock') {
       const interval = setInterval(() => {
         // Only update if we're still using mock data
-        if (!hasValidApiKey || eodActivities.length === 0) {
+        if (!isValidPolygonApiKey(polygonApiKey) || eodActivities.length === 0) {
           console.log('[useOptionsData] Refreshing mock data...');
           // This will trigger a re-render through the useMemo dependency
         }
@@ -79,7 +86,7 @@ export function useOptionsData() {
 
       return () => clearInterval(interval);
     }
-  }, [dataSource, hasValidApiKey, eodActivities.length]);
+  }, [dataSource, polygonApiKey, eodActivities.length]);
 
   const filteredActivities = useMemo(() => {
     let filtered = allActivities;
