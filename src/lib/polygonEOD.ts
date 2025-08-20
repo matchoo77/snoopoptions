@@ -63,10 +63,35 @@ interface PolygonOptionsSnapshot {
 export class PolygonEODService {
   private apiKey: string;
   private baseUrl = 'https://api.polygon.io';
+  private requestQueue: Promise<any> = Promise.resolve();
+  private lastRequestTime = 0;
+  private minRequestInterval = 200; // 200ms between requests for free tier
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
     console.log('PolygonEODService initialized with API key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'none');
+  }
+
+  // Rate-limited request wrapper
+  private async makeRequest(url: string): Promise<Response> {
+    return new Promise((resolve, reject) => {
+      this.requestQueue = this.requestQueue.then(async () => {
+        try {
+          // Ensure minimum time between requests
+          const now = Date.now();
+          const timeSinceLastRequest = now - this.lastRequestTime;
+          if (timeSinceLastRequest < this.minRequestInterval) {
+            await new Promise(resolve => setTimeout(resolve, this.minRequestInterval - timeSinceLastRequest));
+          }
+          
+          this.lastRequestTime = Date.now();
+          const response = await fetch(url);
+          resolve(response);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
   }
 
   // Get all options contracts for a symbol
@@ -85,7 +110,7 @@ export class PolygonEODService {
       const url = `${this.baseUrl}/v3/reference/options/contracts?${params}`;
       console.log(`[PolygonEOD] Contracts URL: ${url.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
       
-      const response = await fetch(`${this.baseUrl}/v3/reference/options/contracts?${params}`);
+      const response = await this.makeRequest(`${this.baseUrl}/v3/reference/options/contracts?${params}`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -122,7 +147,7 @@ export class PolygonEODService {
       const url = `${this.baseUrl}/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${this.apiKey}`;
       console.log(`[PolygonEOD] Fetching aggregates for ${ticker}: ${url.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
       
-      const response = await fetch(
+      const response = await this.makeRequest(
         `${this.baseUrl}/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${this.apiKey}`
       );
       
@@ -154,7 +179,7 @@ export class PolygonEODService {
   async getOptionsSnapshots(tickers: string[]): Promise<Record<string, PolygonOptionsSnapshot>> {
     try {
       const tickerParam = tickers.join(',');
-      const response = await fetch(
+      const response = await this.makeRequest(
         `${this.baseUrl}/v3/snapshot/options/${tickerParam}?apikey=${this.apiKey}`
       );
       
@@ -181,7 +206,7 @@ export class PolygonEODService {
   // Get stock price data for backtesting
   async getStockAggregates(symbol: string, startDate: string, endDate: string): Promise<any[]> {
     try {
-      const response = await fetch(
+      const response = await this.makeRequest(
         `${this.baseUrl}/v2/aggs/ticker/${symbol}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${this.apiKey}`
       );
       
@@ -238,13 +263,13 @@ export class PolygonEODService {
           const expDate = new Date(contract.expiration_date);
           const today = new Date(date);
           const daysToExp = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          return daysToExp > 0 && daysToExp <= 90; // 0-90 days to expiration (increased range)
+          return daysToExp > 0 && daysToExp <= 30; // 0-30 days to expiration (reduced for API efficiency)
         });
         
         console.log(`[PolygonEOD] Found ${activeContracts.length} active contracts for ${symbol}`);
 
-        // Limit to most liquid contracts for API efficiency - but check more for paid subscription
-        const contractsToCheck = activeContracts.slice(0, 50); // Increased for paid subscription
+        // Limit to most liquid contracts for API efficiency
+        const contractsToCheck = activeContracts.slice(0, 10); // Reduced to prevent rate limiting
         
         // Get EOD data for each contract
         for (const contract of contractsToCheck) {
@@ -269,8 +294,8 @@ export class PolygonEODService {
             console.log(`[PolygonEOD] No aggregate data found for ${ticker} on ${date}`);
           }
           
-          // Reduced delay for paid subscription
-          await new Promise(resolve => setTimeout(resolve, 100)); // Reduced to 100ms for paid tier
+          // Add delay to prevent rate limiting
+          await new Promise(resolve => setTimeout(resolve, 300)); // Increased delay
         }
       } catch (error) {
         console.error(`[PolygonEOD] Error scanning ${symbol}:`, error);
@@ -475,6 +500,11 @@ export class PolygonEODService {
     return type === 'call' ? 'bullish' : 'bearish';
   }
 
+  // Check if activity is unusual
+  private isUnusualActivity(activity: OptionsActivity): boolean {
+    return activity.unusual;
+  }
+
   // Get most active options for a symbol on a specific date
   async getMostActiveOptions(symbol: string, date: string, limit: number = 20): Promise<OptionsActivity[]> {
     try {
@@ -508,15 +538,15 @@ export class PolygonEODService {
         const expDate = new Date(contract.expiration_date);
         const checkDate = new Date(date);
         const daysToExp = Math.ceil((expDate.getTime() - checkDate.getTime()) / (1000 * 60 * 60 * 24));
-        return daysToExp > 0 && daysToExp <= 90; // 0-90 days to expiration
+        return daysToExp > 0 && daysToExp <= 30; // 0-30 days to expiration
       });
       
       console.log(`[PolygonEOD] Filtered to ${activeContracts.length} active contracts for ${symbol}`);
 
       const activities: OptionsActivity[] = [];
       
-      // Get EOD data for each contract - increased limit for paid subscription
-      const contractsToCheck = activeContracts.slice(0, Math.min(limit * 2, 50));
+      // Get EOD data for each contract
+      const contractsToCheck = activeContracts.slice(0, Math.min(limit, 10));
       console.log(`[PolygonEOD] Checking ${contractsToCheck.length} contracts for ${symbol}`);
       
       for (const contract of contractsToCheck) {
@@ -530,8 +560,8 @@ export class PolygonEODService {
           }
         }
         
-        // Reduced rate limiting for paid subscription
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Add delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
       
       console.log(`[PolygonEOD] Generated ${activities.length} activities for ${symbol}`);
@@ -563,7 +593,7 @@ export class PolygonEODService {
       allActivities.push(...unusualActivities);
       
       // Add delay between symbols to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
     console.log(`[PolygonEOD] Total unusual activities across all symbols: ${allActivities.length}`);

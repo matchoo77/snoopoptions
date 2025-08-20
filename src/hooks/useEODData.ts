@@ -55,6 +55,14 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       console.log('[useEODData] === EOD DATA FETCH COMPLETE ===');
       console.log('[useEODData] Total unusual activities found:', unusualActivities.length);
       
+      if (unusualActivities.length === 0) {
+        console.log('[useEODData] No unusual activities found - this could be due to:');
+        console.log('[useEODData] 1. Market closed/weekend');
+        console.log('[useEODData] 2. No unusual activity on previous trading day');
+        console.log('[useEODData] 3. API rate limiting');
+        console.log('[useEODData] 4. Filters too restrictive');
+      }
+      
       setActivities(unusualActivities);
       setLastUpdated(new Date().toISOString());
       
