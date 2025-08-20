@@ -25,18 +25,18 @@ export function useOptionsData() {
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
   const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here';
   
-  console.log('=== POLYGON API KEY DEBUG ===');
-  console.log('Raw env var:', import.meta.env.VITE_POLYGON_API_KEY);
-  console.log('Processed key:', polygonApiKey);
-  console.log('Key details:', {
+  console.log('[useOptionsData] === POLYGON API KEY DEBUG ===');
+  console.log('[useOptionsData] Raw env var:', import.meta.env.VITE_POLYGON_API_KEY);
+  console.log('[useOptionsData] Processed key:', polygonApiKey);
+  console.log('[useOptionsData] Key details:', {
     hasKey: !!polygonApiKey,
     keyLength: polygonApiKey?.length || 0,
     isValid: hasValidApiKey,
     keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'none',
-    keyEndsWithCorrectSuffix: polygonApiKey?.endsWith('Hp8X') || false
+    keyEndsWithCorrectSuffix: polygonApiKey?.length > 10 || false
   });
-  console.log('All env vars:', Object.keys(import.meta.env));
-  console.log('=== END POLYGON DEBUG ===');
+  console.log('[useOptionsData] All env vars:', Object.keys(import.meta.env));
+  console.log('[useOptionsData] === END POLYGON DEBUG ===');
   
   // Use real-time Polygon WebSocket data
   const { 
@@ -47,7 +47,7 @@ export function useOptionsData() {
   } = usePolygonData({ 
     apiKey: polygonApiKey,
     symbols: filters.symbols,
-    enabled: hasValidApiKey
+    enabled: false // Disable WebSocket for now to focus on EOD data
   });
 
   // Use EOD data from Polygon
@@ -56,10 +56,14 @@ export function useOptionsData() {
     loading: eodLoading,
     error: eodError,
     fetchSymbolData: fetchEODSymbolData
-  } = useEODData({ apiKey: polygonApiKey, symbols: filters.symbols });
+  } = useEODData({ 
+    apiKey: polygonApiKey, 
+    symbols: filters.symbols,
+    enabled: hasValidApiKey 
+  });
 
   useEffect(() => {
-    console.log('useOptionsData - Data Source Logic:', {
+    console.log('[useOptionsData] Data Source Logic:', {
       hasValidApiKey,
       polygonActivitiesCount: polygonActivities.length,
       eodActivitiesCount: eodActivities.length,
@@ -68,22 +72,22 @@ export function useOptionsData() {
     });
     
     // Determine which data source to use
-    if (hasValidApiKey && polygonActivities.length > 0) {
-      console.log('Using real-time Polygon data');
+    if (hasValidApiKey && polygonActivities.length > 0 && false) { // Disabled WebSocket for now
+      console.log('[useOptionsData] Using real-time Polygon data');
       setDataSource('realtime');
       setAllActivities(polygonActivities);
     } else if (hasValidApiKey && eodActivities.length > 0) {
-      console.log('Using EOD Polygon data');
+      console.log('[useOptionsData] Using EOD Polygon data');
       setDataSource('eod');
       setAllActivities(eodActivities);
     } else if (hasValidApiKey) {
       // API key is configured but no data yet - keep trying EOD
-      console.log('API key configured, waiting for EOD data...');
+      console.log('[useOptionsData] API key configured, waiting for EOD data...');
       setDataSource('eod');
       setAllActivities(eodActivities); // May be empty initially
     } else {
       // Fall back to mock data
-      console.log('Using mock data - API key not configured or invalid');
+      console.log('[useOptionsData] Using mock data - API key not configured or invalid');
       setDataSource('mock');
       setAllActivities(generateMockData());
 

@@ -16,8 +16,8 @@ export class BacktestingEngine {
     summary: BacktestSummary;
   }> {
     try {
-      console.log('Starting pattern recognition analysis with real EOD data...');
-      console.log('Backtest parameters:', params);
+      console.log('[Backtest] Starting pattern recognition analysis with real EOD data...');
+      console.log('[Backtest] Parameters:', params);
       
       // Step 1: Find significant stock movements in the date range
       const stockMovements = await this.findSignificantStockMovements(
@@ -27,12 +27,14 @@ export class BacktestingEngine {
         params.targetMovement
       );
       
-      console.log(`Found ${stockMovements.length} significant stock movements`);
+      console.log(`[Backtest] Found ${stockMovements.length} significant stock movements`);
       
       // Step 2: For each stock movement, look for unusual options activity 1-3 days before
       const results: BacktestResult[] = [];
       
       for (const movement of stockMovements) {
+        console.log(`[Backtest] Analyzing movement: ${movement.symbol} ${movement.percentChange.toFixed(1)}% on ${movement.moveDate}`);
+        
         // Look for unusual options activity 1-3 days before the movement
         const precedingTrades = await this.findPrecedingOptionsActivity(
           movement.symbol,
@@ -42,6 +44,8 @@ export class BacktestingEngine {
           params.optionTypes,
           params.tradeLocations
         );
+        
+        console.log(`[Backtest] Found ${precedingTrades.length} preceding trades for ${movement.symbol}`);
         
         // Convert each preceding trade to a result
         for (const trade of precedingTrades) {
@@ -62,22 +66,23 @@ export class BacktestingEngine {
           results.push(result);
         }
         
-        // Add delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Reduced delay for paid subscription
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
       
       if (results.length === 0) {
-        console.log('No patterns found - consider adjusting parameters');
+        console.log('[Backtest] No patterns found - consider adjusting parameters');
+        console.log('[Backtest] Try: lower volume/premium thresholds, different date range, or more symbols');
       }
       
-      console.log(`Found ${results.length} trades that preceded significant moves`);
+      console.log(`[Backtest] Found ${results.length} trades that preceded significant moves`);
 
       // Step 3: Generate summary statistics
       const summary = this.generateSummary(results);
 
       return { results, summary };
     } catch (error) {
-      console.error('Pattern recognition error:', error);
+      console.error('[Backtest] Pattern recognition error:', error);
       throw new Error('Failed to run pattern recognition analysis');
     }
   }
@@ -96,11 +101,14 @@ export class BacktestingEngine {
     percentChange: number;
     daysFromTrade: number;
   }>> {
+    console.log(`[Backtest] Finding stock movements for ${symbols.length} symbols from ${startDate} to ${endDate}`);
     const movements = [];
     
     for (const symbol of symbols) {
       try {
+        console.log(`[Backtest] Getting stock data for ${symbol}...`);
         const stockData = await this.eodService.getStockAggregates(symbol, startDate, endDate);
+        console.log(`[Backtest] Got ${stockData.length} days of stock data for ${symbol}`);
         
         // Look for days with significant moves
         for (let i = 3; i < stockData.length; i++) { // Start at day 3 to allow for 1-3 day lookback
@@ -112,6 +120,7 @@ export class BacktestingEngine {
             
             // Check if this meets our target movement criteria
             if (Math.abs(percentChange) >= targetMovement) {
+              console.log(`[Backtest] Found significant move: ${symbol} ${percentChange.toFixed(1)}% on ${new Date(current.t).toISOString().split('T')[0]}`);
               movements.push({
                 symbol,
                 moveDate: new Date(current.t).toISOString().split('T')[0],
@@ -124,11 +133,12 @@ export class BacktestingEngine {
           }
         }
       } catch (error) {
-        console.error(`Error analyzing stock movements for ${symbol}:`, error);
+        console.error(`[Backtest] Error analyzing stock movements for ${symbol}:`, error);
         continue;
       }
     }
     
+    console.log(`[Backtest] Total significant movements found: ${movements.length}`);
     return movements;
   }
 
@@ -141,6 +151,7 @@ export class BacktestingEngine {
     optionTypes: ('call' | 'put')[],
     tradeLocations: ('below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask')[]
   ): Promise<BacktestTrade[]> {
+    console.log(`[Backtest] Looking for options activity preceding ${symbol} move on ${moveDate}`);
     const precedingTrades: BacktestTrade[] = [];
     
     // Look 1-3 days before the movement
@@ -150,7 +161,9 @@ export class BacktestingEngine {
       const tradeDateStr = tradeDate.toISOString().split('T')[0];
       
       try {
+        console.log(`[Backtest] Checking ${symbol} options activity on ${tradeDateStr} (${daysBefore} days before move)`);
         const activities = await this.eodService.getMostActiveOptions(symbol, tradeDateStr, 10);
+        console.log(`[Backtest] Found ${activities.length} activities for ${symbol} on ${tradeDateStr}`);
         
         // Filter for unusual activities that match our criteria
         const qualifyingTrades = activities.filter(activity => 
@@ -160,6 +173,8 @@ export class BacktestingEngine {
           tradeLocations.includes(activity.tradeLocation) &&
           activity.unusual
         );
+        
+        console.log(`[Backtest] ${qualifyingTrades.length} trades qualify for ${symbol} on ${tradeDateStr}`);
         
         // Convert to BacktestTrade format
         for (const activity of qualifyingTrades) {
@@ -180,10 +195,11 @@ export class BacktestingEngine {
           });
         }
       } catch (error) {
-        console.error(`Error fetching options for ${symbol} on ${tradeDateStr}:`, error);
+        console.error(`[Backtest] Error fetching options for ${symbol} on ${tradeDateStr}:`, error);
       }
     }
     
+    console.log(`[Backtest] Total preceding trades found for ${symbol}: ${precedingTrades.length}`);
     return precedingTrades;
   }
 

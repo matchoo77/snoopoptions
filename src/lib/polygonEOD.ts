@@ -66,12 +66,13 @@ export class PolygonEODService {
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
+    console.log('PolygonEODService initialized with API key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'none');
   }
 
   // Get all options contracts for a symbol
   async getOptionsContracts(symbol: string, expiredGte?: string, expiredLte?: string): Promise<PolygonOptionsContract[]> {
     try {
-      console.log(`Fetching options contracts for ${symbol}...`);
+      console.log(`[PolygonEOD] Fetching options contracts for ${symbol}...`);
       const params = new URLSearchParams({
         'underlying_ticker': symbol,
         'limit': '1000',
@@ -82,29 +83,31 @@ export class PolygonEODService {
       if (expiredLte) params.append('expired.lte', expiredLte);
 
       const url = `${this.baseUrl}/v3/reference/options/contracts?${params}`;
-      console.log(`Polygon contracts URL: ${url.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
+      console.log(`[PolygonEOD] Contracts URL: ${url.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
       
       const response = await fetch(`${this.baseUrl}/v3/reference/options/contracts?${params}`);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Polygon contracts API error: ${response.status} ${response.statusText}`, errorText);
+        console.error(`[PolygonEOD] Contracts API error: ${response.status} ${response.statusText}`, errorText);
         
         // Check for specific error types
         if (response.status === 401) {
           throw new Error('Invalid Polygon.io API key - please check your VITE_POLYGON_API_KEY');
         } else if (response.status === 429) {
           throw new Error('Polygon.io rate limit exceeded - please wait and try again');
+        } else if (response.status === 403) {
+          throw new Error('Polygon.io API access denied - please check your subscription tier');
         }
         
         throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log(`Found ${data.results?.length || 0} contracts for ${symbol}`);
+      console.log(`[PolygonEOD] Found ${data.results?.length || 0} contracts for ${symbol}`);
       return data.results || [];
     } catch (error) {
-      console.error('Error fetching options contracts:', error);
+      console.error(`[PolygonEOD] Error fetching options contracts for ${symbol}:`, error);
       return [];
     }
   }
@@ -117,7 +120,7 @@ export class PolygonEODService {
   ): Promise<PolygonOptionsAgg[]> {
     try {
       const url = `${this.baseUrl}/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${this.apiKey}`;
-      console.log(`Fetching aggregates for ${ticker}: ${url.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
+      console.log(`[PolygonEOD] Fetching aggregates for ${ticker}: ${url.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
       
       const response = await fetch(
         `${this.baseUrl}/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${this.apiKey}`
@@ -125,20 +128,24 @@ export class PolygonEODService {
       
       if (!response.ok) {
         if (response.status === 404) {
-          console.log(`No data available for ${ticker} on ${startDate}`);
+          console.log(`[PolygonEOD] No data available for ${ticker} on ${startDate}`);
           // No data available for this contract
           return [];
         }
+        if (response.status === 403) {
+          console.error(`[PolygonEOD] Access denied for ${ticker} - check subscription tier`);
+          return [];
+        }
         const errorText = await response.text();
-        console.error(`Polygon aggregates API error for ${ticker}: ${response.status} ${response.statusText}`, errorText);
+        console.error(`[PolygonEOD] Aggregates API error for ${ticker}: ${response.status} ${response.statusText}`, errorText);
         throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log(`Found ${data.results?.length || 0} aggregates for ${ticker}`);
+      console.log(`[PolygonEOD] Found ${data.results?.length || 0} aggregates for ${ticker} on ${startDate}`);
       return data.results || [];
     } catch (error) {
-      console.error(`Error fetching options aggregates for ${ticker}:`, error);
+      console.error(`[PolygonEOD] Error fetching options aggregates for ${ticker}:`, error);
       return [];
     }
   }
@@ -195,7 +202,9 @@ export class PolygonEODService {
     symbols: string[] = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'SPY', 'QQQ'],
     date?: string
   ): Promise<OptionsActivity[]> {
-    // Use previous trading day if no date specified
+    console.log(`[PolygonEOD] Starting unusual activity scan...`);
+    
+    // Use previous trading day if no date specified  
     if (!date) {
       const today = new Date();
       const yesterday = new Date(today);
@@ -213,34 +222,34 @@ export class PolygonEODService {
       date = yesterday.toISOString().split('T')[0];
     }
     
-    console.log(`Scanning EOD options activity for date: ${date}`);
+    console.log(`[PolygonEOD] Scanning EOD options activity for date: ${date}`);
     const activities: OptionsActivity[] = [];
     
     for (const symbol of symbols) {
       try {
-        console.log(`Scanning EOD options activity for ${symbol}...`);
+        console.log(`[PolygonEOD] Scanning EOD options activity for ${symbol}...`);
         
         // Get options contracts for this symbol
         const contracts = await this.getOptionsContracts(symbol);
-        console.log(`Found ${contracts.length} total contracts for ${symbol}`);
+        console.log(`[PolygonEOD] Found ${contracts.length} total contracts for ${symbol}`);
         
         // Filter to active contracts (not expired, reasonable expiration dates)
         const activeContracts = contracts.filter(contract => {
           const expDate = new Date(contract.expiration_date);
           const today = new Date(date);
           const daysToExp = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          return daysToExp > 0 && daysToExp <= 60; // 0-60 days to expiration
+          return daysToExp > 0 && daysToExp <= 90; // 0-90 days to expiration (increased range)
         });
         
-        console.log(`Found ${activeContracts.length} active contracts for ${symbol}`);
+        console.log(`[PolygonEOD] Found ${activeContracts.length} active contracts for ${symbol}`);
 
-        // Limit to most liquid contracts for API efficiency
-        const contractsToCheck = activeContracts.slice(0, 20); // Reduce to avoid rate limits
+        // Limit to most liquid contracts for API efficiency - but check more for paid subscription
+        const contractsToCheck = activeContracts.slice(0, 50); // Increased for paid subscription
         
         // Get EOD data for each contract
         for (const contract of contractsToCheck) {
           const ticker = this.buildOptionsTicker(contract);
-          console.log(`Checking contract: ${ticker}`);
+          console.log(`[PolygonEOD] Checking contract: ${ticker}`);
           const aggregates = await this.getOptionsAggregates(ticker, date);
           
           if (aggregates.length > 0) {
@@ -248,21 +257,21 @@ export class PolygonEODService {
             const activity = this.convertAggregateToActivity(agg, contract, date);
             
             if (activity && this.isUnusualActivity(activity)) {
-              console.log(`Found unusual activity: ${ticker} - Volume: ${activity.volume}, Premium: $${activity.premium.toFixed(0)}`);
+              console.log(`[PolygonEOD] Found unusual activity: ${ticker} - Volume: ${activity.volume}, Premium: $${activity.premium.toFixed(0)}`);
               activities.push(activity);
             }
           }
           
-          // Add small delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Increase delay to 1 second
+          // Reduced delay for paid subscription
+          await new Promise(resolve => setTimeout(resolve, 200)); // Reduced to 200ms for paid tier
         }
       } catch (error) {
-        console.error(`Error scanning ${symbol}:`, error);
+        console.error(`[PolygonEOD] Error scanning ${symbol}:`, error);
         continue;
       }
     }
     
-    console.log(`Total unusual activities found: ${activities.length}`);
+    console.log(`[PolygonEOD] Total unusual activities found: ${activities.length}`);
     return activities.sort((a, b) => b.premium - a.premium);
   }
 
@@ -411,12 +420,12 @@ export class PolygonEODService {
 
   // Detect unusual activity based on volume and premium
   private detectUnusualActivity(volume: number, premium: number): boolean {
-    return volume >= 500 || premium >= 25000; // Lower thresholds to catch more activity
+    return volume >= 100 || premium >= 10000; // Even lower thresholds for paid subscription
   }
 
   // Detect block trades
   private isBlockTrade(volume: number, premium: number): boolean {
-    return volume >= 500 || premium >= 50000; // Lower thresholds
+    return volume >= 250 || premium >= 25000; // Lower thresholds for paid subscription
   }
 
   // Calculate sentiment
@@ -435,20 +444,48 @@ export class PolygonEODService {
   // Get most active options for a symbol on a specific date
   async getMostActiveOptions(symbol: string, date: string, limit: number = 20): Promise<OptionsActivity[]> {
     try {
+      console.log(`[PolygonEOD] Getting most active options for ${symbol} on ${date || 'latest'}`);
+      
+      // Use previous trading day if no date specified
+      if (!date) {
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        
+        // If today is Monday, go back to Friday
+        if (today.getDay() === 1) {
+          yesterday.setDate(today.getDate() - 3);
+        }
+        // If today is Sunday, go back to Friday  
+        else if (today.getDay() === 0) {
+          yesterday.setDate(today.getDate() - 2);
+        }
+        
+        date = yesterday.toISOString().split('T')[0];
+        console.log(`[PolygonEOD] Using previous trading day: ${date}`);
+      }
+      
       // Get contracts for the symbol
       const contracts = await this.getOptionsContracts(symbol);
+      console.log(`[PolygonEOD] Got ${contracts.length} contracts for ${symbol}`);
       
       // Filter to active contracts
       const activeContracts = contracts.filter(contract => {
         const expDate = new Date(contract.expiration_date);
         const checkDate = new Date(date);
-        return expDate > checkDate;
+        const daysToExp = Math.ceil((expDate.getTime() - checkDate.getTime()) / (1000 * 60 * 60 * 24));
+        return daysToExp > 0 && daysToExp <= 90; // 0-90 days to expiration
       });
+      
+      console.log(`[PolygonEOD] Filtered to ${activeContracts.length} active contracts for ${symbol}`);
 
       const activities: OptionsActivity[] = [];
       
-      // Get EOD data for each contract
-      for (const contract of activeContracts.slice(0, limit)) {
+      // Get EOD data for each contract - increased limit for paid subscription
+      const contractsToCheck = activeContracts.slice(0, Math.min(limit * 2, 50));
+      console.log(`[PolygonEOD] Checking ${contractsToCheck.length} contracts for ${symbol}`);
+      
+      for (const contract of contractsToCheck) {
         const ticker = this.buildOptionsTicker(contract);
         const aggregates = await this.getOptionsAggregates(ticker, date);
         
@@ -459,9 +496,11 @@ export class PolygonEODService {
           }
         }
         
-        // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Reduced rate limiting for paid subscription
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
+      
+      console.log(`[PolygonEOD] Generated ${activities.length} activities for ${symbol}`);
       
       // Sort by volume and return top activities
       return activities
@@ -469,7 +508,7 @@ export class PolygonEODService {
         .slice(0, limit);
         
     } catch (error) {
-      console.error(`Error getting most active options for ${symbol}:`, error);
+      console.error(`[PolygonEOD] Error getting most active options for ${symbol}:`, error);
       return [];
     }
   }
@@ -479,17 +518,21 @@ export class PolygonEODService {
     symbols: string[],
     date?: string
   ): Promise<OptionsActivity[]> {
-    console.log('Starting multi-symbol unusual activity scan...');
+    console.log('[PolygonEOD] Starting multi-symbol unusual activity scan...');
     const allActivities: OptionsActivity[] = [];
     
     for (const symbol of symbols) {
-      const activities = await this.getMostActiveOptions(symbol, date, 10);
+      console.log(`[PolygonEOD] Processing ${symbol}...`);
+      const activities = await this.getMostActiveOptions(symbol, date, 20); // Increased limit
       const unusualActivities = activities.filter(activity => activity.unusual);
-      console.log(`${symbol}: Found ${activities.length} activities, ${unusualActivities.length} unusual`);
+      console.log(`[PolygonEOD] ${symbol}: Found ${activities.length} activities, ${unusualActivities.length} unusual`);
       allActivities.push(...unusualActivities);
+      
+      // Add delay between symbols to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
     
-    console.log(`Total unusual activities across all symbols: ${allActivities.length}`);
+    console.log(`[PolygonEOD] Total unusual activities across all symbols: ${allActivities.length}`);
     return allActivities.sort((a, b) => b.premium - a.premium);
   }
 }

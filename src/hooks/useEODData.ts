@@ -17,8 +17,8 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
   const eodService = new PolygonEODService(apiKey);
 
   const fetchEODData = async (targetSymbols?: string[]) => {
-    console.log('=== EOD FETCH START ===');
-    console.log('API Key check:', {
+    console.log('[useEODData] === EOD FETCH START ===');
+    console.log('[useEODData] API Key check:', {
       hasApiKey: !!apiKey,
       keyLength: apiKey?.length || 0,
       enabled,
@@ -26,13 +26,13 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
     });
     
     if (!apiKey || apiKey.length < 10) {
-      console.log('EOD fetch skipped - invalid API key');
+      console.log('[useEODData] EOD fetch skipped - invalid API key');
       setError('Polygon API key is required');
       return;
     }
 
     if (!enabled) {
-      console.log('EOD fetch skipped - not enabled');
+      console.log('[useEODData] EOD fetch skipped - not enabled');
       return;
     }
 
@@ -44,22 +44,22 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       const defaultSymbols = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'SPY', 'QQQ'];
       const finalSymbols = symbolsToFetch.length > 0 ? symbolsToFetch : defaultSymbols;
 
-      console.log('=== STARTING EOD DATA FETCH ===');
-      console.log('Symbols to fetch:', finalSymbols);
-      console.log('API Key configured:', apiKey ? `Yes (${apiKey.substring(0, 8)}...)` : 'No');
-      console.log('API Key length:', apiKey?.length || 0);
+      console.log('[useEODData] === STARTING EOD DATA FETCH ===');
+      console.log('[useEODData] Symbols to fetch:', finalSymbols);
+      console.log('[useEODData] API Key configured:', apiKey ? `Yes (${apiKey.substring(0, 8)}...)` : 'No');
+      console.log('[useEODData] API Key length:', apiKey?.length || 0);
 
       // Get previous trading day data
       const unusualActivities = await eodService.getUnusualActivityMultiSymbol(finalSymbols);
 
-      console.log('=== EOD DATA FETCH COMPLETE ===');
-      console.log('Total unusual activities found:', unusualActivities.length);
+      console.log('[useEODData] === EOD DATA FETCH COMPLETE ===');
+      console.log('[useEODData] Total unusual activities found:', unusualActivities.length);
       
       setActivities(unusualActivities);
       setLastUpdated(new Date().toISOString());
       
     } catch (err) {
-      console.error('Error fetching EOD data:', err);
+      console.error('[useEODData] Error fetching EOD data:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch EOD data');
     } finally {
       setLoading(false);
