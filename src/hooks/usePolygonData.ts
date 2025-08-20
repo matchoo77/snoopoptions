@@ -55,19 +55,29 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
   // Parse Polygon options trade data into our format
   const parseOptionsActivity = (trade: any): OptionsActivity | null => {
     try {
-      console.log('[usePolygonData] Parsing trade data:', trade);
+      console.log('[usePolygonData] === PARSING TRADE DATA ===');
+      console.log('[usePolygonData] Raw trade:', JSON.stringify(trade, null, 2));
       const symbol = trade.sym; // e.g., "O:AAPL240216C00150000"
       
       // Parse options symbol
       const match = symbol.match(/O:([A-Z]+)(\d{6})([CP])(\d{8})/);
       if (!match) {
-        console.log('[usePolygonData] Failed to parse symbol:', symbol);
+        console.log('[usePolygonData] ❌ Failed to parse symbol:', symbol);
         return null;
       }
 
       const [, underlying, dateStr, callPut, strikeStr] = match;
       const strike = parseInt(strikeStr) / 1000; // Strike price in dollars
       const type = callPut === 'C' ? 'call' : 'put';
+      
+      console.log('[usePolygonData] ✅ Parsed symbol components:', {
+        underlying,
+        dateStr,
+        callPut,
+        strikeStr,
+        strike,
+        type
+      });
       
       // Parse expiration date
       const year = 2000 + parseInt(dateStr.substring(0, 2));
@@ -79,19 +89,20 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
       const lastPrice = trade.p || 0;
       
       if (lastPrice === 0) {
-        console.log('[usePolygonData] No price data for trade:', symbol);
+        console.log('[usePolygonData] ❌ No price data for trade:', symbol);
         return null;
       }
       
       const premium = volume * lastPrice * 100; // Convert to total premium
       
-      console.log('[usePolygonData] Parsed trade:', {
+      console.log('[usePolygonData] ✅ Successfully parsed trade:', {
         underlying,
         type,
         strike,
         volume,
         lastPrice,
-        premium
+        premium,
+        timestamp: trade.t
       });
       
       // Determine trade location based on bid/ask spread
