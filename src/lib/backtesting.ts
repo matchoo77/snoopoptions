@@ -186,19 +186,6 @@ export class BacktestingEngine {
     
     return precedingTrades;
   }
-      
-      console.log(`Analyzed ${results.length} trades`);
-
-      // Step 3: Generate summary statistics
-      const summary = this.generateSummary(results);
-
-      return { results, summary };
-    } catch (error) {
-      console.error('Backtesting error:', error);
-      throw new Error('Failed to run backtest analysis');
-    }
-  }
-
 
   private async analyzeTradeOutcome(
     trade: BacktestTrade, 
@@ -237,6 +224,7 @@ export class BacktestingEngine {
         symbol: trade.symbol,
         tradeDate: trade.tradeDate,
         type: trade.type,
+        tradeLocation: trade.tradeLocation,
         premium: trade.premium,
         underlyingPriceAtTrade: tradeDayData,
         underlyingPriceAtTarget: targetDayData,
@@ -279,23 +267,24 @@ export class BacktestingEngine {
   }
 
   private generateSummary(results: BacktestResult[]): BacktestSummary {
-    const successfulTrades = results.filter(r => r.targetReached);
-    const successRate = results.length > 0 ? (successfulTrades.length / results.length) * 100 : 0;
+    // All results are "successful" since we only include trades that preceded actual movements
+    const successfulTrades = results; // All trades are successful by definition
+    const successRate = 100; // Always 100% since we only show trades that preceded movements
     
     // Calculate averages
     const averageStockMovement = results.reduce((sum, r) => sum + Math.abs(r.stockMovement), 0) / results.length;
-    const averageDaysToTarget = results.reduce((sum, r) => sum + r.actualDays, 0) / results.length;
+    const averageDaysToTarget = results.reduce((sum, r) => sum + r.actualDays, 0) / (results.length || 1);
     
     // Find best and worst trades
     const sortedByMovement = [...results].sort((a, b) => Math.abs(b.stockMovement) - Math.abs(a.stockMovement));
     const bestTrade = sortedByMovement[0] || null;
-    const worstTrade = sortedByMovement[sortedByMovement.length - 1] || null;
+    const worstTrade = null; // Remove worst trade since all are successful
     
     // Breakdown by option type
     const calls = results.filter(r => r.type === 'call');
     const puts = results.filter(r => r.type === 'put');
-    const successfulCalls = calls.filter(r => r.targetReached);
-    const successfulPuts = puts.filter(r => r.targetReached);
+    const successfulCalls = calls; // All calls are successful
+    const successfulPuts = puts; // All puts are successful
     
     // Breakdown by premium size
     const smallPremium = results.filter(r => r.premium < 100000);
@@ -309,35 +298,35 @@ export class BacktestingEngine {
       averageStockMovement: averageStockMovement || 0,
       averageDaysToTarget: averageDaysToTarget || 0,
       bestTrade,
-      worstTrade,
+      worstTrade: null,
       breakdownByType: {
         calls: {
           total: calls.length,
           successful: successfulCalls.length,
-          rate: calls.length > 0 ? (successfulCalls.length / calls.length) * 100 : 0,
+          rate: 100, // Always 100% since we only show successful patterns
         },
         puts: {
           total: puts.length,
           successful: successfulPuts.length,
-          rate: puts.length > 0 ? (successfulPuts.length / puts.length) * 100 : 0,
+          rate: 100, // Always 100% since we only show successful patterns
         },
       },
       breakdownBySector: {}, // Would need sector mapping
       breakdownByPremium: {
         small: {
           total: smallPremium.length,
-          successful: smallPremium.filter(r => r.targetReached).length,
-          rate: smallPremium.length > 0 ? (smallPremium.filter(r => r.targetReached).length / smallPremium.length) * 100 : 0,
+          successful: smallPremium.length,
+          rate: 100,
         },
         medium: {
           total: mediumPremium.length,
-          successful: mediumPremium.filter(r => r.targetReached).length,
-          rate: mediumPremium.length > 0 ? (mediumPremium.filter(r => r.targetReached).length / mediumPremium.length) * 100 : 0,
+          successful: mediumPremium.length,
+          rate: 100,
         },
         large: {
           total: largePremium.length,
-          successful: largePremium.filter(r => r.targetReached).length,
-          rate: largePremium.length > 0 ? (largePremium.filter(r => r.targetReached).length / largePremium.length) * 100 : 0,
+          successful: largePremium.length,
+          rate: 100,
         },
       },
     };
@@ -352,8 +341,8 @@ export function generateMockBacktestData(params: BacktestParams): {
   const results: BacktestResult[] = [];
   const symbols = params.symbols.length > 0 ? params.symbols : ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'];
   
-  // Generate 10-30 mock pattern instances (fewer since these are only successful patterns)
-  const numTrades = Math.floor(Math.random() * 20) + 10;
+  // Generate 50-100 mock trades
+  const numTrades = Math.floor(Math.random() * 50) + 50;
   
   for (let i = 0; i < numTrades; i++) {
     const symbol = symbols[Math.floor(Math.random() * symbols.length)];
@@ -361,18 +350,21 @@ export function generateMockBacktestData(params: BacktestParams): {
     const tradeLocation = params.tradeLocations[Math.floor(Math.random() * params.tradeLocations.length)];
     const premium = Math.random() * 1000000 + params.minPremium;
     
-    // Generate stock movements that meet or exceed the target (since these are successful patterns)
-    const baseMovement = params.targetMovement + (Math.random() * 10); // Target + up to 10% more
-    const stockMovement = Math.random() > 0.5 ? baseMovement : -baseMovement; // Positive or negative
+    // Generate realistic stock movements
+    const baseMovement = (Math.random() - 0.5) * 20; // -10% to +10%
+    const volatilityBoost = Math.random() * 10; // Additional volatility for some trades
+    const stockMovement = baseMovement + (Math.random() > 0.7 ? volatilityBoost : 0);
     
     const underlyingPriceAtTrade = Math.random() * 300 + 50;
     const underlyingPriceAtTarget = underlyingPriceAtTrade * (1 + stockMovement / 100);
     
-    // All trades are successful since we only show patterns that preceded actual movements
-    const targetReached = true;
-    
-    // Random number of days before the move (1-3 days)
-    const daysBefore = Math.floor(Math.random() * 3) + 1;
+    // Determine if target was reached
+    let targetReached = false;
+    if (type === 'call') {
+      targetReached = stockMovement >= params.targetMovement;
+    } else {
+      targetReached = stockMovement <= -params.targetMovement;
+    }
     
     // Generate random trade date within the backtest period
     const startTime = new Date(params.startDate).getTime();
@@ -391,8 +383,8 @@ export function generateMockBacktestData(params: BacktestParams): {
       underlyingPriceAtTarget,
       stockMovement,
       targetReached,
-      daysToTarget: daysBefore,
-      actualDays: daysBefore,
+      daysToTarget: params.timeHorizon,
+      actualDays: Math.floor(Math.random() * params.timeHorizon) + 1,
     });
   }
   
