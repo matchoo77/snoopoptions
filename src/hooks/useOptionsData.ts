@@ -77,15 +77,23 @@ export function useOptionsData() {
       polygonActivitiesCount: polygonActivities.length,
       eodActivitiesCount: eodActivities.length,
       isConnected,
-      currentDataSource: dataSource
+      currentDataSource: dataSource,
+      shouldUseRealtime: hasValidApiKey && !isMarketClosed,
+      marketStatus: { day, hour, isWeekend, isOutsideTradingHours }
     });
     
     // Determine which data source to use
-    if (hasValidApiKey && !isMarketClosed) {
+    if (hasValidApiKey && !isMarketClosed && isConnected) {
       console.log('[useOptionsData] Using real-time Polygon data');
       setDataSource('realtime');
-      // Always try to use real-time data during market hours
       setAllActivities(polygonActivities);
+    } else if (hasValidApiKey && !isMarketClosed && !isConnected) {
+      console.log('[useOptionsData] Market open but WebSocket not connected - attempting real-time');
+      setDataSource('realtime');
+      // Keep existing activities while connecting
+      if (polygonActivities.length > 0) {
+        setAllActivities(polygonActivities);
+      }
     } else if (hasValidApiKey && eodActivities.length > 0) {
       console.log('[useOptionsData] Using EOD Polygon data');
       setDataSource('eod');
@@ -103,7 +111,7 @@ export function useOptionsData() {
 
       return () => clearInterval(interval);
     }
-  }, [hasValidApiKey, polygonActivities, eodActivities, isConnected, isMarketClosed, dataSource]);
+  }, [hasValidApiKey, polygonActivities, eodActivities, isConnected, isMarketClosed, day, hour, isWeekend, isOutsideTradingHours]);
 
   // Fetch data for specific symbol when search changes
   useEffect(() => {
