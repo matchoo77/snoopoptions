@@ -1,5 +1,6 @@
 import React from 'react';
 import { Wifi, WifiOff, AlertCircle, ExternalLink, Clock, Database, BarChart3 } from 'lucide-react';
+import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
 
 interface DataSourceIndicatorProps {
   isConnected: boolean;
@@ -17,10 +18,7 @@ export function DataSourceIndicator({
   error 
 }: DataSourceIndicatorProps) {
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
-  const hasValidApiKey = polygonApiKey && 
-    polygonApiKey.length >= 20 && 
-    polygonApiKey !== 'your_polygon_api_key_here' &&
-    polygonApiKey !== 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
+  const hasValidApiKey = isValidPolygonApiKey(polygonApiKey);
   
   // Enhanced debug for environment variables
   console.log('Polygon API key status:', {
@@ -122,13 +120,9 @@ export function DataSourceIndicator({
             <h3 className="text-sm font-medium text-yellow-800 mb-1">
               API Key Not Configured
             </h3>
-            <p className="text-sm text-yellow-700">
-              Please set a valid Polygon.io API key. Current key length: {polygonApiKey?.length || 0} characters
-              {polygonApiKey && polygonApiKey.length <= 10 && ' (too short)'}
-            </p>
             <p className="text-sm text-yellow-700 mb-3">
-              Your trading dog is practicing with toy bones! 🦴 To start the real hunt for unusual options activity, 
-              you'll need to configure your Polygon.io API key in the project settings.
+              Please configure a valid Polygon.io API key to access real market data. 
+              Current key: {polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'Not set'}
             </p>
             <div className="flex items-center space-x-4 text-xs">
               <a

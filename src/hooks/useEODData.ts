@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { OptionsActivity } from '../types/options';
 import { PolygonEODService } from '../lib/polygonEOD';
+import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
 
 interface UseEODDataProps {
   apiKey: string;
@@ -25,7 +26,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       keyPreview: apiKey ? `${apiKey.substring(0, 8)}...` : 'none'
     });
     
-    if (!apiKey || apiKey.length < 20 || apiKey === 'your_polygon_api_key_here' || apiKey === 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X') {
+    if (!isValidPolygonApiKey(apiKey)) {
       console.log('[useEODData] EOD fetch skipped - invalid API key');
       setError('Polygon API key is required');
       return;

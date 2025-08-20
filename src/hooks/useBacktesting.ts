@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BacktestParams, BacktestResult, BacktestSummary } from '../types/backtesting';
 import { BacktestingEngine, generateMockBacktestData } from '../lib/backtesting';
+import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
 
 export function useBacktesting() {
   const [results, setResults] = useState<BacktestResult[]>([]);
@@ -17,10 +18,10 @@ export function useBacktesting() {
       console.log('Backtest API key check:', {
         hasKey: !!polygonApiKey,
         keyLength: polygonApiKey?.length || 0,
-        keyValid: polygonApiKey && polygonApiKey.length >= 20 && polygonApiKey !== 'your_polygon_api_key_here' && polygonApiKey !== 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X'
+        keyValid: isValidPolygonApiKey(polygonApiKey)
       });
       
-      if (polygonApiKey && polygonApiKey.length >= 20 && polygonApiKey !== 'your_polygon_api_key_here' && polygonApiKey !== 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X') {
+      if (isValidPolygonApiKey(polygonApiKey)) {
         // Use real EOD data if API key is available
         console.log('Running backtest with real Polygon.io data...');
         const engine = new BacktestingEngine(polygonApiKey);

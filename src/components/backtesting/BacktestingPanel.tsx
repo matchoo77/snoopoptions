@@ -4,6 +4,7 @@ import { BacktestParams } from '../../types/backtesting';
 import { useBacktesting } from '../../hooks/useBacktesting';
 import { BacktestResults } from './BacktestResults';
 import { SnoopAlertSetup } from './SnoopAlertSetup';
+import { isValidPolygonApiKey } from '../../lib/apiKeyValidation';
 
 export function BacktestingPanel() {
   const { results, summary, loading, error, runBacktest, clearResults } = useBacktesting();
@@ -280,7 +281,7 @@ export function BacktestingPanel() {
           If no such patterns exist, try adjusting your parameters (lower thresholds, different time periods, etc.).
         </p>
         <p className="text-xs text-blue-600 mt-2">
-          {import.meta.env.VITE_POLYGON_API_KEY && import.meta.env.VITE_POLYGON_API_KEY.length >= 20 && import.meta.env.VITE_POLYGON_API_KEY !== 'your_polygon_api_key_here' && import.meta.env.VITE_POLYGON_API_KEY !== 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X'
+          {isValidPolygonApiKey(import.meta.env.VITE_POLYGON_API_KEY)
             ? '✓ Using real Polygon.io data' 
             : '⚠️ Using mock data (configure VITE_POLYGON_API_KEY for real data)'
           }

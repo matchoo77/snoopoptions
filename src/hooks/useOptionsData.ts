@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { OptionsActivity, FilterOptions } from '../types/options';
 import { generateMockData } from '../data/mockData';
 import { useEODData } from './useEODData';
+import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
 
 export function useOptionsData() {
   const [filters, setFilters] = useState<FilterOptions>({
@@ -19,10 +20,7 @@ export function useOptionsData() {
   });
 
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
-  const hasValidApiKey = polygonApiKey && 
-    polygonApiKey.length >= 20 && 
-    polygonApiKey !== 'your_polygon_api_key_here' &&
-    polygonApiKey !== 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
+  const hasValidApiKey = isValidPolygonApiKey(polygonApiKey);
 
   // Use EOD data hook for real data
   const { 
