@@ -267,24 +267,23 @@ export class BacktestingEngine {
   }
 
   private generateSummary(results: BacktestResult[]): BacktestSummary {
-    // All results are "successful" since we only include trades that preceded actual movements
-    const successfulTrades = results; // All trades are successful by definition
-    const successRate = 100; // Always 100% since we only show trades that preceded movements
+    const successfulTrades = results.filter(r => r.targetReached);
+    const successRate = results.length > 0 ? (successfulTrades.length / results.length) * 100 : 0;
     
     // Calculate averages
     const averageStockMovement = results.reduce((sum, r) => sum + Math.abs(r.stockMovement), 0) / results.length;
-    const averageDaysToTarget = results.reduce((sum, r) => sum + r.actualDays, 0) / (results.length || 1);
+    const averageDaysToTarget = results.reduce((sum, r) => sum + r.actualDays, 0) / results.length;
     
     // Find best and worst trades
     const sortedByMovement = [...results].sort((a, b) => Math.abs(b.stockMovement) - Math.abs(a.stockMovement));
     const bestTrade = sortedByMovement[0] || null;
-    const worstTrade = null; // Remove worst trade since all are successful
+    const worstTrade = sortedByMovement[sortedByMovement.length - 1] || null;
     
     // Breakdown by option type
     const calls = results.filter(r => r.type === 'call');
     const puts = results.filter(r => r.type === 'put');
-    const successfulCalls = calls; // All calls are successful
-    const successfulPuts = puts; // All puts are successful
+    const successfulCalls = calls.filter(r => r.targetReached);
+    const successfulPuts = puts.filter(r => r.targetReached);
     
     // Breakdown by premium size
     const smallPremium = results.filter(r => r.premium < 100000);
@@ -298,35 +297,35 @@ export class BacktestingEngine {
       averageStockMovement: averageStockMovement || 0,
       averageDaysToTarget: averageDaysToTarget || 0,
       bestTrade,
-      worstTrade: null,
+      worstTrade,
       breakdownByType: {
         calls: {
           total: calls.length,
           successful: successfulCalls.length,
-          rate: 100, // Always 100% since we only show successful patterns
+          rate: calls.length > 0 ? (successfulCalls.length / calls.length) * 100 : 0,
         },
         puts: {
           total: puts.length,
           successful: successfulPuts.length,
-          rate: 100, // Always 100% since we only show successful patterns
+          rate: puts.length > 0 ? (successfulPuts.length / puts.length) * 100 : 0,
         },
       },
       breakdownBySector: {}, // Would need sector mapping
       breakdownByPremium: {
         small: {
           total: smallPremium.length,
-          successful: smallPremium.length,
-          rate: 100,
+          successful: smallPremium.filter(r => r.targetReached).length,
+          rate: smallPremium.length > 0 ? (smallPremium.filter(r => r.targetReached).length / smallPremium.length) * 100 : 0,
         },
         medium: {
           total: mediumPremium.length,
-          successful: mediumPremium.length,
-          rate: 100,
+          successful: mediumPremium.filter(r => r.targetReached).length,
+          rate: mediumPremium.length > 0 ? (mediumPremium.filter(r => r.targetReached).length / mediumPremium.length) * 100 : 0,
         },
         large: {
           total: largePremium.length,
-          successful: largePremium.length,
-          rate: 100,
+          successful: largePremium.filter(r => r.targetReached).length,
+          rate: largePremium.length > 0 ? (largePremium.filter(r => r.targetReached).length / largePremium.length) * 100 : 0,
         },
       },
     };
