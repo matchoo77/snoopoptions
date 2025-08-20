@@ -64,7 +64,7 @@ export function DataSourceIndicator({
         </div>
       </div>
     );
-  }</parameter>
+  }
   
   if (hasValidApiKey && isMarketClosed) {
     return (
