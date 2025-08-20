@@ -270,7 +270,7 @@ export function BacktestResults({ results, summary, params, onCreateAlert }: Bac
       {/* Detailed Results Table */}
       {results.length > 0 && (
         <div className="bg-white rounded-lg border overflow-hidden">
-              🐕 Want Your Trading Dog to Bark When These Patterns Appear?
+          <div className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-purple-50">
             <h3 className="text-lg font-semibold text-gray-900">Detailed Trade Results</h3>
             <p className="text-sm text-gray-600">
               Set up a Snoop Alert to catch these same patterns in real-time - potentially before the next big move!
