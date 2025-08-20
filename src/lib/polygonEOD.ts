@@ -249,21 +249,28 @@ export class PolygonEODService {
         // Get EOD data for each contract
         for (const contract of contractsToCheck) {
           const ticker = this.buildOptionsTicker(contract);
-          console.log(`[PolygonEOD] Checking contract: ${ticker}`);
+          console.log(`[PolygonEOD] Processing contract ${contractsToCheck.indexOf(contract) + 1}/${contractsToCheck.length}: ${ticker}`);
           const aggregates = await this.getOptionsAggregates(ticker, date);
           
           if (aggregates.length > 0) {
+            console.log(`[PolygonEOD] Found aggregate data for ${ticker}:`, aggregates[0]);
             const agg = aggregates[0];
             const activity = this.convertAggregateToActivity(agg, contract, date);
             
             if (activity && this.isUnusualActivity(activity)) {
               console.log(`[PolygonEOD] Found unusual activity: ${ticker} - Volume: ${activity.volume}, Premium: $${activity.premium.toFixed(0)}`);
               activities.push(activity);
+            } else if (activity) {
+              console.log(`[PolygonEOD] Activity not unusual: ${ticker} - Volume: ${activity.volume}, Premium: $${activity.premium.toFixed(0)}`);
+            } else {
+              console.log(`[PolygonEOD] Failed to convert aggregate to activity for ${ticker}`);
             }
+          } else {
+            console.log(`[PolygonEOD] No aggregate data found for ${ticker} on ${date}`);
           }
           
           // Reduced delay for paid subscription
-          await new Promise(resolve => setTimeout(resolve, 200)); // Reduced to 200ms for paid tier
+          await new Promise(resolve => setTimeout(resolve, 100)); // Reduced to 100ms for paid tier
         }
       } catch (error) {
         console.error(`[PolygonEOD] Error scanning ${symbol}:`, error);
@@ -372,8 +379,22 @@ export class PolygonEODService {
     date: string
   ): OptionsActivity | null {
     try {
+      console.log(`[PolygonEOD] Converting aggregate for ${contract.ticker}:`, {
+        volume: agg.v,
+        close: agg.c,
+        vwap: agg.vw,
+        timestamp: agg.t
+      });
+      
       const volume = agg.v || 0;
       const lastPrice = agg.c || agg.vw || 0;
+      
+      // Skip if no meaningful data
+      if (volume === 0 || lastPrice === 0) {
+        console.log(`[PolygonEOD] Skipping ${contract.ticker} - no volume or price data`);
+        return null;
+      }
+      
       const bid = lastPrice - 0.05;
       const ask = lastPrice + 0.05;
       const premium = volume * lastPrice * 100;
@@ -411,6 +432,14 @@ export class PolygonEODService {
         sentiment: this.calculateSentiment(contract.contract_type, delta, volume),
       };
 
+      console.log(`[PolygonEOD] Created activity for ${contract.ticker}:`, {
+        symbol: activity.symbol,
+        volume: activity.volume,
+        premium: activity.premium,
+        unusual: activity.unusual,
+        blockTrade: activity.blockTrade
+      });
+
       return activity;
     } catch (error) {
       console.error('Error converting aggregate to activity:', error);
@@ -420,12 +449,16 @@ export class PolygonEODService {
 
   // Detect unusual activity based on volume and premium
   private detectUnusualActivity(volume: number, premium: number): boolean {
-    return volume >= 100 || premium >= 10000; // Even lower thresholds for paid subscription
+    const isUnusual = volume >= 50 || premium >= 5000; // Very low thresholds for paid subscription
+    console.log(`[PolygonEOD] Unusual activity check: volume=${volume}, premium=${premium}, unusual=${isUnusual}`);
+    return isUnusual;
   }
 
   // Detect block trades
   private isBlockTrade(volume: number, premium: number): boolean {
-    return volume >= 250 || premium >= 25000; // Lower thresholds for paid subscription
+    const isBlock = volume >= 100 || premium >= 15000; // Lower thresholds for paid subscription
+    console.log(`[PolygonEOD] Block trade check: volume=${volume}, premium=${premium}, block=${isBlock}`);
+    return isBlock;
   }
 
   // Calculate sentiment
