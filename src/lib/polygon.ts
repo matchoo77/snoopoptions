@@ -1,297 +1,219 @@
-import { useState, useEffect, useCallback } from 'react';
-import { OptionsActivity } from '../types/options';
-import { PolygonAPI, detectUnusualActivity, isBlockTrade, calculateSentiment } from '../lib/polygon';
-
-interface UsePolygonDataProps {
-  apiKey: string;
-  symbols?: string[];
-  enabled?: boolean;
+// Polygon.io API client for options data
+export interface OptionsContract {
+  underlying_ticker: string;
+  expiration_date: string;
+  contract_type: 'call' | 'put';
+  strike_price: number;
 }
 
-export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePolygonDataProps) {
-  const [activities, setActivities] = useState<OptionsActivity[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [polygonApi] = useState(() => new PolygonAPI(apiKey, setIsConnected, setError));
-
-  // Process incoming WebSocket data
-  const processWebSocketData = useCallback((data: any[]) => {
-    console.log('[usePolygonData] Processing WebSocket data:', data.length, 'items');
-    if (!Array.isArray(data)) return;
-
-    const newActivities: OptionsActivity[] = [];
-
-    data.forEach((item) => {
-      if (item.sym && item.sym.startsWith('O:')) {
-        console.log('[usePolygonData] Found options trade:', item.sym, 'size:', item.s, 'price:', item.p);
-        const activity = parseOptionsActivity(item);
-        if (activity) {
-            // Subscribe to options trades after successful authentication
-            console.log('[Polygon] Subscribing to options trades...');
-          if (isUnusualActivity(activity)) {
-            console.log('[usePolygonData] Activity is unusual, adding to feed');
-            newActivities.push(activity);
-              // params: 'T.O:*' // All options trades (15-min delayed)
-          } else {
-            console.log('[usePolygonData] Activity not unusual enough');
-          }
-        } else {
-          console.log('[usePolygonData] Failed to parse activity from:', item);
-        }
-      }
-    });
-
-    console.log('[usePolygonData] Generated', newActivities.length, 'new activities');
-    if (newActivities.length > 0) {
-      setActivities(prev => {
-        const combined = [...newActivities, ...prev];
-        console.log('[usePolygonData] Updated activities count:', combined.length);
-        // Keep only the most recent 200 activities
-        return combined.slice(0, 200);
-      });
-    }
-  }, []);
-
-  // Parse Polygon options trade data into our format
-  const parseOptionsActivity = (trade: any): OptionsActivity | null => {
-    try {
-      console.log('[usePolygonData] Parsing trade data:', trade);
-      const symbol = trade.sym; // e.g., "O:AAPL240216C00150000"
-      
-      // Parse options symbol
-      const match = symbol.match(/O:([A-Z]+)(\d{6})([CP])(\d{8})/);
-      if (!match) {
-        console.log('[usePolygonData] Failed to parse symbol:', symbol);
-        return null;
-      }
-
-      const [, underlying, dateStr, callPut, strikeStr] = match;
-      const strike = parseInt(strikeStr) / 1000; // Strike price in dollars
-      const type = callPut === 'C' ? 'call' : 'put';
-      
-      // Parse expiration date
-      const year = 2000 + parseInt(dateStr.substring(0, 2));
-      const month = parseInt(dateStr.substring(2, 4));
-      const day = parseInt(dateStr.substring(4, 6));
-      const expiration = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-
-      const volume = trade.s || Math.floor(Math.random() * 1000) + 100; // Use trade size or generate reasonable volume
-      const lastPrice = trade.p || 0;
-      
-      if (lastPrice === 0) {
-        console.log('[usePolygonData] No price data for trade:', symbol);
-        return null;
-      }
-      
-      const premium = volume * lastPrice * 100; // Convert to total premium
-      
-      console.log('[usePolygonData] Parsed trade:', {
-        underlying,
-        type,
-        strike,
-        volume,
-        lastPrice,
-        premium
-      });
-      
-      // Determine trade location based on bid/ask spread
-      const bid = lastPrice - 0.05; // Simplified - would get from separate quote
-      const ask = lastPrice + 0.05;
-      const midpoint = (bid + ask) / 2;
-      
-      let tradeLocation: 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask';
-      if (lastPrice < bid) tradeLocation = 'below-bid';
-      else if (lastPrice <= bid + 0.01) tradeLocation = 'at-bid';
-      else if (Math.abs(lastPrice - midpoint) <= 0.02) tradeLocation = 'midpoint';
-      else if (lastPrice >= ask - 0.01) tradeLocation = 'at-ask';
-      else tradeLocation = 'above-ask';
-
-      // Estimate Greeks (in real implementation, you'd get these from separate API calls)
-      const delta = type === 'call' ? Math.random() * 0.8 + 0.1 : -(Math.random() * 0.8 + 0.1);
-      const gamma = Math.random() * 0.1;
-      const theta = -(Math.random() * 0.5);
-      const vega = Math.random() * 0.3;
-      const impliedVolatility = Math.random() * 0.8 + 0.2;
-
-      const activity: OptionsActivity = {
-        id: `${symbol}-${trade.t || Date.now()}`,
-        symbol: underlying,
-        strike,
-        expiration,
-        type,
-        volume,
-        openInterest: Math.floor(Math.random() * 10000) + 100, // Would need separate API call
-        lastPrice,
-        bid: lastPrice - 0.05,
-        ask: lastPrice + 0.05,
-        impliedVolatility,
-        delta,
-        gamma,
-        theta,
-        vega,
-        premium,
-        tradeLocation,
-        timestamp: new Date(trade.t || Date.now()).toISOString(),
-        unusual: detectUnusualActivity(volume, 500, 1000, premium), // Simplified detection
-        blockTrade: isBlockTrade(volume, premium),
-        sentiment: calculateSentiment(type, delta, volume),
-      };
-
-      return activity;
-    } catch (error) {
-      console.error('Error parsing options activity:', error);
-      return null;
-    }
+export interface OptionsQuote {
+  ticker: string;
+  last_trade?: {
+    price: number;
+    timestamp: number;
   };
-
-  // Simple unusual activity detection
-  const isUnusualActivity = (activity: OptionsActivity): boolean => {
-    // Much more lenient thresholds for paid subscription
-    const isUnusual = activity.volume >= 5 || activity.premium >= 500 || activity.unusual;
-    console.log('[usePolygonData] Unusual activity check:', {
-      symbol: activity.symbol,
-      volume: activity.volume,
-      premium: activity.premium,
-      unusual: activity.unusual,
-      result: isUnusual
-    });
-    return isUnusual;
+  last_quote?: {
+    bid: number;
+    ask: number;
   };
+  open_interest?: number;
+  implied_volatility?: number;
+  delta?: number;
+  gamma?: number;
+  theta?: number;
+  vega?: number;
+}
 
-  // Connect to Polygon WebSocket
-  useEffect(() => {
-    console.log('[usePolygonData] WebSocket connection check:', {
-      enabled,
-      hasApiKey: !!apiKey,
-      apiKeyValid: apiKey && !apiKey.includes('your_polygon_api_key'),
-      apiKeyLength: apiKey?.length || 0
-    });
-    
-    if (!enabled || !apiKey || apiKey.includes('your_polygon_api_key')) {
-      if (!enabled) {
-        console.log('[usePolygonData] WebSocket disabled');
-        setError(null);
-      } else {
-        console.log('[usePolygonData] Invalid API key for WebSocket');
-        setError('Valid Polygon API key is required');
-      }
+export class PolygonAPI {
+  private apiKey: string;
+  private ws: WebSocket | null = null;
+  private setIsConnected: (connected: boolean) => void;
+  private setError: (error: string | null) => void;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectDelay = 1000;
+
+  constructor(
+    apiKey: string,
+    setIsConnected: (connected: boolean) => void,
+    setError: (error: string | null) => void
+  ) {
+    this.apiKey = apiKey;
+    this.setIsConnected = setIsConnected;
+    this.setError = setError;
+  }
+
+  connectWebSocket(onData: (data: any[]) => void, onError?: (error: string) => void) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      console.log('[Polygon] WebSocket already connected');
       return;
     }
 
-    console.log('[usePolygonData] Starting WebSocket connection...');
-    setError(null);
-    
-    polygonApi.connectWebSocket(
-      (data) => {
-        console.log('[usePolygonData] Received WebSocket data:', data);
-        processWebSocketData(data);
-      },
-      (error) => {
-        console.log('[usePolygonData] WebSocket error:', error);
-        // Error handling is now done in polygon.ts
-      }
-    );
+    console.log('[Polygon] Connecting to options WebSocket...');
+    this.ws = new WebSocket('wss://socket.polygon.io/options');
 
-    return () => {
-      console.log('[usePolygonData] Disconnecting WebSocket...');
-      polygonApi.disconnect();
-      setIsConnected(false);
+    this.ws.onopen = () => {
+      console.log('[Polygon] ✅ WebSocket connected');
+      this.setIsConnected(true);
+      this.setError(null);
+      this.reconnectAttempts = 0;
+
+      // Authenticate
+      const authMessage = {
+        action: 'auth',
+        params: this.apiKey
+      };
+      console.log('[Polygon] 🔐 Authenticating...');
+      this.ws?.send(JSON.stringify(authMessage));
     };
-  }, [apiKey, enabled, polygonApi, processWebSocketData]);
 
-  // Fetch initial data for specific symbols
-  const fetchSymbolData = useCallback(async (symbol: string) => {
+    this.ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('[Polygon] 📨 Received message:', data);
+
+        if (Array.isArray(data)) {
+          data.forEach(msg => {
+            if (msg.ev === 'status') {
+              if (msg.status === 'auth_success') {
+                console.log('[Polygon] ✅ Authentication successful');
+                
+                // Subscribe to options trades
+                const subscribeMessage = {
+                  action: 'subscribe',
+                  params: 'T.O:*' // All options trades (15-min delayed)
+                };
+                console.log('[Polygon] 📡 Subscribing to options trades...');
+                this.ws?.send(JSON.stringify(subscribeMessage));
+              } else if (msg.status === 'auth_failed') {
+                console.log('[Polygon] ❌ Authentication failed');
+                this.setError('Authentication failed. Please check your API key.');
+                this.setIsConnected(false);
+              } else if (msg.status === 'success' && msg.message?.includes('subscribed')) {
+                console.log('[Polygon] ✅ Successfully subscribed to options trades');
+              }
+            } else if (msg.ev === 'T' && msg.sym?.startsWith('O:')) {
+              console.log('[Polygon] 📈 Options trade received:', msg.sym, 'size:', msg.s, 'price:', msg.p);
+            }
+          });
+
+          // Pass all data to the handler
+          onData(data);
+        }
+      } catch (error) {
+        console.error('[Polygon] Error parsing WebSocket message:', error);
+      }
+    };
+
+    this.ws.onclose = (event) => {
+      console.log('[Polygon] WebSocket closed:', event.code, event.reason);
+      this.setIsConnected(false);
+      
+      if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+        console.log(`[Polygon] Attempting to reconnect (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})...`);
+        setTimeout(() => {
+          this.reconnectAttempts++;
+          this.connectWebSocket(onData, onError);
+        }, this.reconnectDelay * Math.pow(2, this.reconnectAttempts));
+      }
+    };
+
+    this.ws.onerror = (error) => {
+      console.error('[Polygon] WebSocket error:', error);
+      this.setError('WebSocket connection failed. Please verify your Polygon.io API key and subscription.');
+      this.setIsConnected(false);
+      onError?.('WebSocket connection failed');
+    };
+  }
+
+  disconnect() {
+    if (this.ws) {
+      console.log('[Polygon] Disconnecting WebSocket...');
+      this.ws.close(1000, 'User disconnected');
+      this.ws = null;
+    }
+    this.setIsConnected(false);
+  }
+
+  async getOptionsContracts(symbol: string): Promise<OptionsContract[]> {
     try {
-      setError(null);
-      
-      // Get options contracts for the symbol
-      const contracts = await polygonApi.getOptionsContracts(symbol);
-      
-      // Get quotes for the most active contracts (limit to 20 for performance)
-      const activeContracts = contracts.slice(0, 20);
-      const tickers = activeContracts.map(contract => 
-        `O:${contract.underlying_ticker}${contract.expiration_date.replace(/-/g, '').substring(2)}${contract.contract_type.toUpperCase().charAt(0)}${(contract.strike_price * 1000).toString().padStart(8, '0')}`
+      const response = await fetch(
+        `https://api.polygon.io/v3/reference/options/contracts?underlying_ticker=${symbol}&limit=1000&apikey=${this.apiKey}`
       );
       
-      if (tickers.length > 0) {
-        const quotes = await polygonApi.getOptionsQuotes(tickers);
-        
-        // Convert quotes to activities
-        const symbolActivities: OptionsActivity[] = quotes
-          .map(quote => convertQuoteToActivity(quote, activeContracts))
-          .filter((activity): activity is OptionsActivity => activity !== null)
-          .filter(isUnusualActivity);
-
-        setActivities(prev => {
-          const filtered = prev.filter(activity => activity.symbol !== symbol);
-          return [...symbolActivities, ...filtered].slice(0, 200);
-        });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      
+      const data = await response.json();
+      return data.results || [];
     } catch (error) {
-      console.error('Error fetching symbol data:', error);
-      setError(`Failed to fetch data for ${symbol}`);
+      console.error('Error fetching options contracts:', error);
+      throw error;
     }
-  }, [polygonApi]);
+  }
 
-  // Convert Polygon quote to our activity format
-  const convertQuoteToActivity = (quote: OptionsQuote, contracts: OptionsContract[]): OptionsActivity | null => {
+  async getOptionsQuotes(tickers: string[]): Promise<OptionsQuote[]> {
     try {
-      // Find matching contract
-      const contract = contracts.find(c => quote.ticker.includes(c.underlying_ticker));
-      if (!contract) return null;
-
-      const volume = Math.floor(Math.random() * 2000) + 100; // Would need separate volume API call
-      const lastPrice = quote.last_trade?.price || (quote.last_quote ? (quote.last_quote.bid + quote.last_quote.ask) / 2 : 0);
-      const premium = volume * lastPrice * 100;
+      const quotes: OptionsQuote[] = [];
       
-      // Determine trade location
-      const bid = quote.last_quote?.bid || lastPrice - 0.05;
-      const ask = quote.last_quote?.ask || lastPrice + 0.05;
-      const midpoint = (bid + ask) / 2;
+      // Batch requests to avoid rate limits
+      for (let i = 0; i < tickers.length; i += 10) {
+        const batch = tickers.slice(i, i + 10);
+        const tickerParam = batch.join(',');
+        
+        const response = await fetch(
+          `https://api.polygon.io/v3/snapshot/options/${tickerParam}?apikey=${this.apiKey}`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.results) {
+            quotes.push(...data.results);
+          }
+        }
+        
+        // Small delay between batches
+        if (i + 10 < tickers.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
       
-      let tradeLocation: 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask';
-      if (lastPrice < bid) tradeLocation = 'below-bid';
-      else if (lastPrice <= bid + 0.01) tradeLocation = 'at-bid';
-      else if (Math.abs(lastPrice - midpoint) <= 0.02) tradeLocation = 'midpoint';
-      else if (lastPrice >= ask - 0.01) tradeLocation = 'at-ask';
-      else tradeLocation = 'above-ask';
-
-      const activity: OptionsActivity = {
-        id: `${quote.ticker}-${Date.now()}-${Math.random()}`,
-        symbol: contract.underlying_ticker,
-        strike: contract.strike_price,
-        expiration: contract.expiration_date,
-        type: contract.contract_type,
-        volume,
-        openInterest: quote.open_interest || Math.floor(Math.random() * 10000) + 100,
-        lastPrice,
-        bid,
-        ask,
-        impliedVolatility: quote.implied_volatility || Math.random() * 0.8 + 0.2,
-        delta: quote.delta || (contract.contract_type === 'call' ? Math.random() * 0.8 + 0.1 : -(Math.random() * 0.8 + 0.1)),
-        gamma: quote.gamma || Math.random() * 0.1,
-        theta: quote.theta || -(Math.random() * 0.5),
-        vega: quote.vega || Math.random() * 0.3,
-        premium,
-        tradeLocation,
-        timestamp: new Date(quote.last_trade?.timestamp || Date.now()).toISOString(),
-        unusual: detectUnusualActivity(volume, 500, quote.open_interest || 1000, premium),
-        blockTrade: isBlockTrade(volume, premium),
-        sentiment: calculateSentiment(contract.contract_type, quote.delta || 0, volume),
-      };
-
-      return activity;
+      return quotes;
     } catch (error) {
-      console.error('Error converting quote to activity:', error);
-      return null;
+      console.error('Error fetching options quotes:', error);
+      throw error;
     }
-  };
+  }
+}
 
-  return {
-    activities,
-    isConnected,
-    error,
-    fetchSymbolData,
-    disconnect: () => polygonApi.disconnect(),
-  };
+// Utility functions for options analysis
+export function detectUnusualActivity(
+  volume: number,
+  avgVolume: number,
+  openInterest: number,
+  premium: number
+): boolean {
+  const volumeRatio = avgVolume > 0 ? volume / avgVolume : 1;
+  const oiRatio = openInterest > 0 ? volume / openInterest : 0;
+  
+  return (
+    volumeRatio >= 2 || // Volume 2x average
+    oiRatio >= 0.5 || // Volume is 50%+ of open interest
+    premium >= 50000 // Premium over $50k
+  );
+}
+
+export function isBlockTrade(volume: number, premium: number): boolean {
+  return volume >= 100 || premium >= 100000; // 100+ contracts or $100k+ premium
+}
+
+export function calculateSentiment(
+  type: 'call' | 'put',
+  delta: number,
+  volume: number
+): 'bullish' | 'bearish' | 'neutral' {
+  if (type === 'call' && delta > 0.3) return 'bullish';
+  if (type === 'put' && delta < -0.3) return 'bearish';
+  return 'neutral';
 }
