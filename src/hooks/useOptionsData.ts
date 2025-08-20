@@ -19,7 +19,10 @@ export function useOptionsData() {
   });
 
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
-  const hasValidApiKey = polygonApiKey && polygonApiKey.length >= 20 && !polygonApiKey.includes('your_polygon_api_key');
+  const hasValidApiKey = polygonApiKey && 
+    polygonApiKey.length >= 20 && 
+    !polygonApiKey.includes('your_polygon_api_key') &&
+    !polygonApiKey.includes('K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X');
 
   // Use EOD data hook for real data
   const { 
