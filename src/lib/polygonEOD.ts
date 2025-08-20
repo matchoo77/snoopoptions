@@ -449,14 +449,14 @@ export class PolygonEODService {
 
   // Detect unusual activity based on volume and premium
   private detectUnusualActivity(volume: number, premium: number): boolean {
-    const isUnusual = volume >= 50 || premium >= 5000; // Very low thresholds for paid subscription
+    const isUnusual = volume >= 10 || premium >= 1000; // Even lower thresholds for paid subscription
     console.log(`[PolygonEOD] Unusual activity check: volume=${volume}, premium=${premium}, unusual=${isUnusual}`);
     return isUnusual;
   }
 
   // Detect block trades
   private isBlockTrade(volume: number, premium: number): boolean {
-    const isBlock = volume >= 100 || premium >= 15000; // Lower thresholds for paid subscription
+    const isBlock = volume >= 50 || premium >= 10000; // Lower thresholds for paid subscription
     console.log(`[PolygonEOD] Block trade check: volume=${volume}, premium=${premium}, block=${isBlock}`);
     return isBlock;
   }
