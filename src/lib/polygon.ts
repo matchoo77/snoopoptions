@@ -22,14 +22,18 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
     const newActivities: OptionsActivity[] = [];
 
     data.forEach((item) => {
+      if (item.sym && item.sym.startsWith('O:')) {
         console.log('[usePolygonData] Found options trade:', item.sym, 'size:', item.s, 'price:', item.p);
         const activity = parseOptionsActivity(item);
+        if (activity) {
             // Subscribe to options trades after successful authentication
             console.log('[Polygon] Subscribing to options trades...');
           if (isUnusualActivity(activity)) {
             console.log('[usePolygonData] Activity is unusual, adding to feed');
-              params: 'T.O:*' // All options trades (15-min delayed)
+            newActivities.push(activity);
+              // params: 'T.O:*' // All options trades (15-min delayed)
             console.log('[Polygon] 🚀 Now receiving 15-minute delayed options trades');
+          } else {
             console.log('[usePolygonData] Activity not unusual enough');
           }
         } else {
