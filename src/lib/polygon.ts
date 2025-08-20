@@ -180,7 +180,7 @@ export class PolygonAPI {
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('[Polygon] WebSocket message received:', data);
+          console.log('[Polygon] WebSocket message received:', data.length, 'items');
           
           // Handle authentication response
           if (data[0]?.ev === 'status' && data[0]?.status === 'auth_success') {
@@ -197,7 +197,7 @@ export class PolygonAPI {
           
           // Process actual trade/quote data
           if (data.length > 0 && (data[0]?.ev === 'T' || data[0]?.ev === 'Q')) {
-            console.log('[Polygon] Processing trade/quote data:', data.length, 'items');
+            console.log('[Polygon] Processing trade/quote data:', data.length, 'items', data.slice(0, 3));
           }
           
           onMessage(data);

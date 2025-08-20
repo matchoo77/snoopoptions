@@ -81,25 +81,15 @@ export function useOptionsData() {
     });
     
     // Determine which data source to use
-    if (hasValidApiKey && !isMarketClosed && isConnected) {
+    if (hasValidApiKey && !isMarketClosed) {
       console.log('[useOptionsData] Using real-time Polygon data');
       setDataSource('realtime');
-      // Use real-time data if available, otherwise fall back to EOD
-      setAllActivities(polygonActivities.length > 0 ? polygonActivities : eodActivities);
+      // Always try to use real-time data during market hours
+      setAllActivities(polygonActivities);
     } else if (hasValidApiKey && eodActivities.length > 0) {
       console.log('[useOptionsData] Using EOD Polygon data');
       setDataSource('eod');
       setAllActivities(eodActivities);
-    } else if (hasValidApiKey && !isMarketClosed) {
-      // API key is configured and market is open - try real-time first
-      console.log('[useOptionsData] API key configured, attempting real-time connection...');
-      setDataSource('realtime');
-      setAllActivities(eodActivities); // Use EOD as fallback while connecting
-    } else if (hasValidApiKey) {
-      // Market closed, use EOD data
-      console.log('[useOptionsData] Market closed, using EOD data...');
-      setDataSource('eod');
-      setAllActivities(eodActivities); // May be empty initially
     } else {
       // Fall back to mock data
       console.log('[useOptionsData] Using mock data - API key not configured or invalid');
@@ -113,7 +103,7 @@ export function useOptionsData() {
 
       return () => clearInterval(interval);
     }
-  }, [hasValidApiKey, polygonActivities, eodActivities, isConnected, isMarketClosed]);
+  }, [hasValidApiKey, polygonActivities, eodActivities, isConnected, isMarketClosed, dataSource]);
 
   // Fetch data for specific symbol when search changes
   useEffect(() => {
