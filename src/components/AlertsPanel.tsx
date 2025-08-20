@@ -211,7 +211,7 @@ export function AlertsPanel({ activities }: AlertsPanelProps) {
           <div className="mt-2 flex items-center text-xs text-red-600">
             <Clock className="w-3 h-3 mr-1" />
             <span>Tracking: {snoopAlerts.tradeLocations.join(', ')} trades</span>
-          </p>
+          </div>
         </div>
       )}
     </div>
