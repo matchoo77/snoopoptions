@@ -377,7 +377,7 @@ export function BacktestResults({ results, summary, params, onCreateAlert }: Bac
             <h4 className="font-medium text-blue-800 mb-2">Trading Strategy</h4>
             <ul className="space-y-1 text-blue-700">
               <li>• Watch for similar patterns 1-3 days before potential {formatPercentage(params.targetMovement)} moves</li>
-              <li>• Focus on unusual activity with premium > {formatCurrency(params.minPremium)}</li>
+              <li>• Focus on unusual activity with premium &gt; {formatCurrency(params.minPremium)}</li>
               <li>• Average stock movement after patterns: {formatPercentage(summary.averageStockMovement)}</li>
             </ul>
           </div>
