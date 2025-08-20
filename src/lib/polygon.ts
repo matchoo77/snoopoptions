@@ -185,10 +185,12 @@ export class PolygonAPI {
           // Handle subscription confirmation
           if (data[0]?.ev === 'status' && data[0]?.status === 'success') {
             console.log('Polygon WebSocket subscription confirmed');
-            console.log('Now receiving 15-minute delayed options data');
+            console.log('Now receiving 15-minute delayed options data with paid subscription');
             return;
           }
           
+          // Log all incoming data for debugging
+          console.log('Polygon WebSocket raw data:', data);
           onMessage(data);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
