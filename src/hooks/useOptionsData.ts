@@ -25,6 +25,14 @@ export function useOptionsData() {
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
   const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here';
   
+  // Check if market is open for real-time data
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+  const hour = now.getHours();
+  const isWeekend = day === 0 || day === 6;
+  const isOutsideTradingHours = hour < 4 || hour > 20; // Pre-market starts at 4 AM ET, after-hours ends at 8 PM ET
+  const isMarketClosed = isWeekend || isOutsideTradingHours;
+
   console.log('[useOptionsData] === POLYGON API KEY DEBUG ===');
   console.log('[useOptionsData] Raw env var:', import.meta.env.VITE_POLYGON_API_KEY);
   console.log('[useOptionsData] Processed key:', polygonApiKey);
@@ -61,14 +69,6 @@ export function useOptionsData() {
     symbols: filters.symbols,
     enabled: hasValidApiKey // Always enable EOD as fallback
   });
-
-  // Check if market is open for real-time data
-  const now = new Date();
-  const day = now.getDay(); // 0 = Sunday, 6 = Saturday
-  const hour = now.getHours();
-  const isWeekend = day === 0 || day === 6;
-  const isOutsideTradingHours = hour < 4 || hour > 20; // Pre-market starts at 4 AM ET, after-hours ends at 8 PM ET
-  const isMarketClosed = isWeekend || isOutsideTradingHours;
 
   useEffect(() => {
     console.log('[useOptionsData] Data Source Logic:', {
