@@ -32,7 +32,6 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
             console.log('[usePolygonData] Activity is unusual, adding to feed');
             newActivities.push(activity);
               // params: 'T.O:*' // All options trades (15-min delayed)
-            console.log('[Polygon] 🚀 Now receiving 15-minute delayed options trades');
           } else {
             console.log('[usePolygonData] Activity not unusual enough');
           }
