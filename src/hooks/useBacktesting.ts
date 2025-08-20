@@ -17,10 +17,10 @@ export function useBacktesting() {
       console.log('Backtest API key check:', {
         hasKey: !!polygonApiKey,
         keyLength: polygonApiKey?.length || 0,
-        keyValid: polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here'
+        keyValid: polygonApiKey && polygonApiKey.length >= 20 && !polygonApiKey.includes('your_polygon_api_key')
       });
       
-      if (polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here') {
+      if (polygonApiKey && polygonApiKey.length >= 20 && !polygonApiKey.includes('your_polygon_api_key')) {
         // Use real EOD data if API key is available
         console.log('Running backtest with real Polygon.io data...');
         const engine = new BacktestingEngine(polygonApiKey);

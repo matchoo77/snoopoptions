@@ -17,7 +17,7 @@ export function DataSourceIndicator({
   error 
 }: DataSourceIndicatorProps) {
   const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
-  const hasValidApiKey = polygonApiKey && polygonApiKey.length > 10 && polygonApiKey !== 'your_polygon_api_key_here';
+  const hasValidApiKey = polygonApiKey && polygonApiKey.length >= 20 && !polygonApiKey.includes('your_polygon_api_key');
   
   // Enhanced debug for environment variables
   console.log('Polygon API key status:', {

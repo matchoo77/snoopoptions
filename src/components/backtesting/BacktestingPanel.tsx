@@ -280,7 +280,7 @@ export function BacktestingPanel() {
           If no such patterns exist, try adjusting your parameters (lower thresholds, different time periods, etc.).
         </p>
         <p className="text-xs text-blue-600 mt-2">
-          {import.meta.env.VITE_POLYGON_API_KEY && import.meta.env.VITE_POLYGON_API_KEY.length > 10 
+          {import.meta.env.VITE_POLYGON_API_KEY && import.meta.env.VITE_POLYGON_API_KEY.length >= 20 && !import.meta.env.VITE_POLYGON_API_KEY.includes('your_polygon_api_key')
             ? '✓ Using real Polygon.io data' 
             : '⚠️ Using mock data (configure VITE_POLYGON_API_KEY for real data)'
           }
