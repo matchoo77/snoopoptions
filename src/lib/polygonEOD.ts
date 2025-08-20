@@ -343,6 +343,19 @@ export class PolygonEODService {
     return `O:${contract.underlying_ticker}${dateStr}${callPut}${strikeStr}`;
   }
 
+  // Calculate trade location relative to bid/ask
+  private getTradeLocation(lastPrice: number, bid: number, ask: number): 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask' {
+    const midpoint = (bid + ask) / 2;
+    const bidThreshold = bid + (ask - bid) * 0.1; // 10% above bid
+    const askThreshold = ask - (ask - bid) * 0.1; // 10% below ask
+    
+    if (lastPrice < bid) return 'below-bid';
+    if (lastPrice <= bidThreshold) return 'at-bid';
+    if (lastPrice >= askThreshold) return 'at-ask';
+    if (lastPrice > ask) return 'above-ask';
+    return 'midpoint';
+  }
+
   // Convert Polygon aggregate to our OptionsActivity format
   private convertAggregateToActivity(
     agg: PolygonOptionsAgg, 
@@ -352,6 +365,8 @@ export class PolygonEODService {
     try {
       const volume = agg.v || 0;
       const lastPrice = agg.c || agg.vw || 0;
+      const bid = lastPrice - 0.05;
+      const ask = lastPrice + 0.05;
       const premium = volume * lastPrice * 100;
       
       // Estimate Greeks (in production, you'd get these from separate API calls)
@@ -372,8 +387,9 @@ export class PolygonEODService {
         volume,
         openInterest: Math.floor(Math.random() * 10000) + 100, // Would need separate API call
         lastPrice,
-        bid: lastPrice - 0.05,
-        ask: lastPrice + 0.05,
+        bid,
+        ask,
+        tradeLocation: this.getTradeLocation(lastPrice, bid, ask),
         impliedVolatility,
         delta,
         gamma,

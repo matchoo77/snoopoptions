@@ -15,6 +15,7 @@ export function BacktestingPanel() {
     minPremium: 100000,
     symbols: [], // All symbols
     optionTypes: ['call', 'put'],
+    tradeLocations: ['below-bid', 'at-bid', 'midpoint', 'at-ask', 'above-ask'],
   });
 
   const handleParamChange = (key: keyof BacktestParams, value: any) => {
@@ -36,9 +37,20 @@ export function BacktestingPanel() {
     handleParamChange('optionTypes', newTypes);
   };
 
+  const toggleTradeLocation = (location: 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask') => {
+    const newLocations = params.tradeLocations.includes(location)
+      ? params.tradeLocations.filter(l => l !== location)
+      : [...params.tradeLocations, location];
+    handleParamChange('tradeLocations', newLocations);
+  };
+
   const handleRunBacktest = () => {
     if (params.optionTypes.length === 0) {
       alert('Please select at least one option type (calls or puts)');
+      return;
+    }
+    if (params.tradeLocations.length === 0) {
+      alert('Please select at least one trade location');
       return;
     }
     runBacktest(params);
@@ -181,13 +193,38 @@ export function BacktestingPanel() {
             </label>
           </div>
         </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Trade Locations
+          </label>
+          <div className="space-y-1">
+            {[
+              { value: 'below-bid', label: 'Below Bid', color: 'red' },
+              { value: 'at-bid', label: 'At Bid', color: 'orange' },
+              { value: 'midpoint', label: 'Midpoint', color: 'blue' },
+              { value: 'at-ask', label: 'At Ask', color: 'green' },
+              { value: 'above-ask', label: 'Above Ask', color: 'purple' },
+            ].map(({ value, label, color }) => (
+              <label key={value} className="flex items-center text-xs">
+                <input
+                  type="checkbox"
+                  checked={params.tradeLocations.includes(value as any)}
+                  onChange={() => toggleTradeLocation(value as any)}
+                  className="mr-2 text-purple-600 focus:ring-purple-500"
+                />
+                <span className={`text-${color}-600 font-medium`}>{label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Run Backtest Button */}
       <div className="flex items-center justify-center mb-6">
         <button
           onClick={handleRunBacktest}
-          disabled={loading || params.optionTypes.length === 0}
+          disabled={loading || params.optionTypes.length === 0 || params.tradeLocations.length === 0}
           className="flex items-center space-x-2 bg-purple-600 text-white px-6 py-3 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? (

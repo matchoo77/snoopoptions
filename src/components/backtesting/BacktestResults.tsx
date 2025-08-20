@@ -282,6 +282,7 @@ export function BacktestResults({ results, summary, params }: BacktestResultsPro
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Symbol</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trade Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Premium</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock Move</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Target Hit</th>
@@ -302,6 +303,21 @@ export function BacktestResults({ results, summary, params }: BacktestResultsPro
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 font-mono">
                       {formatDate(result.tradeDate)}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        result.tradeLocation === 'below-bid' ? 'bg-red-100 text-red-800' :
+                        result.tradeLocation === 'at-bid' ? 'bg-orange-100 text-orange-800' :
+                        result.tradeLocation === 'midpoint' ? 'bg-blue-100 text-blue-800' :
+                        result.tradeLocation === 'at-ask' ? 'bg-green-100 text-green-800' :
+                        'bg-purple-100 text-purple-800'
+                      }`}>
+                        {result.tradeLocation === 'below-bid' ? 'Below' :
+                         result.tradeLocation === 'at-bid' ? 'Bid' :
+                         result.tradeLocation === 'midpoint' ? 'Mid' :
+                         result.tradeLocation === 'at-ask' ? 'Ask' :
+                         'Above'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900 font-mono">
                       {formatCurrency(result.premium)}

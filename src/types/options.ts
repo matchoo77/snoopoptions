@@ -9,6 +9,7 @@ export interface OptionsActivity {
   lastPrice: number;
   bid: number;
   ask: number;
+  tradeLocation: 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask';
   impliedVolatility: number;
   delta: number;
   gamma: number;
@@ -27,6 +28,7 @@ export interface FilterOptions {
   maxDaysToExpiration: number;
   optionTypes: ('call' | 'put')[];
   sentiment: ('bullish' | 'bearish' | 'neutral')[];
+  tradeLocations: ('below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask')[];
   blockTradesOnly: boolean;
   minOpenInterest: number;
   symbols: string[];

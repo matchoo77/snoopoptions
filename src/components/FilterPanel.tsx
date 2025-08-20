@@ -176,6 +176,37 @@ export function FilterPanel({ filters, onFiltersChange }: FilterPanelProps) {
           </div>
         </div>
 
+        {/* Trade Location */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Trade Location
+          </label>
+          <div className="space-y-1">
+            {[
+              { value: 'below-bid', label: 'Below Bid', color: 'red' },
+              { value: 'at-bid', label: 'At Bid', color: 'orange' },
+              { value: 'midpoint', label: 'Midpoint', color: 'blue' },
+              { value: 'at-ask', label: 'At Ask', color: 'green' },
+              { value: 'above-ask', label: 'Above Ask', color: 'purple' },
+            ].map(({ value, label, color }) => (
+              <label key={value} className="flex items-center text-xs">
+                <input
+                  type="checkbox"
+                  checked={filters.tradeLocations.includes(value as any)}
+                  onChange={() => {
+                    const newLocations = filters.tradeLocations.includes(value as any)
+                      ? filters.tradeLocations.filter(l => l !== value)
+                      : [...filters.tradeLocations, value as any];
+                    onFiltersChange({ ...filters, tradeLocations: newLocations });
+                  }}
+                  className="mr-2 text-blue-600 focus:ring-blue-500"
+                />
+                <span className={`text-${color}-600 font-medium`}>{label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
         {/* Block Trades Only */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">

@@ -4,6 +4,7 @@ export interface BacktestTrade {
   strike: number;
   expiration: string;
   type: 'call' | 'put';
+  tradeLocation: 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask';
   volume: number;
   premium: number;
   tradeDate: string;
@@ -18,6 +19,7 @@ export interface BacktestResult {
   symbol: string;
   tradeDate: string;
   type: 'call' | 'put';
+  tradeLocation: 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask';
   premium: number;
   underlyingPriceAtTrade: number;
   underlyingPriceAtTarget: number;
@@ -56,4 +58,14 @@ export interface BacktestParams {
   minPremium: number;
   symbols: string[]; // Empty array means all symbols
   optionTypes: ('call' | 'put')[];
+  tradeLocations: ('below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask')[];
+}
+
+export interface SnoopAlertConfig {
+  enabled: boolean;
+  minDollarAmount: number;
+  timeWindow: number; // Hours
+  tradeLocations: ('below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask')[];
+  optionTypes: ('call' | 'put')[];
+  symbols: string[]; // Empty means all symbols
 }

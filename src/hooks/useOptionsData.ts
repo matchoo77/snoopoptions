@@ -13,6 +13,7 @@ export function useOptionsData() {
     maxDaysToExpiration: 60,
     optionTypes: ['call', 'put'],
     sentiment: ['bullish', 'bearish', 'neutral'],
+    tradeLocations: ['below-bid', 'at-bid', 'midpoint', 'at-ask', 'above-ask'],
     blockTradesOnly: false,
     minOpenInterest: 0,
     symbols: [],
@@ -126,6 +127,9 @@ export function useOptionsData() {
 
       // Sentiment filter
       if (!filters.sentiment.includes(activity.sentiment)) return false;
+
+      // Trade location filter
+      if (!filters.tradeLocations.includes(activity.tradeLocation)) return false;
 
       // Block trades only filter
       if (filters.blockTradesOnly && !activity.blockTrade) return false;

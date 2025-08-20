@@ -35,7 +35,7 @@ export class BacktestingEngine {
       
       for (const trade of blockTrades) {
         // Only analyze trades that match our option type filter
-        if (params.optionTypes.includes(trade.type)) {
+        if (params.optionTypes.includes(trade.type) && params.tradeLocations.includes(trade.tradeLocation)) {
           const result = await this.analyzeTradeOutcome(trade, params.targetMovement, params.timeHorizon);
           if (result) {
             results.push(result);
@@ -217,6 +217,7 @@ export function generateMockBacktestData(params: BacktestParams): {
   for (let i = 0; i < numTrades; i++) {
     const symbol = symbols[Math.floor(Math.random() * symbols.length)];
     const type = params.optionTypes[Math.floor(Math.random() * params.optionTypes.length)];
+    const tradeLocation = params.tradeLocations[Math.floor(Math.random() * params.tradeLocations.length)];
     const premium = Math.random() * 1000000 + params.minPremium;
     
     // Generate realistic stock movements
@@ -246,6 +247,7 @@ export function generateMockBacktestData(params: BacktestParams): {
       symbol,
       tradeDate,
       type,
+      tradeLocation,
       premium,
       underlyingPriceAtTrade,
       underlyingPriceAtTarget,

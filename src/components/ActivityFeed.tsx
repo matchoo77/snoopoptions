@@ -149,6 +149,9 @@ export function ActivityFeed({
                 Last Price
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Trade Location
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <button
                   onClick={() => handleSort('premium')}
                   className="flex items-center hover:text-gray-700 transition-colors"
@@ -218,6 +221,21 @@ export function ActivityFeed({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                   {formatCurrency(activity.lastPrice)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    activity.tradeLocation === 'below-bid' ? 'bg-red-100 text-red-800' :
+                    activity.tradeLocation === 'at-bid' ? 'bg-orange-100 text-orange-800' :
+                    activity.tradeLocation === 'midpoint' ? 'bg-blue-100 text-blue-800' :
+                    activity.tradeLocation === 'at-ask' ? 'bg-green-100 text-green-800' :
+                    'bg-purple-100 text-purple-800'
+                  }`}>
+                    {activity.tradeLocation === 'below-bid' ? 'Below Bid' :
+                     activity.tradeLocation === 'at-bid' ? 'At Bid' :
+                     activity.tradeLocation === 'midpoint' ? 'Midpoint' :
+                     activity.tradeLocation === 'at-ask' ? 'At Ask' :
+                     'Above Ask'}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                   {formatCurrency(activity.premium)}
