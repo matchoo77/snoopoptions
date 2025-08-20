@@ -11,7 +11,7 @@ export function usePolygonData({ apiKey, symbols = [] }: UsePolygonDataProps) {
   const [activities, setActivities] = useState<OptionsActivity[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [polygonApi] = useState(() => new PolygonAPI(apiKey));
+  const [polygonApi] = useState(() => new PolygonAPI(apiKey, setIsConnected, setError));
 
   // Process incoming WebSocket data
   const processWebSocketData = useCallback((data: any[]) => {

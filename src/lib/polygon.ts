@@ -48,13 +48,17 @@ export class PolygonAPI {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
+  private _setIsConnected?: (connected: boolean) => void;
+  private _setError?: (error: string | null) => void;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, setIsConnected?: (connected: boolean) => void, setError?: (error: string | null) => void) {
     this.config = {
       apiKey,
       baseUrl: 'https://api.polygon.io',
       websocketUrl: 'wss://socket.polygon.io/options',
     };
+    this._setIsConnected = setIsConnected;
+    this._setError = setError;
   }
 
   // Get options contracts for a symbol
@@ -174,7 +178,7 @@ export class PolygonAPI {
           // Handle authentication response
           if (data[0]?.ev === 'status' && data[0]?.status === 'auth_success') {
             console.log('Polygon WebSocket authenticated successfully');
-            setIsConnected(true);
+            this._setIsConnected?.(true);
             return;
           }
           
@@ -192,19 +196,19 @@ export class PolygonAPI {
       
       this.ws.onclose = () => {
         console.log('Polygon WebSocket disconnected');
-        setIsConnected(false);
+        this._setIsConnected?.(false);
         this.handleReconnect(onMessage, onError);
       };
       
       this.ws.onerror = (error) => {
         console.error('Polygon WebSocket connection failed - check API key and subscription');
-        setIsConnected(false);
-        setError('WebSocket connection failed. Please verify your Polygon.io API key and subscription.');
+        this._setIsConnected?.(false);
+        this._setError?.('WebSocket connection failed. Please verify your Polygon.io API key and subscription.');
         if (onError) onError(error);
       };
     } catch (error) {
       console.error('Error connecting to Polygon WebSocket:', error);
-      setError('Failed to establish WebSocket connection');
+      this._setError?.('Failed to establish WebSocket connection');
       if (onError) onError(error as Event);
     }
   }
@@ -228,6 +232,7 @@ export class PolygonAPI {
       this.ws.close();
       this.ws = null;
     }
+    this._setIsConnected?.(false);
   }
 
   // Get market status
