@@ -5,9 +5,10 @@ import { PolygonAPI, detectUnusualActivity, isBlockTrade, calculateSentiment } f
 interface UsePolygonDataProps {
   apiKey: string;
   symbols?: string[];
+  enabled?: boolean;
 }
 
-export function usePolygonData({ apiKey, symbols = [] }: UsePolygonDataProps) {
+export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePolygonDataProps) {
   const [activities, setActivities] = useState<OptionsActivity[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,8 +119,12 @@ export function usePolygonData({ apiKey, symbols = [] }: UsePolygonDataProps) {
 
   // Connect to Polygon WebSocket
   useEffect(() => {
-    if (!apiKey) {
-      setError('Polygon API key is required');
+    if (!enabled || !apiKey || apiKey.includes('your_polygon_api_key')) {
+      if (!enabled) {
+        setError(null);
+      } else {
+        setError('Valid Polygon API key is required');
+      }
       return;
     }
 
@@ -138,7 +143,7 @@ export function usePolygonData({ apiKey, symbols = [] }: UsePolygonDataProps) {
       polygonApi.disconnect();
       setIsConnected(false);
     };
-  }, [apiKey, polygonApi, processWebSocketData]);
+  }, [apiKey, enabled, polygonApi, processWebSocketData]);
 
   // Fetch initial data for specific symbols
   const fetchSymbolData = useCallback(async (symbol: string) => {
