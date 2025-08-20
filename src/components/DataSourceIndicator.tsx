@@ -44,7 +44,10 @@ export function DataSourceIndicator({
     loading,
     error,
     apiKeyLength: polygonApiKey?.length || 0,
-    isMarketClosed
+    isMarketClosed,
+    currentTime: new Date().toLocaleString(),
+    marketHour: new Date().getHours(),
+    marketDay: new Date().getDay()
   });
 
   // Show loading state

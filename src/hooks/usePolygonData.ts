@@ -114,7 +114,7 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
 
   // Simple unusual activity detection
   const isUnusualActivity = (activity: OptionsActivity): boolean => {
-    const isUnusual = activity.volume >= 100 || activity.premium >= 10000 || activity.unusual;
+    const isUnusual = activity.volume >= 10 || activity.premium >= 1000 || activity.unusual;
     console.log('[usePolygonData] Unusual activity check:', {
       symbol: activity.symbol,
       volume: activity.volume,

@@ -437,7 +437,8 @@ export class PolygonEODService {
         volume: activity.volume,
         premium: activity.premium,
         unusual: activity.unusual,
-        blockTrade: activity.blockTrade
+        blockTrade: activity.blockTrade,
+        lastPrice: activity.lastPrice
       });
 
       return activity;
