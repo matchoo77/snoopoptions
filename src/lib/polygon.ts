@@ -148,6 +148,7 @@ export class PolygonAPI {
       this.ws.onopen = () => {
         console.log('Connected to Polygon WebSocket');
         this.reconnectAttempts = 0;
+        this._setIsConnected?.(true);
         
         // Use setTimeout to ensure connection is fully established
         setTimeout(() => {
@@ -163,7 +164,7 @@ export class PolygonAPI {
               if (this.ws && this.ws.readyState === WebSocket.OPEN) {
                 this.ws.send(JSON.stringify({
                   action: 'subscribe',
-                  params: 'T.*, Q.*' // All options trades and quotes
+                  params: 'T.*' // All options trades (15-min delayed for paid subscription)
                 }));
               }
             }, 100);
@@ -178,13 +179,13 @@ export class PolygonAPI {
           // Handle authentication response
           if (data[0]?.ev === 'status' && data[0]?.status === 'auth_success') {
             console.log('Polygon WebSocket authenticated successfully');
-            this._setIsConnected?.(true);
             return;
           }
           
           // Handle subscription confirmation
           if (data[0]?.ev === 'status' && data[0]?.status === 'success') {
             console.log('Polygon WebSocket subscription confirmed');
+            console.log('Now receiving 15-minute delayed options data');
             return;
           }
           

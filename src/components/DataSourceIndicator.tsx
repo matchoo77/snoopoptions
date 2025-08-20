@@ -34,25 +34,6 @@ export function DataSourceIndicator({
   const isOutsideTradingHours = hour < 4 || hour > 20; // Pre-market starts at 4 AM ET, after-hours ends at 8 PM ET
   const isMarketClosed = isWeekend || isOutsideTradingHours;
 
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="flex items-start space-x-3">
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mt-0.5"></div>
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-blue-800 mb-1">
-              Loading EOD Options Data
-            </h3>
-            <p className="text-sm text-blue-700">
-              Fetching unusual options activity from Polygon.io...
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Add debug info
   console.log('DataSourceIndicator debug:', {
     hasValidApiKey,
@@ -65,6 +46,25 @@ export function DataSourceIndicator({
     apiKeyLength: polygonApiKey?.length || 0,
     isMarketClosed
   });
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start space-x-3">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mt-0.5"></div>
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-blue-800 mb-1">
+              Loading Options Data
+            </h3>
+            <p className="text-sm text-blue-700">
+              Connecting to Polygon.io {dataSource === 'realtime' ? '15-minute delayed' : 'EOD'} data feed...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }</parameter>
   
   if (hasValidApiKey && isMarketClosed) {
     return (
@@ -185,10 +185,13 @@ export function DataSourceIndicator({
         <Wifi className="w-5 h-5 text-green-600 mt-0.5" />
         <div className="flex-1">
           <h3 className="text-sm font-medium text-green-800 mb-1">
-            Live Market Data Connected
+            {dataSource === 'realtime' ? '15-Minute Delayed Data Connected' : 'EOD Market Data Connected'}
           </h3>
           <p className="text-sm text-green-700">
-            Receiving real-time unusual options activity from Polygon.io
+            {dataSource === 'realtime' 
+              ? 'Receiving 15-minute delayed options activity from Polygon.io (paid subscription)'
+              : 'Using end-of-day options data from Polygon.io'
+            }
           </p>
         </div>
       </div>

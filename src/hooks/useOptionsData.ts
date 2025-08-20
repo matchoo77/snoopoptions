@@ -47,7 +47,7 @@ export function useOptionsData() {
   } = usePolygonData({ 
     apiKey: polygonApiKey,
     symbols: filters.symbols,
-    enabled: false // Disable WebSocket for now to focus on EOD data
+    enabled: hasValidApiKey // Enable WebSocket for paid subscriptions
   });
 
   // Use EOD data from Polygon
@@ -72,7 +72,7 @@ export function useOptionsData() {
     });
     
     // Determine which data source to use
-    if (hasValidApiKey && polygonActivities.length > 0 && false) { // Disabled WebSocket for now
+    if (hasValidApiKey && polygonActivities.length > 0) {
       console.log('[useOptionsData] Using real-time Polygon data');
       setDataSource('realtime');
       setAllActivities(polygonActivities);
