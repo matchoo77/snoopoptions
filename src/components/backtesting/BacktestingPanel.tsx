@@ -3,6 +3,7 @@ import { BarChart3, Play, RotateCcw, TrendingUp, TrendingDown, Calendar } from '
 import { BacktestParams } from '../../types/backtesting';
 import { useBacktesting } from '../../hooks/useBacktesting';
 import { BacktestResults } from './BacktestResults';
+import { SnoopAlertSetup } from './SnoopAlertSetup';
 
 export function BacktestingPanel() {
   const { results, summary, loading, error, runBacktest, clearResults } = useBacktesting();
@@ -17,6 +18,7 @@ export function BacktestingPanel() {
     optionTypes: ['call', 'put'],
     tradeLocations: ['below-bid', 'at-bid', 'midpoint', 'at-ask', 'above-ask'],
   });
+  const [showAlertSetup, setShowAlertSetup] = useState(false);
 
   const handleParamChange = (key: keyof BacktestParams, value: any) => {
     setParams(prev => ({ ...prev, [key]: value }));
@@ -254,6 +256,16 @@ export function BacktestingPanel() {
           results={results} 
           summary={summary} 
           params={params}
+          onCreateAlert={() => setShowAlertSetup(true)}
+        />
+      )}
+
+      {/* Snoop Alert Setup */}
+      {showAlertSetup && (
+        <SnoopAlertSetup
+          backtestParams={params}
+          backtestSummary={summary}
+          onClose={() => setShowAlertSetup(false)}
         />
       )}
 

@@ -15,17 +15,34 @@ export function AlertsPanel({ activities }: AlertsPanelProps) {
     tradeLocations: ['below-bid', 'at-bid'],
     optionTypes: ['call', 'put'],
     symbols: [],
+    minVolume: 1000,
+    minPremium: 100000,
   });
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [lastAlertCount, setLastAlertCount] = useState(0);
   const [recentTrades, setRecentTrades] = useState<OptionsActivity[]>([]);
 
+  // Load saved alert config on mount
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('snoopAlertConfig');
+    if (savedConfig) {
+      try {
+        const config = JSON.parse(savedConfig);
+        setSnoopAlerts(config);
+      } catch (error) {
+        console.error('Error loading saved alert config:', error);
+      }
+    }
+  }, []);
+
   // Track recent trades within the time window
   useEffect(() => {
     const cutoffTime = new Date(Date.now() - snoopAlerts.timeWindow * 60 * 60 * 1000);
     const recent = activities.filter(activity => 
       new Date(activity.timestamp) > cutoffTime &&
+      activity.volume >= snoopAlerts.minVolume &&
+      activity.premium >= snoopAlerts.minPremium &&
       snoopAlerts.tradeLocations.includes(activity.tradeLocation) &&
       snoopAlerts.optionTypes.includes(activity.type) &&
       (snoopAlerts.symbols.length === 0 || snoopAlerts.symbols.includes(activity.symbol))
@@ -132,6 +149,57 @@ export function AlertsPanel({ activities }: AlertsPanelProps) {
                 }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="24"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Min Volume
+              </label>
+              <input
+                type="number"
+                value={snoopAlerts.minVolume}
+                onChange={(e) => setSnoopAlerts(prev => ({ 
+                  ...prev, 
+                  minVolume: parseInt(e.target.value) || 0 
+                }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="1000"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Min Premium ($)
+              </label>
+              <input
+                type="number"
+                value={snoopAlerts.minPremium}
+                onChange={(e) => setSnoopAlerts(prev => ({ 
+                  ...prev, 
+                  minPremium: parseInt(e.target.value) || 0 
+                }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="100000"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Symbols (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={snoopAlerts.symbols.join(', ')}
+                onChange={(e) => {
+                  const symbols = e.target.value
+                    .split(',')
+                    .map(s => s.trim().toUpperCase())
+                    .filter(s => s.length > 0);
+                  setSnoopAlerts(prev => ({ ...prev, symbols }));
+                }}
+                placeholder="AAPL, TSLA, NVDA (leave empty for all symbols)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>

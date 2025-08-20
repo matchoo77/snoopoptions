@@ -68,4 +68,6 @@ export interface SnoopAlertConfig {
   tradeLocations: ('below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask')[];
   optionTypes: ('call' | 'put')[];
   symbols: string[]; // Empty means all symbols
+  minVolume: number;
+  minPremium: number;
 }

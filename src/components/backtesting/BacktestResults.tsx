@@ -6,9 +6,10 @@ interface BacktestResultsProps {
   results: BacktestResult[];
   summary: BacktestSummary;
   params: BacktestParams;
+  onCreateAlert: () => void;
 }
 
-export function BacktestResults({ results, summary, params }: BacktestResultsProps) {
+export function BacktestResults({ results, summary, params, onCreateAlert }: BacktestResultsProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -88,6 +89,22 @@ export function BacktestResults({ results, summary, params }: BacktestResultsPro
             <DollarSign className="w-8 h-8 text-orange-600" />
           </div>
         </div>
+      </div>
+
+      {/* Create Alert Button */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white text-center">
+        <h3 className="text-lg font-semibold mb-2">
+          🐕 Want Your Trading Dog to Bark When Similar Trades Happen?
+        </h3>
+        <p className="text-blue-100 mb-4 text-sm">
+          Set up a Snoop Alert to get notified when trades matching your backtest criteria occur in real-time!
+        </p>
+        <button
+          onClick={onCreateAlert}
+          className="bg-white text-blue-600 px-6 py-3 rounded-md font-semibold hover:bg-gray-50 transition-colors"
+        >
+          Create Snoop Alert from This Backtest
+        </button>
       </div>
 
       {/* Breakdown Analysis */}
