@@ -127,27 +127,40 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
 
   // Connect to Polygon WebSocket
   useEffect(() => {
+    console.log('[usePolygonData] WebSocket connection check:', {
+      enabled,
+      hasApiKey: !!apiKey,
+      apiKeyValid: apiKey && !apiKey.includes('your_polygon_api_key'),
+      apiKeyLength: apiKey?.length || 0
+    });
+    
     if (!enabled || !apiKey || apiKey.includes('your_polygon_api_key')) {
       if (!enabled) {
+        console.log('[usePolygonData] WebSocket disabled');
         setError(null);
       } else {
+        console.log('[usePolygonData] Invalid API key for WebSocket');
         setError('Valid Polygon API key is required');
       }
       return;
     }
 
+    console.log('[usePolygonData] Starting WebSocket connection...');
     setError(null);
     
     polygonApi.connectWebSocket(
       (data) => {
+        console.log('[usePolygonData] Received WebSocket data:', data);
         processWebSocketData(data);
       },
       (error) => {
+        console.log('[usePolygonData] WebSocket error:', error);
         // Error handling is now done in polygon.ts
       }
     );
 
     return () => {
+      console.log('[usePolygonData] Disconnecting WebSocket...');
       polygonApi.disconnect();
       setIsConnected(false);
     };

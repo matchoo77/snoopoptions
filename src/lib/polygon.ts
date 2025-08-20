@@ -142,17 +142,21 @@ export class PolygonAPI {
 
   // Connect to real-time WebSocket feed
   connectWebSocket(onMessage: (data: any) => void, onError?: (error: Event) => void): void {
+    console.log('[Polygon] Attempting WebSocket connection to:', this.config.websocketUrl);
+    console.log('[Polygon] API key configured:', this.config.apiKey ? `${this.config.apiKey.substring(0, 8)}...` : 'none');
+    
     try {
       this.ws = new WebSocket(this.config.websocketUrl);
       
       this.ws.onopen = () => {
-        console.log('Connected to Polygon WebSocket');
+        console.log('[Polygon] Connected to Polygon WebSocket successfully');
         this.reconnectAttempts = 0;
         this._setIsConnected?.(true);
         
         // Use setTimeout to ensure connection is fully established
         setTimeout(() => {
           if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            console.log('[Polygon] Authenticating with API key...');
             // Authenticate
             this.ws.send(JSON.stringify({
               action: 'auth',
@@ -162,55 +166,60 @@ export class PolygonAPI {
             // Subscribe to options trades and quotes after authentication
             setTimeout(() => {
               if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                console.log('[Polygon] Subscribing to options trades...');
                 this.ws.send(JSON.stringify({
                   action: 'subscribe',
-                  params: 'T.*' // All options trades (15-min delayed for paid subscription)
+                  params: 'T.*,Q.*' // Options trades and quotes (15-min delayed for paid subscription)
                 }));
               }
-            }, 100);
+            }, 500);
           }
-        }, 100);
+        }, 500);
       };
       
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log('[Polygon] WebSocket message received:', data);
           
           // Handle authentication response
           if (data[0]?.ev === 'status' && data[0]?.status === 'auth_success') {
-            console.log('Polygon WebSocket authenticated successfully');
+            console.log('[Polygon] ✅ WebSocket authenticated successfully');
             return;
           }
           
           // Handle subscription confirmation
           if (data[0]?.ev === 'status' && data[0]?.status === 'success') {
-            console.log('Polygon WebSocket subscription confirmed');
-            console.log('Now receiving 15-minute delayed options data with paid subscription');
+            console.log('[Polygon] ✅ WebSocket subscription confirmed');
+            console.log('[Polygon] 🚀 Now receiving 15-minute delayed options data with paid subscription');
             return;
           }
           
-          // Log all incoming data for debugging
-          console.log('Polygon WebSocket raw data:', data);
+          // Process actual trade/quote data
+          if (data.length > 0 && (data[0]?.ev === 'T' || data[0]?.ev === 'Q')) {
+            console.log('[Polygon] Processing trade/quote data:', data.length, 'items');
+          }
+          
           onMessage(data);
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          console.error('[Polygon] Error parsing WebSocket message:', error);
         }
       };
       
       this.ws.onclose = () => {
-        console.log('Polygon WebSocket disconnected');
+        console.log('[Polygon] WebSocket disconnected');
         this._setIsConnected?.(false);
         this.handleReconnect(onMessage, onError);
       };
       
       this.ws.onerror = (error) => {
-        console.error('Polygon WebSocket connection failed - check API key and subscription');
+        console.error('[Polygon] WebSocket connection failed - check API key and subscription');
         this._setIsConnected?.(false);
         this._setError?.('WebSocket connection failed. Please verify your Polygon.io API key and subscription.');
         if (onError) onError(error);
       };
     } catch (error) {
-      console.error('Error connecting to Polygon WebSocket:', error);
+      console.error('[Polygon] Error connecting to Polygon WebSocket:', error);
       this._setError?.('Failed to establish WebSocket connection');
       if (onError) onError(error as Event);
     }
