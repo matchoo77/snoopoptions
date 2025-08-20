@@ -272,12 +272,12 @@ export function BacktestingPanel() {
       {/* Info Box */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <h3 className="text-sm font-medium text-blue-800 mb-2">
-          How EOD Backtesting Works
+          How Pattern Recognition Works
         </h3>
         <p className="text-sm text-blue-700">
-          This analysis uses real end-of-day options data from Polygon.io to identify historical block trades, 
-          then measures whether the underlying stock moved in the predicted direction by your target percentage 
-          within your specified time horizon. For calls, we measure upward moves; for puts, downward moves.
+          This tool identifies patterns of unusual options activity that occurred 1-3 days BEFORE significant stock moves. 
+          It searches for clusters of block trades that preceded your target % movement, helping you recognize early warning signals. 
+          If no such patterns exist, try adjusting your parameters (lower thresholds, different time periods, etc.).
         </p>
         <p className="text-xs text-blue-600 mt-2">
           {import.meta.env.VITE_POLYGON_API_KEY && import.meta.env.VITE_POLYGON_API_KEY.length > 10 

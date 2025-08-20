@@ -30,63 +30,48 @@ export function BacktestResults({ results, summary, params, onCreateAlert }: Bac
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-green-700">Success Rate</p>
-              <p className="text-2xl font-bold text-green-900">
-                {formatPercentage(summary.successRate)}
-              </p>
-              <p className="text-xs text-green-600">
-                {summary.successfulTrades} of {summary.totalTrades} trades
-              </p>
-            </div>
-            <Target className="w-8 h-8 text-green-600" />
-          </div>
-        </div>
-
         <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-blue-700">Avg Movement</p>
+              <p className="text-sm text-blue-700">Pattern Instances</p>
               <p className="text-2xl font-bold text-blue-900">
-                {formatPercentage(summary.averageStockMovement)}
+                {summary.totalTrades}
               </p>
               <p className="text-xs text-blue-600">
-                Target: {formatPercentage(params.targetMovement)}
+                Trades preceding {formatPercentage(params.targetMovement)} moves
               </p>
             </div>
-            <BarChart3 className="w-8 h-8 text-blue-600" />
+            <Target className="w-8 h-8 text-blue-600" />
           </div>
         </div>
 
         <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-purple-700">Avg Days</p>
+              <p className="text-sm text-purple-700">Avg Movement</p>
               <p className="text-2xl font-bold text-purple-900">
-                {summary.averageDaysToTarget.toFixed(1)}
+                {formatPercentage(summary.averageStockMovement)}
               </p>
               <p className="text-xs text-purple-600">
-                Target: {params.timeHorizon} days
+                Average stock movement after trades
               </p>
             </div>
-            <Clock className="w-8 h-8 text-purple-600" />
+            <BarChart3 className="w-8 h-8 text-purple-600" />
           </div>
         </div>
 
         <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-orange-700">Total Trades</p>
+              <p className="text-sm text-orange-700">Lookback Period</p>
               <p className="text-2xl font-bold text-orange-900">
-                {summary.totalTrades}
+                1-3 days
               </p>
               <p className="text-xs text-orange-600">
-                {formatDate(params.startDate)} - {formatDate(params.endDate)}
+                Trades before stock moves
               </p>
             </div>
-            <DollarSign className="w-8 h-8 text-orange-600" />
+            <Clock className="w-8 h-8 text-orange-600" />
           </div>
         </div>
       </div>
@@ -97,13 +82,13 @@ export function BacktestResults({ results, summary, params, onCreateAlert }: Bac
           🐕 Want Your Trading Dog to Bark When Similar Trades Happen?
         </h3>
         <p className="text-blue-100 mb-4 text-sm">
-          Set up a Snoop Alert to get notified when trades matching your backtest criteria occur in real-time!
+          Set up a Snoop Alert to get notified when similar trade patterns occur in real-time - before the next big move!
         </p>
         <button
           onClick={onCreateAlert}
           className="bg-white text-blue-600 px-6 py-3 rounded-md font-semibold hover:bg-gray-50 transition-colors"
         >
-          Create Snoop Alert from This Backtest
+          Create Snoop Alert from This Pattern
         </button>
       </div>
 
@@ -285,10 +270,10 @@ export function BacktestResults({ results, summary, params, onCreateAlert }: Bac
       {/* Detailed Results Table */}
       {results.length > 0 && (
         <div className="bg-white rounded-lg border overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b">
+              🐕 Want Your Trading Dog to Bark When These Patterns Appear?
             <h3 className="text-lg font-semibold text-gray-900">Detailed Trade Results</h3>
             <p className="text-sm text-gray-600">
-              Showing {results.length} block trades analyzed
+              Set up a Snoop Alert to catch these same patterns in real-time - potentially before the next big move!
             </p>
           </div>
           
@@ -382,18 +367,18 @@ export function BacktestResults({ results, summary, params, onCreateAlert }: Bac
           <div>
             <h4 className="font-medium text-blue-800 mb-2">Performance Analysis</h4>
             <ul className="space-y-1 text-blue-700">
-              <li>• {summary.successRate >= 60 ? 'Strong' : summary.successRate >= 40 ? 'Moderate' : 'Weak'} predictive accuracy</li>
-              <li>• {summary.breakdownByType.calls.rate > summary.breakdownByType.puts.rate ? 'Call' : 'Put'} options showed better performance</li>
-              <li>• {summary.breakdownByPremium.large.rate >= summary.breakdownByPremium.small.rate ? 'Larger' : 'Smaller'} premiums had higher success rates</li>
+              <li>• Found {summary.totalTrades} instances of unusual activity preceding {formatPercentage(params.targetMovement)} moves</li>
+              <li>• {summary.breakdownByType.calls.total > summary.breakdownByType.puts.total ? 'Call' : 'Put'} options appeared more frequently in patterns</li>
+              <li>• {summary.breakdownByPremium.large.total >= summary.breakdownByPremium.small.total ? 'Larger' : 'Smaller'} premiums were more common in patterns</li>
             </ul>
           </div>
           
           <div>
             <h4 className="font-medium text-blue-800 mb-2">Trading Strategy</h4>
             <ul className="space-y-1 text-blue-700">
-              <li>• Target movement of {formatPercentage(params.targetMovement)} within {params.timeHorizon} days</li>
-              <li>• Focus on trades with premium &gt; {formatCurrency(params.minPremium)}</li>
-              <li>• {summary.averageDaysToTarget < params.timeHorizon ? 'Targets typically hit early' : 'Full time horizon usually needed'}</li>
+              <li>• Watch for similar patterns 1-3 days before potential {formatPercentage(params.targetMovement)} moves</li>
+              <li>• Focus on unusual activity with premium > {formatCurrency(params.minPremium)}</li>
+              <li>• Average stock movement after patterns: {formatPercentage(summary.averageStockMovement)}</li>
             </ul>
           </div>
         </div>

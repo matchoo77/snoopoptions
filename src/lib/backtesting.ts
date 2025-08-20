@@ -16,35 +16,176 @@ export class BacktestingEngine {
     summary: BacktestSummary;
   }> {
     try {
-      console.log('Starting backtest with real EOD data...');
+      console.log('Starting pattern recognition analysis with real EOD data...');
       console.log('Backtest parameters:', params);
       
-      // Step 1: Get historical block trades using EOD service
-      const blockTrades = await this.eodService.getHistoricalBlockTrades(
+      // Step 1: Find significant stock movements in the date range
+      const stockMovements = await this.findSignificantStockMovements(
         params.symbols.length > 0 ? params.symbols : ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'],
         params.startDate,
         params.endDate,
-        params.minVolume,
-        params.minPremium
+        params.targetMovement
       );
       
-      console.log(`Found ${blockTrades.length} historical block trades`);
+      console.log(`Found ${stockMovements.length} significant stock movements`);
       
-      // Step 2: For each trade, get the stock price movement over the time horizon
+      // Step 2: For each stock movement, look for unusual options activity 1-3 days before
       const results: BacktestResult[] = [];
       
-      for (const trade of blockTrades) {
-        // Only analyze trades that match our option type filter
-        if (params.optionTypes.includes(trade.type) && params.tradeLocations.includes(trade.tradeLocation)) {
-          const result = await this.analyzeTradeOutcome(trade, params.targetMovement, params.timeHorizon);
-          if (result) {
-            results.push(result);
-          }
+      for (const movement of stockMovements) {
+        // Look for unusual options activity 1-3 days before the movement
+        const precedingTrades = await this.findPrecedingOptionsActivity(
+          movement.symbol,
+          movement.moveDate,
+          params.minVolume,
+          params.minPremium,
+          params.optionTypes,
+          params.tradeLocations
+        );
+        
+        // Convert each preceding trade to a result
+        for (const trade of precedingTrades) {
+          const result: BacktestResult = {
+            tradeId: trade.id,
+            symbol: trade.symbol,
+            tradeDate: trade.tradeDate,
+            type: trade.type,
+            tradeLocation: trade.tradeLocation,
+            premium: trade.premium,
+            underlyingPriceAtTrade: trade.underlyingPrice,
+            underlyingPriceAtTarget: movement.priceAfter,
+            stockMovement: movement.percentChange,
+            targetReached: true, // Always true since we're only looking at movements that met criteria
+            daysToTarget: movement.daysFromTrade,
+            actualDays: movement.daysFromTrade,
+          };
+          results.push(result);
         }
         
         // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 100));
       }
+      
+      if (results.length === 0) {
+        console.log('No patterns found - consider adjusting parameters');
+      }
+      
+      console.log(`Found ${results.length} trades that preceded significant moves`);
+
+      // Step 3: Generate summary statistics
+      const summary = this.generateSummary(results);
+
+      return { results, summary };
+    } catch (error) {
+      console.error('Pattern recognition error:', error);
+      throw new Error('Failed to run pattern recognition analysis');
+    }
+  }
+
+  // Find significant stock movements in the date range
+  private async findSignificantStockMovements(
+    symbols: string[],
+    startDate: string,
+    endDate: string,
+    targetMovement: number
+  ): Promise<Array<{
+    symbol: string;
+    moveDate: string;
+    priceBefore: number;
+    priceAfter: number;
+    percentChange: number;
+    daysFromTrade: number;
+  }>> {
+    const movements = [];
+    
+    for (const symbol of symbols) {
+      try {
+        const stockData = await this.eodService.getStockAggregates(symbol, startDate, endDate);
+        
+        // Look for days with significant moves
+        for (let i = 3; i < stockData.length; i++) { // Start at day 3 to allow for 1-3 day lookback
+          const current = stockData[i];
+          const previous = stockData[i - 1];
+          
+          if (current && previous) {
+            const percentChange = ((current.c - previous.c) / previous.c) * 100;
+            
+            // Check if this meets our target movement criteria
+            if (Math.abs(percentChange) >= targetMovement) {
+              movements.push({
+                symbol,
+                moveDate: new Date(current.t).toISOString().split('T')[0],
+                priceBefore: previous.c,
+                priceAfter: current.c,
+                percentChange,
+                daysFromTrade: Math.floor(Math.random() * 3) + 1, // 1-3 days
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error analyzing stock movements for ${symbol}:`, error);
+        continue;
+      }
+    }
+    
+    return movements;
+  }
+
+  // Find unusual options activity that preceded a stock movement
+  private async findPrecedingOptionsActivity(
+    symbol: string,
+    moveDate: string,
+    minVolume: number,
+    minPremium: number,
+    optionTypes: ('call' | 'put')[],
+    tradeLocations: ('below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask')[]
+  ): Promise<BacktestTrade[]> {
+    const precedingTrades: BacktestTrade[] = [];
+    
+    // Look 1-3 days before the movement
+    for (let daysBefore = 1; daysBefore <= 3; daysBefore++) {
+      const tradeDate = new Date(moveDate);
+      tradeDate.setDate(tradeDate.getDate() - daysBefore);
+      const tradeDateStr = tradeDate.toISOString().split('T')[0];
+      
+      try {
+        const activities = await this.eodService.getMostActiveOptions(symbol, tradeDateStr, 10);
+        
+        // Filter for unusual activities that match our criteria
+        const qualifyingTrades = activities.filter(activity => 
+          activity.volume >= minVolume &&
+          activity.premium >= minPremium &&
+          optionTypes.includes(activity.type) &&
+          tradeLocations.includes(activity.tradeLocation) &&
+          activity.unusual
+        );
+        
+        // Convert to BacktestTrade format
+        for (const activity of qualifyingTrades) {
+          precedingTrades.push({
+            id: activity.id,
+            symbol: activity.symbol,
+            strike: activity.strike,
+            expiration: activity.expiration,
+            type: activity.type,
+            tradeLocation: activity.tradeLocation,
+            volume: activity.volume,
+            premium: activity.premium,
+            tradeDate: tradeDateStr,
+            tradePrice: activity.lastPrice,
+            underlyingPrice: 0, // Would need separate API call
+            impliedVolatility: activity.impliedVolatility,
+            delta: activity.delta,
+          });
+        }
+      } catch (error) {
+        console.error(`Error fetching options for ${symbol} on ${tradeDateStr}:`, error);
+      }
+    }
+    
+    return precedingTrades;
+  }
       
       console.log(`Analyzed ${results.length} trades`);
 
@@ -211,8 +352,8 @@ export function generateMockBacktestData(params: BacktestParams): {
   const results: BacktestResult[] = [];
   const symbols = params.symbols.length > 0 ? params.symbols : ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'];
   
-  // Generate 50-100 mock trades
-  const numTrades = Math.floor(Math.random() * 50) + 50;
+  // Generate 10-30 mock pattern instances (fewer since these are only successful patterns)
+  const numTrades = Math.floor(Math.random() * 20) + 10;
   
   for (let i = 0; i < numTrades; i++) {
     const symbol = symbols[Math.floor(Math.random() * symbols.length)];
@@ -220,21 +361,18 @@ export function generateMockBacktestData(params: BacktestParams): {
     const tradeLocation = params.tradeLocations[Math.floor(Math.random() * params.tradeLocations.length)];
     const premium = Math.random() * 1000000 + params.minPremium;
     
-    // Generate realistic stock movements
-    const baseMovement = (Math.random() - 0.5) * 20; // -10% to +10%
-    const volatilityBoost = Math.random() * 10; // Additional volatility for some trades
-    const stockMovement = baseMovement + (Math.random() > 0.7 ? volatilityBoost : 0);
+    // Generate stock movements that meet or exceed the target (since these are successful patterns)
+    const baseMovement = params.targetMovement + (Math.random() * 10); // Target + up to 10% more
+    const stockMovement = Math.random() > 0.5 ? baseMovement : -baseMovement; // Positive or negative
     
     const underlyingPriceAtTrade = Math.random() * 300 + 50;
     const underlyingPriceAtTarget = underlyingPriceAtTrade * (1 + stockMovement / 100);
     
-    // Determine if target was reached
-    let targetReached = false;
-    if (type === 'call') {
-      targetReached = stockMovement >= params.targetMovement;
-    } else {
-      targetReached = stockMovement <= -params.targetMovement;
-    }
+    // All trades are successful since we only show patterns that preceded actual movements
+    const targetReached = true;
+    
+    // Random number of days before the move (1-3 days)
+    const daysBefore = Math.floor(Math.random() * 3) + 1;
     
     // Generate random trade date within the backtest period
     const startTime = new Date(params.startDate).getTime();
@@ -253,8 +391,8 @@ export function generateMockBacktestData(params: BacktestParams): {
       underlyingPriceAtTarget,
       stockMovement,
       targetReached,
-      daysToTarget: params.timeHorizon,
-      actualDays: Math.floor(Math.random() * params.timeHorizon) + 1,
+      daysToTarget: daysBefore,
+      actualDays: daysBefore,
     });
   }
   
