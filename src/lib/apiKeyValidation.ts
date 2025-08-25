@@ -1,5 +1,5 @@
-// Centralized API key validation
-export function isValidPolygonApiKey(apiKey: string | undefined): boolean {
+// Centralized API key validation with type guard
+export function isValidPolygonApiKey(apiKey: string | undefined): apiKey is string {
   if (!apiKey) {
     console.log('[API Validation] No API key provided');
     return false;
