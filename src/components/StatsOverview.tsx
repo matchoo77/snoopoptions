@@ -4,10 +4,10 @@ import { OptionsActivity } from '../types/options';
 
 interface StatsOverviewProps {
   activities: OptionsActivity[];
-  dataSource?: 'mock' | 'realtime' | 'eod';
+  dataSource?: 'none' | 'realtime' | 'eod';
 }
 
-export function StatsOverview({ activities, dataSource = 'mock' }: StatsOverviewProps) {
+export function StatsOverview({ activities, dataSource = 'eod' }: StatsOverviewProps) {
   const stats = React.useMemo(() => {
     const totalVolume = activities.reduce((sum, activity) => sum + activity.volume, 0);
     const totalPremium = activities.reduce((sum, activity) => sum + activity.premium, 0);

@@ -5,7 +5,7 @@ import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
 interface DataSourceIndicatorProps {
   isConnected: boolean;
   isUsingRealData: boolean;
-  dataSource?: 'mock' | 'realtime' | 'eod';
+  dataSource?: 'none' | 'realtime' | 'eod';
   loading?: boolean;
   error?: string | null;
 }
@@ -13,7 +13,7 @@ interface DataSourceIndicatorProps {
 export function DataSourceIndicator({ 
   isConnected, 
   isUsingRealData, 
-  dataSource = 'mock',
+  dataSource = 'eod',
   loading = false,
   error 
 }: DataSourceIndicatorProps) {
@@ -83,10 +83,10 @@ export function DataSourceIndicator({
           <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
           <div className="flex-1">
             <h3 className="text-sm font-medium text-blue-800 mb-1">
-              Market Closed - Using {dataSource === 'eod' ? 'EOD' : 'Real-time'} Data
+              Market Closed - Using {dataSource === 'eod' ? 'EOD' : dataSource === 'realtime' ? 'Real-time' : 'No'} Data
             </h3>
             <p className="text-sm text-blue-700 mb-2">
-              Your Polygon.io API key is properly configured. Currently showing {dataSource === 'eod' ? 'end-of-day' : 'demo'} data because 
+              Your Polygon.io API key is properly configured. Currently showing {dataSource === 'eod' ? 'end-of-day' : 'current'} data because 
               {isWeekend ? ' the market is closed for the weekend' : ' the market is outside trading hours'}.
             </p>
             <p className="text-xs text-gray-500 mt-1">

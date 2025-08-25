@@ -282,8 +282,8 @@ export function BacktestingPanel() {
         </p>
         <p className="text-xs text-blue-600 mt-2">
           {isValidPolygonApiKey(import.meta.env.VITE_POLYGON_API_KEY)
-            ? '✓ Using real Polygon.io data' 
-            : '⚠️ Using mock data (configure VITE_POLYGON_API_KEY for real data)'
+            ? '✓ Using Polygon.io data'
+            : '⚠️ Configure VITE_POLYGON_API_KEY to run backtests'
           }
         </p>
         <p className="text-xs text-gray-500 mt-1">

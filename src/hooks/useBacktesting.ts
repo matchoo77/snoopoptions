@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BacktestParams, BacktestResult, BacktestSummary } from '../types/backtesting';
-import { BacktestingEngine, generateMockBacktestData } from '../lib/backtesting';
+import { BacktestingEngine } from '../lib/backtesting';
 import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
 
 export function useBacktesting() {
@@ -21,22 +21,20 @@ export function useBacktesting() {
         keyValid: isValidPolygonApiKey(polygonApiKey)
       });
       
-      if (isValidPolygonApiKey(polygonApiKey)) {
-        // Use real EOD data if API key is available
-        console.log('Running backtest with real Polygon.io data...');
-        const engine = new BacktestingEngine(polygonApiKey);
-        const { results: backtestResults, summary: backtestSummary } = await engine.runBacktest(params);
-        console.log('Real backtest completed:', { resultsCount: backtestResults.length, successRate: backtestSummary.successRate });
-        setResults(backtestResults);
-        setSummary(backtestSummary);
-      } else {
-        // Use mock data for demonstration when no API key
-        console.log('Running backtest with mock data (no API key configured)...');
-        const { results: mockResults, summary: mockSummary } = generateMockBacktestData(params);
-        console.log('Mock backtest completed:', { resultsCount: mockResults.length, successRate: mockSummary.successRate });
-        setResults(mockResults);
-        setSummary(mockSummary);
+      if (!isValidPolygonApiKey(polygonApiKey)) {
+        setError('Polygon API key is required to run backtests.');
+        setResults([]);
+        setSummary(null);
+        return;
       }
+
+      // Use real EOD data if API key is available
+      console.log('Running backtest with real Polygon.io data...');
+      const engine = new BacktestingEngine(polygonApiKey);
+      const { results: backtestResults, summary: backtestSummary } = await engine.runBacktest(params);
+      console.log('Real backtest completed:', { resultsCount: backtestResults.length, successRate: backtestSummary.successRate });
+      setResults(backtestResults);
+      setSummary(backtestSummary);
     } catch (err) {
       console.error('Backtest error:', err);
       setError(err instanceof Error ? err.message : 'Failed to run backtest');
