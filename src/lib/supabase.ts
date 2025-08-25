@@ -41,29 +41,27 @@ export const getResolvedSupabaseAnonKey = resolveSupabaseAnonKey;
 let supabaseUrl = resolveSupabaseUrl();
 let supabaseAnonKey = resolveSupabaseAnonKey();
 
-// Validate Supabase configuration
-const isValidSupabaseUrl = supabaseUrl && 
-  supabaseUrl.startsWith('https://') && 
-  supabaseUrl.includes('.supabase.co') &&
-  !supabaseUrl.includes('your_supabase_url');
+const isUrlValid = (url?: string) =>
+  !!url && url.startsWith('https://') && url.includes('.supabase.co') && !url.includes('your_supabase_url');
+const isKeyValid = (key?: string) =>
+  !!key && key.length > 100 && key.includes('.') && !key.includes('your_supabase_anon_key');
 
-const isValidSupabaseKey = supabaseAnonKey && 
-  supabaseAnonKey.length > 100 && 
-  supabaseAnonKey.includes('.') &&
-  !supabaseAnonKey.includes('your_supabase_anon_key');
+// Validate Supabase configuration (initial)
+let isValidSupabaseUrl = isUrlValid(supabaseUrl);
+let isValidSupabaseKey = isKeyValid(supabaseAnonKey);
 
 export const isSupabaseConfigured = (): boolean => {
   const url = resolveSupabaseUrl();
   const key = resolveSupabaseAnonKey();
-  const urlOk = !!url && url.startsWith('https://') && url.includes('.supabase.co') && !url.includes('your_supabase_url');
-  const keyOk = !!key && key.length > 100 && key.includes('.') && !key.includes('your_supabase_anon_key');
-  return urlOk && keyOk;
+  return isUrlValid(url) && isKeyValid(key);
 };
 
 const createSupabaseClient = (): SupabaseClient<any> => {
   // Re-resolve at creation to pick up any globals/localStorage updates
   supabaseUrl = resolveSupabaseUrl();
   supabaseAnonKey = resolveSupabaseAnonKey();
+  isValidSupabaseUrl = isUrlValid(supabaseUrl);
+  isValidSupabaseKey = isKeyValid(supabaseAnonKey);
 
   if (!isValidSupabaseUrl || !isValidSupabaseKey) {
     console.warn('Supabase not configured - using mock client');
