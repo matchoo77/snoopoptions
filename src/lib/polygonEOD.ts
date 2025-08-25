@@ -66,10 +66,23 @@ export class PolygonEODService {
   private requestQueue: Promise<any> = Promise.resolve();
   private lastRequestTime = 0;
   private minRequestInterval = 200; // 200ms between requests for free tier
+  private proxyUrl: string | null = null;
+  private useProxy = false;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
     console.log('PolygonEODService initialized with API key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'none');
+
+    // Detect Supabase Edge Function proxy availability
+    const supabaseUrl = (import.meta as any)?.env?.VITE_SUPABASE_URL as string | undefined;
+    const isValidSupabase = !!supabaseUrl && supabaseUrl.startsWith('https://') && supabaseUrl.includes('.supabase.co');
+    if (isValidSupabase) {
+      this.proxyUrl = `${supabaseUrl}/functions/v1/polygon-proxy`;
+      this.useProxy = true;
+      console.log('[PolygonEOD] Using Supabase Edge Function proxy for Polygon API requests');
+    } else {
+      console.log('[PolygonEOD] Supabase not configured or invalid; calling Polygon API directly from client');
+    }
   }
 
   // Rate-limited request wrapper
@@ -85,7 +98,17 @@ export class PolygonEODService {
           }
           
           this.lastRequestTime = Date.now();
-          const response = await fetch(url);
+          let response: Response;
+          if (this.useProxy && this.proxyUrl) {
+            // Send through Supabase Edge Function; it injects the server-side POLYGON_API_KEY
+            response = await fetch(this.proxyUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url }),
+            });
+          } else {
+            response = await fetch(url);
+          }
           resolve(response);
         } catch (error) {
           reject(error);
@@ -344,6 +367,7 @@ export class PolygonEODService {
                 strike: contract.strike_price,
                 expiration: contract.expiration_date,
                 type: contract.contract_type,
+                tradeLocation: this.getTradeLocation(agg.c || agg.vw || 0, agg.o || 0, agg.h || 0),
                 volume,
                 premium,
                 tradeDate: new Date(agg.t).toISOString(),
@@ -386,7 +410,6 @@ export class PolygonEODService {
 
   // Calculate trade location relative to bid/ask
   private getTradeLocation(lastPrice: number, bid: number, ask: number): 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask' {
-    const midpoint = (bid + ask) / 2;
     const bidThreshold = bid + (ask - bid) * 0.1; // 10% above bid
     const askThreshold = ask - (ask - bid) * 0.1; // 10% below ask
     
@@ -587,7 +610,7 @@ export class PolygonEODService {
     
     for (const symbol of symbols) {
       console.log(`[PolygonEOD] Processing ${symbol}...`);
-      const activities = await this.getMostActiveOptions(symbol, date, 20); // Increased limit
+  const activities = await this.getMostActiveOptions(symbol, date || '', 20); // Increased limit
       const unusualActivities = activities.filter(activity => activity.unusual);
       console.log(`[PolygonEOD] ${symbol}: Found ${activities.length} activities, ${unusualActivities.length} unusual`);
       allActivities.push(...unusualActivities);
