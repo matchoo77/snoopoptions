@@ -31,8 +31,7 @@ export function useOptionsData() {
   const { 
     activities: eodActivities, 
     loading: eodLoading, 
-    error: eodError,
-    lastUpdated 
+    error: eodError
   } = useEODData({
     apiKey: polygonApiKey,
     symbols: [],
@@ -70,16 +69,16 @@ export function useOptionsData() {
   }, []);
 
   const filteredActivities = useMemo(() => {
-    let filtered = allActivities;
+    let filtered: OptionsActivity[] = allActivities;
 
     // Apply search symbol filter first
     if (filters.searchSymbol) {
-      filtered = filtered.filter(activity => 
+      filtered = filtered.filter((activity: OptionsActivity) => 
         activity.symbol.toLowerCase().includes(filters.searchSymbol.toLowerCase())
       );
     }
 
-    return filtered.filter(activity => {
+    return filtered.filter((activity: OptionsActivity) => {
       // Volume filter
       if (activity.volume < filters.minVolume) return false;
 
