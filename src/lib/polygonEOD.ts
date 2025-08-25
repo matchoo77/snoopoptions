@@ -74,7 +74,7 @@ export class PolygonEODService {
     console.log('PolygonEODService initialized with API key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'none');
 
     // Detect Supabase Edge Function proxy availability
-    const supabaseUrl = (import.meta as any)?.env?.VITE_SUPABASE_URL as string | undefined;
+  const supabaseUrl = (import.meta as any)?.env?.VITE_SUPABASE_URL as string | undefined;
     const isValidSupabase = !!supabaseUrl && supabaseUrl.startsWith('https://') && supabaseUrl.includes('.supabase.co');
     if (isValidSupabase) {
       this.proxyUrl = `${supabaseUrl}/functions/v1/polygon-proxy`;

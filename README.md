@@ -19,6 +19,20 @@ A real-time unusual options activity scanner that helps traders identify signifi
 3. Connect to Supabase for user authentication and data storage
 4. Run `npm run dev` to start the development server
 
+### Hosting on Bolt.new with Supabase
+
+- Frontend env (Vite):
+	- VITE_POLYGON_API_KEY=your_real_polygon_key
+	- VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+	- VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+
+- Server (Supabase) secrets:
+	- POLYGON_API_KEY=your_real_polygon_key
+
+- Deploy the Edge Function proxy:
+	- supabase functions deploy polygon-proxy
+
+With VITE_SUPABASE_URL set, the app routes Polygon requests via the proxy; otherwise it uses the browser key.
 ## Technology Stack
 
 - **Frontend**: React + TypeScript + Tailwind CSS

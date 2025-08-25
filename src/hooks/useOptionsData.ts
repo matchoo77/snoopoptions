@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { OptionsActivity, FilterOptions } from '../types/options';
 import { useEODData } from './useEODData';
 import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 export function useOptionsData() {
   const [filters, setFilters] = useState<FilterOptions>({
@@ -18,7 +19,7 @@ export function useOptionsData() {
     showFavoritesOnly: false,
   });
 
-  const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
+  const polygonApiKey = (import.meta as any)?.env?.VITE_POLYGON_API_KEY?.toString() || '';
   
   console.log('[useOptionsData] API Key check:', {
     hasKey: !!polygonApiKey,
@@ -35,21 +36,21 @@ export function useOptionsData() {
   } = useEODData({
     apiKey: polygonApiKey,
     symbols: [],
-    enabled: isValidPolygonApiKey(polygonApiKey)
+  enabled: isValidPolygonApiKey(polygonApiKey) || isSupabaseConfigured()
   });
 
   // Determine data source and activities to use (no mock fallback)
   const { allActivities, dataSource, isConnected, loading, error } = useMemo(() => {
-    const hasValidKey = isValidPolygonApiKey(polygonApiKey);
+  const hasValidKey = isValidPolygonApiKey(polygonApiKey) || isSupabaseConfigured();
 
-    if (!hasValidKey) {
+  if (!hasValidKey) {
       console.warn('[useOptionsData] No valid API key. Returning empty dataset.');
       return {
         allActivities: [] as OptionsActivity[],
         dataSource: 'none' as const,
         isConnected: false,
         loading: false,
-        error: 'Polygon API key is missing or invalid.'
+    error: 'Polygon API key is missing/invalid and Supabase is not configured.'
       };
     }
 

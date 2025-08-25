@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, Play, RotateCcw, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { BarChart3, Play, RotateCcw } from 'lucide-react';
 import { BacktestParams } from '../../types/backtesting';
 import { useBacktesting } from '../../hooks/useBacktesting';
 import { BacktestResults } from './BacktestResults';

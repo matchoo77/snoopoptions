@@ -14,7 +14,7 @@ export function useBacktesting() {
     setError(null);
     
     try {
-      const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY;
+  const polygonApiKey = (import.meta as any)?.env?.VITE_POLYGON_API_KEY as string | undefined;
       console.log('Backtest API key check:', {
         hasKey: !!polygonApiKey,
         keyLength: polygonApiKey?.length || 0,

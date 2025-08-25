@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wifi, WifiOff, AlertCircle, ExternalLink, Clock, Database, BarChart3 } from 'lucide-react';
+import { Wifi, WifiOff, AlertCircle, ExternalLink, Clock, Database } from 'lucide-react';
 import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
 
 interface DataSourceIndicatorProps {
@@ -17,7 +17,7 @@ export function DataSourceIndicator({
   loading = false,
   error 
 }: DataSourceIndicatorProps) {
-  const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
+  const polygonApiKey = (import.meta as any)?.env?.VITE_POLYGON_API_KEY?.toString() || '';
   
   console.log('[DataSourceIndicator] API Key validation:', {
     keyExists: !!polygonApiKey,

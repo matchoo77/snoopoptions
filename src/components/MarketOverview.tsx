@@ -19,7 +19,7 @@ export function MarketOverview() {
   useEffect(() => {
     const symbols = ['SPY', 'QQQ', 'IWM', 'AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'];
 
-    const apiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
+  const apiKey = (import.meta as any)?.env?.VITE_POLYGON_API_KEY?.toString() || '';
     if (!isValidPolygonApiKey(apiKey)) {
       setError('Polygon API key is missing or invalid.');
       setMarketData([]);

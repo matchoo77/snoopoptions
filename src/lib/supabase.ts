@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = (import.meta as any)?.env?.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 // Validate Supabase configuration
 const isValidSupabaseUrl = supabaseUrl && 
@@ -13,6 +13,14 @@ const isValidSupabaseKey = supabaseAnonKey &&
   supabaseAnonKey.length > 100 && 
   supabaseAnonKey.includes('.') &&
   !supabaseAnonKey.includes('your_supabase_anon_key');
+
+export const isSupabaseConfigured = (): boolean => {
+  const url = (import.meta as any)?.env?.VITE_SUPABASE_URL as string | undefined;
+  const key = (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY as string | undefined;
+  const urlOk = !!url && url.startsWith('https://') && url.includes('.supabase.co') && !url.includes('your_supabase_url');
+  const keyOk = !!key && key.length > 100 && key.includes('.') && !key.includes('your_supabase_anon_key');
+  return urlOk && keyOk;
+};
 
 const createSupabaseClient = () => {
   if (!isValidSupabaseUrl || !isValidSupabaseKey) {
