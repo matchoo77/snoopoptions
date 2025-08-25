@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Clock, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, DollarSign, AlertCircle } from 'lucide-react';
+import { PolygonEODService } from '../lib/polygonEOD';
+import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
 
 interface MarketData {
   symbol: string;
@@ -12,19 +14,56 @@ interface MarketData {
 export function MarketOverview() {
   const [marketData, setMarketData] = useState<MarketData[]>([]);
   const [marketStatus, setMarketStatus] = useState<'open' | 'closed' | 'pre' | 'after'>('closed');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate market data (in real implementation, this would come from Polygon.io)
     const symbols = ['SPY', 'QQQ', 'IWM', 'AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'];
-    const mockData = symbols.map(symbol => ({
-      symbol,
-      price: Math.random() * 500 + 100,
-      change: (Math.random() - 0.5) * 20,
-      changePercent: (Math.random() - 0.5) * 5,
-      volume: Math.floor(Math.random() * 100000000) + 1000000,
-    }));
-    
-    setMarketData(mockData);
+
+    const apiKey = import.meta.env.VITE_POLYGON_API_KEY?.toString() || '';
+    if (!isValidPolygonApiKey(apiKey)) {
+      setError('Polygon API key is missing or invalid.');
+      setMarketData([]);
+    } else {
+      // Fetch EOD aggregates for each symbol (previous trading day)
+      const service = new PolygonEODService(apiKey);
+
+      const fetchData = async () => {
+        try {
+          setError(null);
+          // Determine previous trading day (rough approximation)
+          const today = new Date();
+          const prev = new Date(today);
+          prev.setDate(today.getDate() - 1);
+          if (today.getDay() === 1) prev.setDate(today.getDate() - 3); // Monday -> Friday
+          if (today.getDay() === 0) prev.setDate(today.getDate() - 2); // Sunday -> Friday
+          const dateStr = prev.toISOString().split('T')[0];
+
+          const results: MarketData[] = [];
+          for (const symbol of symbols) {
+            const aggs = await service.getStockAggregates(symbol, dateStr, dateStr);
+            if (aggs && aggs.length > 0) {
+              const agg = aggs[0];
+              const price = agg.c ?? agg.vw ?? agg.o ?? 0;
+              const open = agg.o ?? price;
+              const change = price - open;
+              const changePercent = open ? (change / open) * 100 : 0;
+              const volume = agg.v ?? 0;
+              results.push({ symbol, price, change, changePercent, volume });
+            }
+            // Small delay to avoid rate limiting on free tier
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          setMarketData(results);
+        } catch (e) {
+          console.error('MarketOverview fetch error:', e);
+          setError('Failed to load market data from Polygon');
+          setMarketData([]);
+        }
+      };
+
+      fetchData();
+    }
 
     // Determine market status based on current time
     const now = new Date();
@@ -81,7 +120,17 @@ export function MarketOverview() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+      {error && (
+        <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded flex items-start space-x-2">
+          <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
+          <div>
+            <p className="text-sm text-yellow-800">{error}</p>
+            <p className="text-xs text-yellow-700 mt-1">Set VITE_POLYGON_API_KEY in your environment to enable real data.</p>
+          </div>
+        </div>
+      )}
+
+  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {marketData.map((stock) => (
           <div key={stock.symbol} className="bg-gray-50 rounded-lg p-3">
             <div className="text-sm font-semibold text-gray-900 mb-1">
