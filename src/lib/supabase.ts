@@ -1,7 +1,45 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = (import.meta as any)?.env?.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY as string | undefined;
+// Optional hardcoded fallbacks (edit these to hardcode your project)
+// Example:
+// const HARDCODED_SUPABASE_URL = 'https://your-ref.supabase.co';
+// const HARDCODED_SUPABASE_ANON_KEY = 'ey...';
+const HARDCODED_SUPABASE_URL = '';
+const HARDCODED_SUPABASE_ANON_KEY = '';
+// If you deploy the public-config Edge Function, you can hardcode its base URL here too
+// For example: https://<ref>.functions.supabase.co
+const HARDCODED_FUNCTIONS_URL = '';
+
+// Resolve Supabase URL and ANON KEY with precedence:
+// 1) window globals set by hosting or inline script
+// 2) localStorage overrides
+// 3) Vite env (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)
+// 4) Hardcoded fallbacks above
+const resolveSupabaseUrl = (): string | undefined => {
+  const w = (typeof window !== 'undefined' ? (window as any) : undefined) as any;
+  return (
+    (w && (w.__SUPABASE_URL__ as string)) ||
+    (typeof localStorage !== 'undefined' ? localStorage.getItem('SUPABASE_URL') || undefined : undefined) ||
+    ((import.meta as any)?.env?.VITE_SUPABASE_URL as string | undefined) ||
+    (HARDCODED_SUPABASE_URL || undefined)
+  );
+};
+
+const resolveSupabaseAnonKey = (): string | undefined => {
+  const w = (typeof window !== 'undefined' ? (window as any) : undefined) as any;
+  return (
+    (w && (w.__SUPABASE_ANON_KEY__ as string)) ||
+    (typeof localStorage !== 'undefined' ? localStorage.getItem('SUPABASE_ANON_KEY') || undefined : undefined) ||
+    ((import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY as string | undefined) ||
+    (HARDCODED_SUPABASE_ANON_KEY || undefined)
+  );
+};
+
+export const getResolvedSupabaseUrl = resolveSupabaseUrl;
+export const getResolvedSupabaseAnonKey = resolveSupabaseAnonKey;
+
+let supabaseUrl = resolveSupabaseUrl();
+let supabaseAnonKey = resolveSupabaseAnonKey();
 
 // Validate Supabase configuration
 const isValidSupabaseUrl = supabaseUrl && 
@@ -15,14 +53,18 @@ const isValidSupabaseKey = supabaseAnonKey &&
   !supabaseAnonKey.includes('your_supabase_anon_key');
 
 export const isSupabaseConfigured = (): boolean => {
-  const url = (import.meta as any)?.env?.VITE_SUPABASE_URL as string | undefined;
-  const key = (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY as string | undefined;
+  const url = resolveSupabaseUrl();
+  const key = resolveSupabaseAnonKey();
   const urlOk = !!url && url.startsWith('https://') && url.includes('.supabase.co') && !url.includes('your_supabase_url');
   const keyOk = !!key && key.length > 100 && key.includes('.') && !key.includes('your_supabase_anon_key');
   return urlOk && keyOk;
 };
 
-const createSupabaseClient = () => {
+const createSupabaseClient = (): SupabaseClient<any> => {
+  // Re-resolve at creation to pick up any globals/localStorage updates
+  supabaseUrl = resolveSupabaseUrl();
+  supabaseAnonKey = resolveSupabaseAnonKey();
+
   if (!isValidSupabaseUrl || !isValidSupabaseKey) {
     console.warn('Supabase not configured - using mock client');
     
@@ -51,11 +93,11 @@ const createSupabaseClient = () => {
   }
   
   console.log('Creating Supabase client with valid credentials:', {
-    urlPreview: `${supabaseUrl.substring(0, 30)}...`,
-    keyPreview: `${supabaseAnonKey.substring(0, 20)}...`
+    urlPreview: `${supabaseUrl!.substring(0, 30)}...`,
+    keyPreview: `${supabaseAnonKey!.substring(0, 20)}...`
   });
   
-  return createClient(supabaseUrl, supabaseAnonKey, {
+  return createClient(supabaseUrl!, supabaseAnonKey!, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
@@ -89,4 +131,46 @@ const createSupabaseClient = () => {
   });
 };
 
-export const supabase = createSupabaseClient();
+// Export a live-binding client that can be swapped after bootstrap
+export let supabase: SupabaseClient<any> = createSupabaseClient();
+
+// Optionally fetch public config (URL + ANON KEY) from a Supabase Edge Function
+// Expects an Edge Function deployed at <functionsBase>/public-config
+// The base can be provided by window.__SUPABASE_FUNCTIONS_URL__ or HARDCODED_FUNCTIONS_URL
+export async function bootstrapSupabaseConfig(): Promise<void> {
+  if (isSupabaseConfigured()) return; // already configured
+
+  try {
+    const w: any = typeof window !== 'undefined' ? (window as any) : {};
+    const functionsBase =
+      (w && w.__SUPABASE_FUNCTIONS_URL__) ||
+      HARDCODED_FUNCTIONS_URL ||
+      undefined;
+
+    if (!functionsBase) {
+      // Nothing to fetch from
+      return;
+    }
+
+    const url = `${functionsBase.replace(/\/$/, '')}/public-config`;
+    const resp = await fetch(url, { method: 'GET' });
+    if (!resp.ok) return;
+    const json = await resp.json();
+    const urlVal = json?.supabaseUrl as string | undefined;
+    const keyVal = json?.supabaseAnonKey as string | undefined;
+    if (urlVal && keyVal) {
+      try {
+        localStorage.setItem('SUPABASE_URL', urlVal);
+        localStorage.setItem('SUPABASE_ANON_KEY', keyVal);
+      } catch {}
+      if (w) {
+        w.__SUPABASE_URL__ = urlVal;
+        w.__SUPABASE_ANON_KEY__ = keyVal;
+      }
+      // Recreate client with new config
+      supabase = createSupabaseClient();
+    }
+  } catch (e) {
+    console.warn('bootstrapSupabaseConfig failed:', e);
+  }
+}
