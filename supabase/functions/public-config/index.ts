@@ -1,4 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+// Local type hint to avoid TS errors when editing in a non-Deno environment
+// deno-lint-ignore no-var
+declare var Deno: any;
 
 /**
  * Public config function: returns SUPABASE_URL and SUPABASE_ANON_KEY to the browser via CORS.
@@ -24,8 +27,8 @@ Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') return corsResponse({}, 204);
     if (req.method !== 'GET') return corsResponse({ error: 'Method not allowed' }, 405);
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  const supabaseUrl = typeof Deno !== 'undefined' ? Deno.env.get('SUPABASE_URL') : undefined;
+  const anonKey = typeof Deno !== 'undefined' ? Deno.env.get('SUPABASE_ANON_KEY') : undefined;
 
     if (!supabaseUrl || !anonKey) {
       return corsResponse({ error: 'Missing SUPABASE_URL or SUPABASE_ANON_KEY on server' }, 500);

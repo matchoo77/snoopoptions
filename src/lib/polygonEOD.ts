@@ -425,7 +425,7 @@ export class PolygonEODService {
   private convertAggregateToActivity(
     agg: PolygonOptionsAgg, 
     contract: PolygonOptionsContract,
-    date: string
+  _date: string
   ): OptionsActivity | null {
     try {
       console.log(`[PolygonEOD] Converting aggregate for ${contract.ticker}:`, {
