@@ -33,6 +33,16 @@ A real-time unusual options activity scanner that helps traders identify signifi
 	- supabase functions deploy polygon-proxy
 
 With VITE_SUPABASE_URL set, the app routes Polygon requests via the proxy; otherwise it uses the browser key.
+
+### Alternate Supabase config sources
+
+You can provide Supabase URL and ANON KEY in multiple ways (precedence order):
+1) Window globals: set `window.__SUPABASE_URL__` and `window.__SUPABASE_ANON_KEY__` before the app loads.
+2) localStorage: set `SUPABASE_URL` and `SUPABASE_ANON_KEY` keys.
+3) Vite env: `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+4) Hardcoded fallbacks in `src/lib/supabase.ts` (edit `HARDCODED_SUPABASE_URL` and `HARDCODED_SUPABASE_ANON_KEY`).
+
+Optionally, deploy the `public-config` Edge Function and set `window.__SUPABASE_FUNCTIONS_URL__` (or hardcode `HARDCODED_FUNCTIONS_URL`) so the app can fetch Supabase URL/ANON KEY from server secrets at runtime.
 ## Technology Stack
 
 - **Frontend**: React + TypeScript + Tailwind CSS
