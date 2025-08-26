@@ -335,7 +335,7 @@ export class PolygonEODService {
           }
           
           // Add delay between contract requests to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 15000)); // 15 second delay for free tier
         }
       } catch (error) {
         console.error(`[PolygonEOD] Error scanning ${symbol}:`, error);
@@ -625,6 +625,9 @@ export class PolygonEODService {
       const unusualActivities = activities.filter(activity => activity.unusual);
       console.log(`[PolygonEOD] ${symbol}: Found ${activities.length} activities, ${unusualActivities.length} unusual`);
       allActivities.push(...unusualActivities);
+      
+      // Add delay between symbols to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 15000)); // 15 second delay for free tier
     }
     
     console.log(`[PolygonEOD] Total unusual activities across all symbols: ${allActivities.length}`);
