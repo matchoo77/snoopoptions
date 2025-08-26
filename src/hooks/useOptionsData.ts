@@ -24,14 +24,16 @@ export function useOptionsData() {
   console.log('[useOptionsData] API Key check:', {
     hasKey: !!polygonApiKey,
     keyLength: polygonApiKey.length,
-    keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...${polygonApiKey.slice(-4)}` : 'none'
+    keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...${polygonApiKey.slice(-4)}` : 'none',
+    keyValid: isValidPolygonApiKey(polygonApiKey)
   });
 
   // Use EOD data hook for real data
   const { 
     activities: eodActivities, 
     loading: eodLoading, 
-    error: eodError
+    error: eodError,
+    fetchEODData
   } = useEODData({
     apiKey: polygonApiKey,
     symbols: [],
@@ -40,16 +42,23 @@ export function useOptionsData() {
 
   // Determine data source and activities to use (no mock fallback)
   const { allActivities, dataSource, isConnected, loading, error } = useMemo(() => {
-  const hasValidKey = isValidPolygonApiKey(polygonApiKey) || isSupabaseConfigured();
+    const hasValidKey = isValidPolygonApiKey(polygonApiKey) || isSupabaseConfigured();
+    
+    console.log('[useOptionsData] Data source determination:', {
+      hasValidKey,
+      polygonValid: isValidPolygonApiKey(polygonApiKey),
+      supabaseConfigured: isSupabaseConfigured(),
+      activitiesCount: eodActivities.length
+    });
 
-  if (!hasValidKey) {
+    if (!hasValidKey) {
       console.warn('[useOptionsData] No valid API key. Returning empty dataset.');
       return {
         allActivities: [] as OptionsActivity[],
         dataSource: 'none' as const,
         isConnected: false,
         loading: false,
-    error: 'Polygon API key is missing/invalid and Supabase is not configured.'
+        error: 'Polygon API key is missing/invalid and Supabase is not configured.'
       };
     }
 
@@ -63,9 +72,17 @@ export function useOptionsData() {
     };
   }, [polygonApiKey, eodActivities, eodLoading, eodError]);
 
-  // No mock refresh loop
+  // Manual refresh function
+  const refreshData = () => {
+    if (isValidPolygonApiKey(polygonApiKey) && fetchEODData) {
+      console.log('[useOptionsData] Manual refresh triggered');
+      fetchEODData();
+    }
+  };
+
   useEffect(() => {
-    // Intentionally left blank: no mock data refresh
+    console.log('[useOptionsData] Mount effect - triggering initial data fetch');
+    refreshData();
   }, []);
 
   const filteredActivities = useMemo(() => {

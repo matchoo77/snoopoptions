@@ -19,16 +19,26 @@ export function MarketOverview() {
   useEffect(() => {
     const symbols = ['SPY', 'QQQ', 'IWM', 'AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'];
 
-  const apiKey = (import.meta as any)?.env?.VITE_POLYGON_API_KEY?.toString() || '';
+    const apiKey = (import.meta as any)?.env?.VITE_POLYGON_API_KEY?.toString() || '';
+    console.log('[MarketOverview] API Key check:', {
+      hasKey: !!apiKey,
+      keyLength: apiKey.length,
+      keyValid: isValidPolygonApiKey(apiKey),
+      keyPreview: apiKey ? `${apiKey.substring(0, 8)}...${apiKey.slice(-4)}` : 'none'
+    });
+    
     if (!isValidPolygonApiKey(apiKey)) {
+      console.log('[MarketOverview] Invalid API key, setting error state');
       setError('Polygon API key is missing or invalid.');
       setMarketData([]);
     } else {
+      console.log('[MarketOverview] Valid API key found, fetching market data...');
       // Fetch EOD aggregates for each symbol (previous trading day)
       const service = new PolygonEODService(apiKey);
 
       const fetchData = async () => {
         try {
+          console.log('[MarketOverview] Starting market data fetch...');
           setError(null);
           // Determine previous trading day (rough approximation)
           const today = new Date();
@@ -40,6 +50,7 @@ export function MarketOverview() {
 
           const results: MarketData[] = [];
           for (const symbol of symbols) {
+            console.log(`[MarketOverview] Fetching data for ${symbol}...`);
             const aggs = await service.getStockAggregates(symbol, dateStr, dateStr);
             if (aggs && aggs.length > 0) {
               const agg = aggs[0];
@@ -49,11 +60,13 @@ export function MarketOverview() {
               const changePercent = open ? (change / open) * 100 : 0;
               const volume = agg.v ?? 0;
               results.push({ symbol, price, change, changePercent, volume });
+              console.log(`[MarketOverview] ${symbol}: $${price.toFixed(2)} (${changePercent.toFixed(2)}%)`);
             }
             // Small delay to avoid rate limiting on free tier
             await new Promise(r => setTimeout(r, 200));
           }
 
+          console.log(`[MarketOverview] Fetched data for ${results.length} symbols`);
           setMarketData(results);
         } catch (e) {
           console.error('MarketOverview fetch error:', e);
@@ -65,6 +78,7 @@ export function MarketOverview() {
       fetchData();
     }
 
+    console.log('[MarketOverview] Setting market status...');
     // Determine market status based on current time
     const now = new Date();
     const hour = now.getHours();

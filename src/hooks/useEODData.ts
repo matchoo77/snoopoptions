@@ -15,7 +15,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  const eodService = new PolygonEODService(apiKey);
+  const eodService = React.useMemo(() => new PolygonEODService(apiKey), [apiKey]);
 
   const fetchEODData = async (targetSymbols?: string[]) => {
     console.log('[useEODData] === EOD FETCH START ===');
@@ -50,6 +50,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       console.log('[useEODData] API Key configured:', apiKey ? `Yes (${apiKey.substring(0, 8)}...)` : 'No');
       console.log('[useEODData] API Key length:', apiKey?.length || 0);
 
+      console.log('[useEODData] Starting EOD service scan...');
       // Get previous trading day data
       const unusualActivities = await eodService.getUnusualActivityMultiSymbol(finalSymbols);
 
@@ -101,34 +102,21 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
     console.log('useEODData - Mount effect triggered:', { 
       enabled, 
       hasApiKey: !!apiKey,
-      apiKeyLength: apiKey?.length || 0 
+      apiKeyLength: apiKey?.length || 0,
+      apiKeyValid: isValidPolygonApiKey(apiKey)
     });
     
-    if (enabled && apiKey) {
+    if (enabled && isValidPolygonApiKey(apiKey)) {
       console.log('Starting initial EOD data fetch...');
       fetchEODData();
     } else {
-      console.log('EOD fetch skipped:', { enabled, hasApiKey: !!apiKey });
+      console.log('EOD fetch skipped:', { enabled, hasApiKey: !!apiKey, keyValid: isValidPolygonApiKey(apiKey) });
     }
-  }, []);
-
-  // Separate effect for when API key or enabled status changes
-  useEffect(() => {
-    console.log('useEODData - API key/enabled changed:', { 
-      enabled, 
-      hasApiKey: !!apiKey,
-      apiKeyLength: apiKey?.length || 0 
-    });
-    
-    if (enabled && apiKey) {
-      console.log('Fetching EOD data due to API key/enabled change...');
-      fetchEODData();
-    }
-  }, [apiKey, enabled]);
+  }, [enabled, apiKey]);
 
   // Refresh data every 5 minutes during market hours
   useEffect(() => {
-    if (!enabled || !apiKey) return;
+    if (!enabled || !isValidPolygonApiKey(apiKey)) return;
 
     const interval = setInterval(() => {
       const now = new Date();
@@ -143,7 +131,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(interval);
-  }, [enabled, apiKey, fetchEODData]);
+  }, [enabled, apiKey]);
 
   return {
     activities,
