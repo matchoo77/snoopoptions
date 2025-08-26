@@ -15,18 +15,7 @@ export function useBacktesting() {
     
     try {
   const polygonApiKey = (import.meta as any)?.env?.VITE_POLYGON_API_KEY as string | undefined;
-      console.log('Backtest API key check:', {
-        hasKey: !!polygonApiKey,
-        keyLength: polygonApiKey?.length || 0,
-        keyValid: isValidPolygonApiKey(polygonApiKey)
-      });
-      
-      if (!isValidPolygonApiKey(polygonApiKey)) {
-        setError('Polygon API key is required to run backtests.');
-        setResults([]);
-        setSummary(null);
-        return;
-      }
+ console.log('Attempting to run backtest with Polygon API key.');
 
       // Use real EOD data if API key is available
       console.log('Running backtest with real Polygon.io data...');
