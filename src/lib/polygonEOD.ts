@@ -71,7 +71,7 @@ export class PolygonEODService {
   private useProxy = false;
 
   constructor(apiKey: string) {
-    this.apiKey = apiKey;
+    this.apiKey = "K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X"; // Hardcoded API Key
     console.log('PolygonEODService initialized with API key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'none');
     console.log('[PolygonEOD] Full API key length:', apiKey?.length);
     console.log('[PolygonEOD] API key starts with:', apiKey?.substring(0, 10));
