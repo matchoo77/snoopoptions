@@ -71,15 +71,15 @@ export class PolygonEODService {
   private useProxy = false;
 
   constructor(apiKey: string) {
-    this.apiKey = apiKey;
+    this.apiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
     console.log('PolygonEODService initialized with API key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'none');
     console.log('[PolygonEOD] Full API key length:', apiKey?.length);
     console.log('[PolygonEOD] API key starts with:', apiKey?.substring(0, 10));
 
     // Enable proxy to handle rate limiting server-side
-    this.useProxy = true;
+    this.useProxy = false;
     this.proxyUrl = `${getResolvedSupabaseUrl()}/functions/v1/polygon-proxy`;
-    console.log('[PolygonEOD] Using Supabase proxy for API calls');
+    console.log('[PolygonEOD] Using direct API calls (proxy disabled)');
   }
 
   // Rate-limited request wrapper
@@ -114,7 +114,11 @@ export class PolygonEODService {
               'Authorization': `Bearer ${this.apiKey}`,
               ...options.headers
             };
-            response = await fetch(url, { ...options, headers });
+            // Add API key as query parameter for direct calls
+            const urlWithKey = url.includes('?') 
+              ? `${url}&apikey=${this.apiKey}`
+              : `${url}?apikey=${this.apiKey}`;
+            response = await fetch(urlWithKey, options);
           }
           console.log('[PolygonEOD] Response status:', response.status, response.statusText);
           resolve(response);
