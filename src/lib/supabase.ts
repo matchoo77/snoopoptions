@@ -1,13 +1,8 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// Optional hardcoded fallbacks (edit these to hardcode your project)
-// Example:
-// const HARDCODED_SUPABASE_URL = 'https://your-ref.supabase.co';
-// const HARDCODED_SUPABASE_ANON_KEY = 'ey...';
-const HARDCODED_SUPABASE_URL = '';
-const HARDCODED_SUPABASE_ANON_KEY = '';
-// If you deploy the public-config Edge Function, you can hardcode its base URL here too
-// For example: https://<ref>.functions.supabase.co
+// Hardcoded Supabase configuration
+const HARDCODED_SUPABASE_URL = 'https://vmaktasytlnftugkrlmp.supabase.co';
+const HARDCODED_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtYWt0YXN5dGxuZnR1Z2tybG1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNzM2OTEsImV4cCI6MjA3MDk0OTY5MX0.D4tSqMTKS0xJIw4vfIcINmYpvjw7lM_yezOpCxs37gE';
 const HARDCODED_FUNCTIONS_URL = '';
 
 // Debug function to check all possible sources
@@ -33,105 +28,69 @@ function debugSupabaseConfig() {
 // 2) localStorage overrides
 // 3) Vite env (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)
 // 4) Hardcoded fallbacks above
-const resolveSupabaseUrl = (): string | undefined => {
+const resolveSupabaseUrl = (): string => {
   debugSupabaseConfig();
   const w = (typeof window !== 'undefined' ? (window as any) : undefined) as any;
   return (
     (w && (w.__SUPABASE_URL__ as string)) ||
     (typeof localStorage !== 'undefined' ? localStorage.getItem('SUPABASE_URL') || undefined : undefined) ||
     ((import.meta as any)?.env?.VITE_SUPABASE_URL as string | undefined) ||
-    (HARDCODED_SUPABASE_URL || undefined)
+    HARDCODED_SUPABASE_URL
   );
 };
 
-const resolveSupabaseAnonKey = (): string | undefined => {
+const resolveSupabaseAnonKey = (): string => {
   const w = (typeof window !== 'undefined' ? (window as any) : undefined) as any;
   return (
     (w && (w.__SUPABASE_ANON_KEY__ as string)) ||
     (typeof localStorage !== 'undefined' ? localStorage.getItem('SUPABASE_ANON_KEY') || undefined : undefined) ||
     ((import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY as string | undefined) ||
-    (HARDCODED_SUPABASE_ANON_KEY || undefined)
+    HARDCODED_SUPABASE_ANON_KEY
   );
 };
 
 export const getResolvedSupabaseUrl = resolveSupabaseUrl;
 export const getResolvedSupabaseAnonKey = resolveSupabaseAnonKey;
 
-let supabaseUrl = resolveSupabaseUrl();
-let supabaseAnonKey = resolveSupabaseAnonKey();
+// Simple validation functions
+const isUrlValid = (url: string) => {
+  return url && url.startsWith('https://') && url.includes('.supabase.co') && url.length > 20;
+};
 
-const isUrlValid = (url?: string) =>
-  !!url && url.startsWith('https://') && url.includes('.supabase.co') && !url.includes('your_supabase_url') && url.length > 20;
-const isKeyValid = (key?: string) =>
-  !!key && key.length > 100 && key.includes('.') && !key.includes('your_supabase_anon_key') && key.startsWith('eyJ');
-
-// Validate Supabase configuration (initial)
-let isValidSupabaseUrl = isUrlValid(supabaseUrl);
-let isValidSupabaseKey = isKeyValid(supabaseAnonKey);
+const isKeyValid = (key: string) => {
+  return key && key.length > 100 && key.includes('.') && key.startsWith('eyJ');
+};
 
 export const isSupabaseConfigured = (): boolean => {
   const url = resolveSupabaseUrl();
   const key = resolveSupabaseAnonKey();
+  const configured = isUrlValid(url) && isKeyValid(key);
+  
   console.log('isSupabaseConfigured check:', { 
     url: url ? `${url.substring(0, 30)}...` : 'none', 
     key: key ? `${key.substring(0, 20)}...` : 'none',
     urlValid: isUrlValid(url),
-    keyValid: isKeyValid(key)
+    keyValid: isKeyValid(key),
+    configured
   });
-  return isUrlValid(url) && isKeyValid(key);
+  
+  return configured;
 };
 
+// Create the Supabase client with hardcoded values
 const createSupabaseClient = (): SupabaseClient<any> => {
-  // Re-resolve at creation to pick up any globals/localStorage updates
-  supabaseUrl = resolveSupabaseUrl();
-  supabaseAnonKey = resolveSupabaseAnonKey();
-  isValidSupabaseUrl = isUrlValid(supabaseUrl);
-  isValidSupabaseKey = isKeyValid(supabaseAnonKey);
-  console.log('Creating Supabase client - config check:', { 
-    isValidSupabaseUrl, 
-    isValidSupabaseKey,
+  const supabaseUrl = resolveSupabaseUrl();
+  const supabaseAnonKey = resolveSupabaseAnonKey();
+  
+  console.log('Creating Supabase client with:', {
     url: supabaseUrl,
-    keyLength: supabaseAnonKey?.length || 0
-  });
-
-  if (!isValidSupabaseUrl || !isValidSupabaseKey) {
-    console.warn('Supabase validation failed - using mock client', {
-      url: supabaseUrl,
-      urlValid: isValidSupabaseUrl,
-      keyValid: isValidSupabaseKey,
-      keyLength: supabaseAnonKey?.length || 0
-    });
-    
-    // Return a mock client that provides helpful error messages
-    return {
-      auth: {
-        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-        getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-        signInWithPassword: () => Promise.resolve({ 
-          data: { user: null }, 
-          error: { message: 'Supabase configuration error. Please check console for details.' } 
-        }),
-        signUp: () => Promise.resolve({ 
-          data: { user: null }, 
-          error: { message: 'Supabase configuration error. Please check console for details.' } 
-        }),
-        signOut: () => Promise.resolve({ error: null }),
-        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-      },
-      from: () => ({
-        select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }),
-        insert: () => Promise.resolve({ error: null }),
-        update: () => ({ eq: () => Promise.resolve({ error: null }) }),
-      }),
-    } as any;
-  }
-  
-  console.log('Creating Supabase client with valid credentials:', {
-    urlPreview: `${supabaseUrl!.substring(0, 30)}...`,
-    keyPreview: `${supabaseAnonKey!.substring(0, 20)}...`
+    keyLength: supabaseAnonKey?.length || 0,
+    urlValid: isUrlValid(supabaseUrl),
+    keyValid: isKeyValid(supabaseAnonKey)
   });
   
-  return createClient(supabaseUrl!, supabaseAnonKey!, {
+  // Always create a real client since we have hardcoded values
+  return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
@@ -165,55 +124,12 @@ const createSupabaseClient = (): SupabaseClient<any> => {
   });
 };
 
-// Export a live-binding client that can be swapped after bootstrap
-export let supabase: SupabaseClient<any>;
-
-// Initialize the client
-const initializeSupabaseClient = () => {
-  supabase = createSupabaseClient();
-  console.log('Supabase client initialized with hardcoded values');
-};
-
-// Initialize immediately
-initializeSupabaseClient();
+// Export the Supabase client
+export const supabase = createSupabaseClient();
 
 // Optionally fetch public config (URL + ANON KEY) from a Supabase Edge Function
-// Expects an Edge Function deployed at <functionsBase>/public-config
-// The base can be provided by window.__SUPABASE_FUNCTIONS_URL__ or HARDCODED_FUNCTIONS_URL
 export async function bootstrapSupabaseConfig(): Promise<void> {
-  if (isSupabaseConfigured()) return; // already configured
-
-  try {
-    const w: any = typeof window !== 'undefined' ? (window as any) : {};
-    const functionsBase =
-      (w && w.__SUPABASE_FUNCTIONS_URL__) ||
-      HARDCODED_FUNCTIONS_URL ||
-      undefined;
-
-    if (!functionsBase) {
-      // Nothing to fetch from
-      return;
-    }
-
-    const url = `${functionsBase.replace(/\/$/, '')}/public-config`;
-    const resp = await fetch(url, { method: 'GET' });
-    if (!resp.ok) return;
-    const json = await resp.json();
-    const urlVal = json?.supabaseUrl as string | undefined;
-    const keyVal = json?.supabaseAnonKey as string | undefined;
-    if (urlVal && keyVal) {
-      try {
-        localStorage.setItem('SUPABASE_URL', urlVal);
-        localStorage.setItem('SUPABASE_ANON_KEY', keyVal);
-      } catch {}
-      if (w) {
-        w.__SUPABASE_URL__ = urlVal;
-        w.__SUPABASE_ANON_KEY__ = keyVal;
-      }
-      // Recreate client with new config
-      supabase = createSupabaseClient();
-    }
-  } catch (e) {
-    console.warn('bootstrapSupabaseConfig failed:', e);
-  }
+  // Since we have hardcoded values, we don't need to bootstrap
+  console.log('Supabase config already hardcoded, skipping bootstrap');
+  return;
 }
