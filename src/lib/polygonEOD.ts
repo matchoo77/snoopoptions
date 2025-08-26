@@ -132,19 +132,22 @@ export class PolygonEODService {
   async getOptionsContracts(symbol: string, expiredGte?: string, expiredLte?: string): Promise<PolygonOptionsContract[]> {
     try {
       console.log(`[PolygonEOD] Fetching options contracts for ${symbol}...`);
+      console.log(`[PolygonEOD] Using API key: ${this.apiKey ? `${this.apiKey.substring(0, 8)}...${this.apiKey.slice(-4)}` : 'NONE'}`);
       const params = new URLSearchParams({
         'underlying_ticker': symbol,
         'limit': '1000',
-        'apikey': this.apiKey,
       });
+      
+      // Add API key parameter
+      params.append('apikey', this.apiKey);
 
       if (expiredGte) params.append('expired.gte', expiredGte);
       if (expiredLte) params.append('expired.lte', expiredLte);
 
-      const url = `${this.baseUrl}/v3/reference/options/contracts?${params}`;
-      console.log(`[PolygonEOD] Contracts URL: ${url.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
+      const fullUrl = `${this.baseUrl}/v3/reference/options/contracts?${params}`;
+      console.log(`[PolygonEOD] Contracts URL: ${fullUrl.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
       
-      const response = await this.makeRequest(`${this.baseUrl}/v3/reference/options/contracts?${params}`);
+      const response = await this.makeRequest(fullUrl);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -178,12 +181,16 @@ export class PolygonEODService {
     endDate: string = startDate
   ): Promise<PolygonOptionsAgg[]> {
     try {
-      const url = `${this.baseUrl}/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${this.apiKey}`;
+      const params = new URLSearchParams({
+        'adjusted': 'true',
+        'sort': 'asc',
+        'apikey': this.apiKey,
+      });
+      
+      const url = `${this.baseUrl}/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?${params}`;
       console.log(`[PolygonEOD] Fetching aggregates for ${ticker}: ${url.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
       
-      const response = await this.makeRequest(
-        `${this.baseUrl}/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${this.apiKey}`
-      );
+      const response = await this.makeRequest(url);
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -240,9 +247,16 @@ export class PolygonEODService {
   // Get stock price data for backtesting
   async getStockAggregates(symbol: string, startDate: string, endDate: string): Promise<any[]> {
     try {
-      const response = await this.makeRequest(
-        `${this.baseUrl}/v2/aggs/ticker/${symbol}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${this.apiKey}`
-      );
+      const params = new URLSearchParams({
+        'adjusted': 'true',
+        'sort': 'asc',
+        'apikey': this.apiKey,
+      });
+      
+      const url = `${this.baseUrl}/v2/aggs/ticker/${symbol}/range/1/day/${startDate}/${endDate}?${params}`;
+      console.log(`[PolygonEOD] Stock aggregates URL: ${url.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
+      
+      const response = await this.makeRequest(url);
       
       if (!response.ok) {
         throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
