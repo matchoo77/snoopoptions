@@ -57,7 +57,22 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       console.log('[useEODData] Starting EOD service scan...');
       // Get previous trading day data
       console.log('[useEODData] Calling getUnusualActivityMultiSymbol with symbols:', finalSymbols);
+      
+      // If searching for a specific symbol, replace existing data
+      // If loading default symbols, merge with existing data
       const unusualActivities = await eodService.getUnusualActivityMultiSymbol(finalSymbols);
+      
+      if (targetSymbols && targetSymbols.length === 1) {
+        // Replace data for this specific symbol
+        const searchSymbol = targetSymbols[0];
+        setActivities(prev => {
+          const filtered = prev.filter(activity => activity.symbol !== searchSymbol);
+          return [...unusualActivities, ...filtered].slice(0, 200);
+        });
+      } else {
+        // Replace all data
+        setActivities(unusualActivities);
+      }
 
       console.log('[useEODData] === EOD DATA FETCH COMPLETE ===');
       console.log('[useEODData] Total unusual activities found:', unusualActivities.length);
@@ -70,7 +85,6 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
         console.log('[useEODData] 4. Filters too restrictive');
       }
       
-      setActivities(unusualActivities);
       setLastUpdated(new Date().toISOString());
       
     } catch (err) {

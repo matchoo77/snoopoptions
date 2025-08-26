@@ -66,7 +66,7 @@ export class PolygonEODService {
   private baseUrl = 'https://api.polygon.io';
   private requestQueue: Promise<any> = Promise.resolve();
   private lastRequestTime = 0;
-  private minRequestInterval = 200; // 200ms between requests for free tier
+  private minRequestInterval = 1000; // 1 second between requests to avoid rate limits
   private proxyUrl: string | null = null;
   private useProxy = false;
 
@@ -333,6 +333,9 @@ export class PolygonEODService {
           } else {
             console.log(`[PolygonEOD] No aggregate data found for ${ticker} on ${date}`);
           }
+          
+          // Add delay between contract requests to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       } catch (error) {
         console.error(`[PolygonEOD] Error scanning ${symbol}:`, error);

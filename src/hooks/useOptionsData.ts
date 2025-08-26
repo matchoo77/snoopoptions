@@ -76,7 +76,7 @@ export function useOptionsData() {
   const refreshData = () => {
     if (isValidPolygonApiKey(polygonApiKey) && fetchEODData) {
       console.log('[useOptionsData] Manual refresh triggered');
-      fetchEODData();
+      fetchEODData(filters.searchSymbol ? [filters.searchSymbol] : []);
     }
   };
 
@@ -84,6 +84,14 @@ export function useOptionsData() {
     console.log('[useOptionsData] Mount effect - triggering initial data fetch');
     refreshData();
   }, []);
+
+  // Trigger search when searchSymbol changes
+  useEffect(() => {
+    if (filters.searchSymbol && isValidPolygonApiKey(polygonApiKey) && fetchEODData) {
+      console.log('[useOptionsData] Search symbol changed, fetching data for:', filters.searchSymbol);
+      fetchEODData([filters.searchSymbol]);
+    }
+  }, [filters.searchSymbol, polygonApiKey, fetchEODData]);
 
   const filteredActivities = useMemo(() => {
     let filtered: OptionsActivity[] = allActivities;
