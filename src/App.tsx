@@ -103,11 +103,14 @@ function App() {
     case 'subscription':
       return user ? (
         <SubscriptionPage 
-          userToken={user.access_token || ''}
+          userToken={''}
           onBack={handleBackToDashboard}
         />
       ) : (
-        <AuthPage onSuccess={handleAuthSuccess} />
+        <LoginForm
+          onSuccess={handleAuthSuccess}
+          onSwitchToSignup={() => setCurrentView('signup')}
+        />
       );
 
     case 'success':
@@ -117,7 +120,12 @@ function App() {
 
     case 'dashboard':
       if (!user) {
-        return <AuthPage onSuccess={handleAuthSuccess} />;
+        return (
+          <LoginForm
+            onSuccess={handleAuthSuccess}
+            onSwitchToSignup={() => setCurrentView('signup')}
+          />
+        );
       }
 
       // For now, always allow dashboard access (simplified trial logic)
