@@ -90,7 +90,7 @@ export class PolygonEODService {
   }
 
   // Rate-limited request wrapper
-  private async makeRequest(url: string): Promise<Response> {
+  private async makeRequest(url: string, options: RequestInit = {}): Promise<Response> {
     console.log('[PolygonEOD] Making request to:', url.replace(this.apiKey, 'API_KEY_HIDDEN'));
     console.log('[PolygonEOD] Using proxy:', this.useProxy);
     
@@ -116,7 +116,12 @@ export class PolygonEODService {
             });
           } else {
             console.log('[PolygonEOD] Making direct API call to:', url.replace(this.apiKey, 'API_KEY_HIDDEN'));
-            response = await fetch(url);
+            // Add Authorization header for Polygon API
+            const headers = {
+              'Authorization': `Bearer ${this.apiKey}`,
+              ...options.headers
+            };
+            response = await fetch(url, { ...options, headers });
           }
           console.log('[PolygonEOD] Response status:', response.status, response.statusText);
           resolve(response);
@@ -138,9 +143,6 @@ export class PolygonEODService {
         'limit': '1000',
       });
       
-      // Add API key parameter
-      params.append('apikey', this.apiKey);
-
       if (expiredGte) params.append('expired.gte', expiredGte);
       if (expiredLte) params.append('expired.lte', expiredLte);
 
@@ -184,7 +186,6 @@ export class PolygonEODService {
       const params = new URLSearchParams({
         'adjusted': 'true',
         'sort': 'asc',
-        'apikey': this.apiKey,
       });
       
       const url = `${this.baseUrl}/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?${params}`;
@@ -221,7 +222,7 @@ export class PolygonEODService {
     try {
       const tickerParam = tickers.join(',');
       const response = await this.makeRequest(
-        `${this.baseUrl}/v3/snapshot/options/${tickerParam}?apikey=${this.apiKey}`
+        `${this.baseUrl}/v3/snapshot/options/${tickerParam}`
       );
       
       if (!response.ok) {
@@ -250,7 +251,6 @@ export class PolygonEODService {
       const params = new URLSearchParams({
         'adjusted': 'true',
         'sort': 'asc',
-        'apikey': this.apiKey,
       });
       
       const url = `${this.baseUrl}/v2/aggs/ticker/${symbol}/range/1/day/${startDate}/${endDate}?${params}`;
