@@ -317,7 +317,7 @@ export class PolygonEODService {
         const contractsToCheck = activeContracts.slice(0, 5); // Further reduced to prevent rate limiting
         
         // Get EOD data for each contract
-        const contractsToCheck = activeContracts.slice(0, Math.min(limit, 3)); // Reduced to 3 contracts
+        for (const contract of contractsToCheck) {
           const ticker = this.buildOptionsTicker(contract);
           console.log(`[PolygonEOD] Processing contract ${contractsToCheck.indexOf(contract) + 1}/${contractsToCheck.length}: ${ticker}`);
           const aggregates = await this.getOptionsAggregates(ticker, date);
@@ -443,7 +443,7 @@ export class PolygonEODService {
   private convertAggregateToActivity(
     agg: PolygonOptionsAgg, 
     contract: PolygonOptionsContract,
-  _date: string
+    _date: string
   ): OptionsActivity | null {
     try {
       console.log(`[PolygonEOD] Converting aggregate for ${contract.ticker}:`, {
@@ -626,13 +626,13 @@ export class PolygonEODService {
     
     for (const symbol of symbols) {
       console.log(`[PolygonEOD] Processing ${symbol}...`);
-  const activities = await this.getMostActiveOptions(symbol, date || '', 20); // Increased limit
+      const activities = await this.getMostActiveOptions(symbol, date || '', 20); // Increased limit
       const unusualActivities = activities.filter(activity => activity.unusual);
       console.log(`[PolygonEOD] ${symbol}: Found ${activities.length} activities, ${unusualActivities.length} unusual`);
       allActivities.push(...unusualActivities);
       
       // Add delay between symbols to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
+      await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
     }
     
     console.log(`[PolygonEOD] Total unusual activities across all symbols: ${allActivities.length}`);
