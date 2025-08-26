@@ -17,7 +17,7 @@ export function MarketOverview() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const symbols = ['SPY', 'QQQ', 'AAPL', 'TSLA'];
+    const symbols = ['SPY', 'QQQ'];
 
     const apiKey = import.meta.env.VITE_POLYGON_API_KEY || '';
     console.log('[MarketOverview] API Key check:', {
