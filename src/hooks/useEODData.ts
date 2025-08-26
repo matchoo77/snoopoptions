@@ -64,7 +64,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       if (targetSymbols && targetSymbols.length === 1) {
         // For single symbol search, use getMostActiveOptions for better results
         const singleSymbolActivities = await eodService.getMostActiveOptions(targetSymbols[0], undefined, 50);
-        unusualActivities = singleSymbolActivities; // Show all activities, not just unusual ones
+        unusualActivities = singleSymbolActivities.filter(activity => activity.volume > 0); // Show all activities with volume
       } else {
         unusualActivities = await eodService.getUnusualActivityMultiSymbol(finalSymbols);
       }

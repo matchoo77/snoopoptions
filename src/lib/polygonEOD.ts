@@ -340,7 +340,7 @@ export class PolygonEODService {
           }
           
           // Add delay between contract requests to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 15000)); // 15 second delay for free tier
+          await new Promise(resolve => setTimeout(resolve, 45000)); // 45 second delay for free tier
         }
       } catch (error) {
         console.error(`[PolygonEOD] Error scanning ${symbol}:`, error);
@@ -517,14 +517,14 @@ export class PolygonEODService {
 
   // Detect unusual activity based on volume and premium
   private detectUnusualActivity(volume: number, premium: number): boolean {
-    const isUnusual = volume >= 1 || premium >= 100; // Very low thresholds to show more data
+    const isUnusual = volume >= 1 || premium >= 1; // Extremely low thresholds to show all data
     console.log(`[PolygonEOD] Unusual activity check: volume=${volume}, premium=${premium}, unusual=${isUnusual}`);
     return isUnusual;
   }
 
   // Detect block trades
   private isBlockTrade(volume: number, premium: number): boolean {
-    const isBlock = volume >= 25 || premium >= 5000; // Lower thresholds to show more data
+    const isBlock = volume >= 10 || premium >= 1000; // Very low thresholds to show more data
     console.log(`[PolygonEOD] Block trade check: volume=${volume}, premium=${premium}, block=${isBlock}`);
     return isBlock;
   }
@@ -632,7 +632,7 @@ export class PolygonEODService {
       allActivities.push(...unusualActivities);
       
       // Add delay between symbols to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, 15000)); // 15 second delay for free tier
+            await new Promise(resolve => setTimeout(resolve, 60000)); // 60 second delay for free tier
     }
     
     console.log(`[PolygonEOD] Total unusual activities across all symbols: ${allActivities.length}`);
