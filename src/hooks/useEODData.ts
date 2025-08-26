@@ -60,7 +60,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       
       // If searching for a specific symbol, replace existing data
       // If loading default symbols, merge with existing data
-      const unusualActivities = await eodService.getUnusualActivityMultiSymbol(finalSymbols, date);
+      const unusualActivities = await eodService.getUnusualActivityMultiSymbol(finalSymbols);
       
       if (targetSymbols && targetSymbols.length === 1) {
         // Replace data for this specific symbol
