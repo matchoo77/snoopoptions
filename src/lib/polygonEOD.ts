@@ -517,14 +517,14 @@ export class PolygonEODService {
 
   // Detect unusual activity based on volume and premium
   private detectUnusualActivity(volume: number, premium: number): boolean {
-    const isUnusual = volume >= 1 || premium >= 1; // Extremely low thresholds to show all data
+    const isUnusual = volume >= 1 || premium >= 100; // Show activities with any volume or $100+ premium
     console.log(`[PolygonEOD] Unusual activity check: volume=${volume}, premium=${premium}, unusual=${isUnusual}`);
     return isUnusual;
   }
 
   // Detect block trades
   private isBlockTrade(volume: number, premium: number): boolean {
-    const isBlock = volume >= 10 || premium >= 1000; // Very low thresholds to show more data
+    const isBlock = volume >= 100 || premium >= 50000; // Block trades: 100+ volume or $50K+ premium
     console.log(`[PolygonEOD] Block trade check: volume=${volume}, premium=${premium}, block=${isBlock}`);
     return isBlock;
   }

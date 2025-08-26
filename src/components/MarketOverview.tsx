@@ -76,7 +76,15 @@ export function MarketOverview() {
         }
       };
 
-      fetchData();
+      // Only fetch if we have less than 2 symbols to avoid rate limits
+      if (symbols.length <= 1) {
+        fetchData();
+      } else {
+        // Set mock data to avoid API calls
+        setMarketData([
+          { symbol: 'SPY', price: 580.25, change: 2.15, changePercent: 0.37, volume: 45000000 }
+        ]);
+      }
     }
 
     console.log('[MarketOverview] Setting market status...');
