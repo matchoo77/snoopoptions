@@ -20,7 +20,10 @@ export function SearchBar({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearchChange(inputValue.toUpperCase());
+    const symbol = inputValue.toUpperCase().trim();
+    if (symbol) {
+      onSearchChange(symbol);
+    }
   };
 
   const handleClear = () => {

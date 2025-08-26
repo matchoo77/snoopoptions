@@ -309,7 +309,7 @@ export class PolygonEODService {
         console.log(`[PolygonEOD] Found ${activeContracts.length} active contracts for ${symbol}`);
 
         // Limit to most liquid contracts for API efficiency
-        const contractsToCheck = activeContracts.slice(0, 10); // Reduced to prevent rate limiting
+        const contractsToCheck = activeContracts.slice(0, 5); // Further reduced to prevent rate limiting
         
         // Get EOD data for each contract
         for (const contract of contractsToCheck) {
@@ -512,14 +512,14 @@ export class PolygonEODService {
 
   // Detect unusual activity based on volume and premium
   private detectUnusualActivity(volume: number, premium: number): boolean {
-    const isUnusual = volume >= 10 || premium >= 1000; // Even lower thresholds for paid subscription
+    const isUnusual = volume >= 1 || premium >= 100; // Very low thresholds to show more data
     console.log(`[PolygonEOD] Unusual activity check: volume=${volume}, premium=${premium}, unusual=${isUnusual}`);
     return isUnusual;
   }
 
   // Detect block trades
   private isBlockTrade(volume: number, premium: number): boolean {
-    const isBlock = volume >= 50 || premium >= 10000; // Lower thresholds for paid subscription
+    const isBlock = volume >= 25 || premium >= 5000; // Lower thresholds to show more data
     console.log(`[PolygonEOD] Block trade check: volume=${volume}, premium=${premium}, block=${isBlock}`);
     return isBlock;
   }

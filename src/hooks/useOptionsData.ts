@@ -89,11 +89,7 @@ export function useOptionsData() {
   useEffect(() => {
     if (filters.searchSymbol && isValidPolygonApiKey(polygonApiKey) && fetchEODData) {
       console.log('[useOptionsData] Search symbol changed, fetching data for:', filters.searchSymbol);
-      const debounceTimer = setTimeout(() => {
-        fetchEODData([filters.searchSymbol]);
-      }, 1000); // Debounce search to avoid rapid API calls
-      
-      return () => clearTimeout(debounceTimer);
+      fetchEODData([filters.searchSymbol]);
     }
   }, [filters.searchSymbol, polygonApiKey, fetchEODData]);
 
