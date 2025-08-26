@@ -76,17 +76,9 @@ export class PolygonEODService {
     console.log('[PolygonEOD] Full API key length:', apiKey?.length);
     console.log('[PolygonEOD] API key starts with:', apiKey?.substring(0, 10));
 
-    // Detect Supabase Edge Function proxy availability (supports hardcoded or fetched config)
-    const supabaseUrl = getResolvedSupabaseUrl();
-    const isValidSupabase = !!supabaseUrl && supabaseUrl.startsWith('https://') && supabaseUrl.includes('.supabase.co');
-    if (isValidSupabase) {
-      this.proxyUrl = `${supabaseUrl}/functions/v1/polygon-proxy`;
-      this.useProxy = true;
-      console.log('[PolygonEOD] Using Supabase Edge Function proxy for Polygon API requests');
-    } else {
-      this.useProxy = false;
-      console.log('[PolygonEOD] Supabase not configured or invalid; calling Polygon API directly from client');
-    }
+    // Disable proxy for now - use direct API calls
+    this.useProxy = false;
+    console.log('[PolygonEOD] Using direct Polygon API calls from client');
   }
 
   // Rate-limited request wrapper
