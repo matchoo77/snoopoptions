@@ -72,7 +72,12 @@ let isValidSupabaseKey = isKeyValid(supabaseAnonKey);
 export const isSupabaseConfigured = (): boolean => {
   const url = resolveSupabaseUrl();
   const key = resolveSupabaseAnonKey();
-  console.log('isSupabaseConfigured check:', { url: url ? `${url.substring(0, 30)}...` : 'none', key: key ? `${key.substring(0, 20)}...` : 'none' });
+  console.log('isSupabaseConfigured check:', { 
+    url: url ? `${url.substring(0, 30)}...` : 'none', 
+    key: key ? `${key.substring(0, 20)}...` : 'none',
+    urlValid: isUrlValid(url),
+    keyValid: isKeyValid(key)
+  });
   return isUrlValid(url) && isKeyValid(key);
 };
 
@@ -82,10 +87,20 @@ const createSupabaseClient = (): SupabaseClient<any> => {
   supabaseAnonKey = resolveSupabaseAnonKey();
   isValidSupabaseUrl = isUrlValid(supabaseUrl);
   isValidSupabaseKey = isKeyValid(supabaseAnonKey);
-  console.log('Creating Supabase client - config check:', { isValidSupabaseUrl, isValidSupabaseKey });
+  console.log('Creating Supabase client - config check:', { 
+    isValidSupabaseUrl, 
+    isValidSupabaseKey,
+    url: supabaseUrl,
+    keyLength: supabaseAnonKey?.length || 0
+  });
 
   if (!isValidSupabaseUrl || !isValidSupabaseKey) {
-    console.warn('Supabase not configured - using mock client');
+    console.warn('Supabase validation failed - using mock client', {
+      url: supabaseUrl,
+      urlValid: isValidSupabaseUrl,
+      keyValid: isValidSupabaseKey,
+      keyLength: supabaseAnonKey?.length || 0
+    });
     
     // Return a mock client that provides helpful error messages
     return {
@@ -94,11 +109,11 @@ const createSupabaseClient = (): SupabaseClient<any> => {
         getUser: () => Promise.resolve({ data: { user: null }, error: null }),
         signInWithPassword: () => Promise.resolve({ 
           data: { user: null }, 
-          error: { message: 'Please connect to Supabase using the "Connect to Supabase" button in the top right to enable authentication.' } 
+          error: { message: 'Supabase configuration error. Please check console for details.' } 
         }),
         signUp: () => Promise.resolve({ 
           data: { user: null }, 
-          error: { message: 'Please connect to Supabase using the "Connect to Supabase" button in the top right to enable authentication.' } 
+          error: { message: 'Supabase configuration error. Please check console for details.' } 
         }),
         signOut: () => Promise.resolve({ error: null }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
@@ -151,7 +166,16 @@ const createSupabaseClient = (): SupabaseClient<any> => {
 };
 
 // Export a live-binding client that can be swapped after bootstrap
-export let supabase: SupabaseClient<any> = createSupabaseClient();
+export let supabase: SupabaseClient<any>;
+
+// Initialize the client
+const initializeSupabaseClient = () => {
+  supabase = createSupabaseClient();
+  console.log('Supabase client initialized with hardcoded values');
+};
+
+// Initialize immediately
+initializeSupabaseClient();
 
 // Optionally fetch public config (URL + ANON KEY) from a Supabase Edge Function
 // Expects an Edge Function deployed at <functionsBase>/public-config
