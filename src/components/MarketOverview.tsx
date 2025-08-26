@@ -19,13 +19,13 @@ export function MarketOverview() {
   useEffect(() => {
     const symbols = ['SPY', 'QQQ'];
 
-    const apiKey = import.meta.env.VITE_POLYGON_API_KEY || '';
+    const apiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
     console.log('[MarketOverview] API Key check:', {
       hasKey: !!apiKey,
       keyLength: apiKey.length,
       keyValid: isValidPolygonApiKey(apiKey),
       keyPreview: apiKey ? `${apiKey.substring(0, 8)}...${apiKey.slice(-4)}` : 'none',
-      fullKey: apiKey
+      fullKey: 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X'
     });
     
     if (!isValidPolygonApiKey(apiKey)) {

@@ -2,8 +2,8 @@ import React from 'react';
 import { Wifi, WifiOff, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export function ConnectionStatus() {
-  const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY;
-  const hasApiKey = polygonApiKey && polygonApiKey !== 'your_polygon_api_key_here';
+  const polygonApiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
+  const hasApiKey = true;
 
   if (!polygonApiKey) {
     return (

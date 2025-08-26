@@ -19,7 +19,7 @@ export function DataSourceIndicator({
   error 
 }: DataSourceIndicatorProps) {
   // Check both API key and Supabase configuration
-  const polygonApiKey = (import.meta as any)?.env?.VITE_POLYGON_API_KEY?.toString() || '';
+  const polygonApiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
   const supabaseConfigured = isSupabaseConfigured();
   
   console.log('[DataSourceIndicator] API Key validation:', {

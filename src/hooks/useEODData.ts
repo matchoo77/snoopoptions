@@ -125,24 +125,26 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
 
   // Auto-fetch data on mount and when symbols change
   useEffect(() => {
+    const hardcodedKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
     console.log('useEODData - Mount effect triggered:', { 
       enabled, 
-      hasApiKey: !!apiKey,
-      apiKeyLength: apiKey?.length || 0,
-      apiKeyValid: isValidPolygonApiKey(apiKey)
+      hasApiKey: true,
+      apiKeyLength: hardcodedKey.length,
+      apiKeyValid: isValidPolygonApiKey(hardcodedKey)
     });
     
-    if (enabled && isValidPolygonApiKey(apiKey)) {
+    if (enabled && isValidPolygonApiKey(hardcodedKey)) {
       console.log('Starting initial EOD data fetch...');
       fetchEODData();
     } else {
-      console.log('EOD fetch skipped:', { enabled, hasApiKey: !!apiKey, keyValid: isValidPolygonApiKey(apiKey) });
+      console.log('EOD fetch skipped:', { enabled, hasApiKey: true, keyValid: isValidPolygonApiKey(hardcodedKey) });
     }
-  }, [enabled, apiKey]);
+  }, [enabled]);
 
   // Refresh data every 5 minutes during market hours
   useEffect(() => {
-    if (!enabled || !isValidPolygonApiKey(apiKey)) return;
+    const hardcodedKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
+    if (!enabled || !isValidPolygonApiKey(hardcodedKey)) return;
 
     const interval = setInterval(() => {
       const now = new Date();
@@ -157,7 +159,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(interval);
-  }, [enabled, apiKey]);
+  }, [enabled]);
 
   return {
     activities,
