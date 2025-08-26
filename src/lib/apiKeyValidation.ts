@@ -8,7 +8,6 @@ export function isValidPolygonApiKey(apiKey: string | undefined): apiKey is stri
   // Check if it's a placeholder/example key
   const placeholderKeys = [
     'your_polygon_api_key_here',
-    'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X', // Example key from .env.example
   ];
   
   if (placeholderKeys.includes(apiKey)) {
