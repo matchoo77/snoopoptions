@@ -1,6 +1,7 @@
 import React from 'react';
 import { Wifi, WifiOff, AlertCircle, ExternalLink, Clock, Database } from 'lucide-react';
 import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 interface DataSourceIndicatorProps {
   isConnected: boolean;
@@ -17,13 +18,20 @@ export function DataSourceIndicator({
   loading = false,
   error 
 }: DataSourceIndicatorProps) {
+  // Check both API key and Supabase configuration
   const polygonApiKey = (import.meta as any)?.env?.VITE_POLYGON_API_KEY?.toString() || '';
+  const supabaseConfigured = isSupabaseConfigured();
   
   console.log('[DataSourceIndicator] API Key validation:', {
     keyExists: !!polygonApiKey,
     keyLength: polygonApiKey.length,
     keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...${polygonApiKey.slice(-4)}` : 'none',
     isValid: isValidPolygonApiKey(polygonApiKey)
+  });
+  
+  console.log('[DataSourceIndicator] Supabase validation:', {
+    configured: supabaseConfigured,
+    hasValidKey: isValidPolygonApiKey(polygonApiKey)
   });
   
   // Enhanced debug for environment variables
@@ -76,7 +84,7 @@ export function DataSourceIndicator({
     );
   }
   
-  if (isValidPolygonApiKey(polygonApiKey) && isMarketClosed) {
+  if ((isValidPolygonApiKey(polygonApiKey) || supabaseConfigured) && isMarketClosed) {
     return (
       <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="flex items-start space-x-3">
@@ -86,7 +94,7 @@ export function DataSourceIndicator({
               Market Closed - Using {dataSource === 'eod' ? 'EOD' : dataSource === 'realtime' ? 'Real-time' : 'No'} Data
             </h3>
             <p className="text-sm text-blue-700 mb-2">
-              Your Polygon.io API key is properly configured. Currently showing {dataSource === 'eod' ? 'end-of-day' : 'current'} data because 
+              Your {supabaseConfigured ? 'Supabase proxy' : 'Polygon.io API key'} is properly configured. Currently showing {dataSource === 'eod' ? 'end-of-day' : 'current'} data because 
               {isWeekend ? ' the market is closed for the weekend' : ' the market is outside trading hours'}.
             </p>
             <p className="text-xs text-gray-500 mt-1">
@@ -98,7 +106,7 @@ export function DataSourceIndicator({
     );
   }
 
-  // Show EOD data indicator
+  // Show EOD data indicator when we have valid configuration
   if (dataSource === 'eod') {
     return (
       <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -109,7 +117,7 @@ export function DataSourceIndicator({
               EOD Market Data Connected
             </h3>
             <p className="text-sm text-green-700">
-              Using end-of-day options data from Polygon.io with your API key
+              Using end-of-day options data from Polygon.io {supabaseConfigured ? 'via Supabase proxy' : 'with your API key'}
             </p>
           </div>
         </div>
@@ -117,7 +125,7 @@ export function DataSourceIndicator({
     );
   }
 
-  if (!isUsingRealData) {
+  if (!isUsingRealData && !supabaseConfigured) {
     return (
       <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <div className="flex items-start space-x-3">
@@ -127,7 +135,7 @@ export function DataSourceIndicator({
               API Key Not Configured
             </h3>
             <p className="text-sm text-yellow-700 mb-3">
-              Please configure a valid Polygon.io API key to access real market data.
+              Please configure a valid Polygon.io API key or ensure Supabase is properly connected to access real market data.
               Current key: {polygonApiKey ? `${polygonApiKey.substring(0, 8)}...` : 'Not set'}
             </p>
             <div className="flex items-center space-x-4 text-xs">

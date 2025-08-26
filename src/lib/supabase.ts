@@ -10,12 +10,31 @@ const HARDCODED_SUPABASE_ANON_KEY = '';
 // For example: https://<ref>.functions.supabase.co
 const HARDCODED_FUNCTIONS_URL = '';
 
+// Debug function to check all possible sources
+function debugSupabaseConfig() {
+  const w = (typeof window !== 'undefined' ? (window as any) : undefined) as any;
+  const viteUrl = (import.meta as any)?.env?.VITE_SUPABASE_URL as string | undefined;
+  const viteKey = (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY as string | undefined;
+  
+  console.log('Supabase config debug:', {
+    windowUrl: w?.__SUPABASE_URL__,
+    windowKey: w?.__SUPABASE_ANON_KEY__ ? `${w.__SUPABASE_ANON_KEY__.substring(0, 20)}...` : undefined,
+    localStorageUrl: typeof localStorage !== 'undefined' ? localStorage.getItem('SUPABASE_URL') : undefined,
+    localStorageKey: typeof localStorage !== 'undefined' ? localStorage.getItem('SUPABASE_ANON_KEY') : undefined,
+    viteUrl,
+    viteKey: viteKey ? `${viteKey.substring(0, 20)}...` : undefined,
+    hardcodedUrl: HARDCODED_SUPABASE_URL,
+    hardcodedKey: HARDCODED_SUPABASE_ANON_KEY ? `${HARDCODED_SUPABASE_ANON_KEY.substring(0, 20)}...` : undefined,
+  });
+}
+
 // Resolve Supabase URL and ANON KEY with precedence:
 // 1) window globals set by hosting or inline script
 // 2) localStorage overrides
 // 3) Vite env (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)
 // 4) Hardcoded fallbacks above
 const resolveSupabaseUrl = (): string | undefined => {
+  debugSupabaseConfig();
   const w = (typeof window !== 'undefined' ? (window as any) : undefined) as any;
   return (
     (w && (w.__SUPABASE_URL__ as string)) ||
@@ -42,9 +61,9 @@ let supabaseUrl = resolveSupabaseUrl();
 let supabaseAnonKey = resolveSupabaseAnonKey();
 
 const isUrlValid = (url?: string) =>
-  !!url && url.startsWith('https://') && url.includes('.supabase.co') && !url.includes('your_supabase_url');
+  !!url && url.startsWith('https://') && url.includes('.supabase.co') && !url.includes('your_supabase_url') && url.length > 20;
 const isKeyValid = (key?: string) =>
-  !!key && key.length > 100 && key.includes('.') && !key.includes('your_supabase_anon_key');
+  !!key && key.length > 100 && key.includes('.') && !key.includes('your_supabase_anon_key') && key.startsWith('eyJ');
 
 // Validate Supabase configuration (initial)
 let isValidSupabaseUrl = isUrlValid(supabaseUrl);
@@ -53,6 +72,7 @@ let isValidSupabaseKey = isKeyValid(supabaseAnonKey);
 export const isSupabaseConfigured = (): boolean => {
   const url = resolveSupabaseUrl();
   const key = resolveSupabaseAnonKey();
+  console.log('isSupabaseConfigured check:', { url: url ? `${url.substring(0, 30)}...` : 'none', key: key ? `${key.substring(0, 20)}...` : 'none' });
   return isUrlValid(url) && isKeyValid(key);
 };
 
@@ -62,6 +82,7 @@ const createSupabaseClient = (): SupabaseClient<any> => {
   supabaseAnonKey = resolveSupabaseAnonKey();
   isValidSupabaseUrl = isUrlValid(supabaseUrl);
   isValidSupabaseKey = isKeyValid(supabaseAnonKey);
+  console.log('Creating Supabase client - config check:', { isValidSupabaseUrl, isValidSupabaseKey });
 
   if (!isValidSupabaseUrl || !isValidSupabaseKey) {
     console.warn('Supabase not configured - using mock client');
