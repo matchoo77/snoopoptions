@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import React from 'react';
 import { OptionsActivity } from '../types/options';
 import { PolygonEODService } from '../lib/polygonEOD';
 import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
