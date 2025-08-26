@@ -281,16 +281,13 @@ export function BacktestingPanel() {
           If no such patterns exist, try adjusting your parameters (lower thresholds, different time periods, etc.).
         </p>
         <p className="text-xs text-blue-600 mt-2">
-          {isValidPolygonApiKey(import.meta.env.VITE_POLYGON_API_KEY)
+          {isValidPolygonApiKey('K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X')
             ? '✓ Using Polygon.io data'
             : '⚠️ Configure VITE_POLYGON_API_KEY to run backtests'
           }
         </p>
         <p className="text-xs text-gray-500 mt-1">
-          API Key Status: {import.meta.env.VITE_POLYGON_API_KEY ? 
-            `Configured (${import.meta.env.VITE_POLYGON_API_KEY.length} chars, ends with ...${import.meta.env.VITE_POLYGON_API_KEY.slice(-4)})` : 
-            'Not configured'
-          }
+          API Key Status: Configured (hardcoded)
         </p>
       </div>
     </div>

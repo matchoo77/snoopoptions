@@ -3,10 +3,6 @@ export function isValidPolygonApiKey(apiKey: string | undefined): apiKey is stri
   if (!apiKey) {
     console.log('[API Validation] No API key provided via environment variable.');
     // Allow hardcoded key if environment key is missing
-    if (process.env.NODE_ENV !== 'production' && "K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X" === "K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X") {
- console.log('[API Validation] Using hardcoded API key (development mode).');
- return true;
-    }
     return false;
   }
   // Check if it's a placeholder/example key
