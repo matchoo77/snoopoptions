@@ -19,12 +19,13 @@ export function MarketOverview() {
   useEffect(() => {
     const symbols = ['SPY', 'QQQ', 'IWM', 'AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'];
 
-    const apiKey = (import.meta as any)?.env?.VITE_POLYGON_API_KEY?.toString() || '';
+    const apiKey = import.meta.env.VITE_POLYGON_API_KEY || '';
     console.log('[MarketOverview] API Key check:', {
       hasKey: !!apiKey,
       keyLength: apiKey.length,
       keyValid: isValidPolygonApiKey(apiKey),
-      keyPreview: apiKey ? `${apiKey.substring(0, 8)}...${apiKey.slice(-4)}` : 'none'
+      keyPreview: apiKey ? `${apiKey.substring(0, 8)}...${apiKey.slice(-4)}` : 'none',
+      fullKey: apiKey
     });
     
     if (!isValidPolygonApiKey(apiKey)) {

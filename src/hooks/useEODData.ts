@@ -24,17 +24,20 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       hasApiKey: !!apiKey,
       keyLength: apiKey?.length || 0,
       enabled,
-      keyPreview: apiKey ? `${apiKey.substring(0, 8)}...` : 'none'
+      keyPreview: apiKey ? `${apiKey.substring(0, 8)}...` : 'none',
+      keyValid: isValidPolygonApiKey(apiKey)
     });
     
     if (!isValidPolygonApiKey(apiKey)) {
       console.log('[useEODData] EOD fetch skipped - invalid API key');
       setError('Polygon API key is required');
+      setLoading(false);
       return;
     }
 
     if (!enabled) {
       console.log('[useEODData] EOD fetch skipped - not enabled');
+      setLoading(false);
       return;
     }
 
@@ -53,6 +56,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
 
       console.log('[useEODData] Starting EOD service scan...');
       // Get previous trading day data
+      console.log('[useEODData] Calling getUnusualActivityMultiSymbol with symbols:', finalSymbols);
       const unusualActivities = await eodService.getUnusualActivityMultiSymbol(finalSymbols);
 
       console.log('[useEODData] === EOD DATA FETCH COMPLETE ===');

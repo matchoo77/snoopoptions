@@ -19,7 +19,7 @@ export function useOptionsData() {
     showFavoritesOnly: false,
   });
 
-  const polygonApiKey = (import.meta as any)?.env?.VITE_POLYGON_API_KEY?.toString() || '';
+  const polygonApiKey = import.meta.env.VITE_POLYGON_API_KEY || '';
   
   console.log('[useOptionsData] API Key check:', {
     hasKey: !!polygonApiKey,

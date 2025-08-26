@@ -73,21 +73,27 @@ export class PolygonEODService {
   constructor(apiKey: string) {
     this.apiKey = apiKey;
     console.log('PolygonEODService initialized with API key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'none');
+    console.log('[PolygonEOD] Full API key length:', apiKey?.length);
+    console.log('[PolygonEOD] API key starts with:', apiKey?.substring(0, 10));
 
-  // Detect Supabase Edge Function proxy availability (supports hardcoded or fetched config)
-  const supabaseUrl = getResolvedSupabaseUrl();
-  const isValidSupabase = !!supabaseUrl && supabaseUrl.startsWith('https://') && supabaseUrl.includes('.supabase.co');
+    // Detect Supabase Edge Function proxy availability (supports hardcoded or fetched config)
+    const supabaseUrl = getResolvedSupabaseUrl();
+    const isValidSupabase = !!supabaseUrl && supabaseUrl.startsWith('https://') && supabaseUrl.includes('.supabase.co');
     if (isValidSupabase) {
       this.proxyUrl = `${supabaseUrl}/functions/v1/polygon-proxy`;
       this.useProxy = true;
       console.log('[PolygonEOD] Using Supabase Edge Function proxy for Polygon API requests');
     } else {
+      this.useProxy = false;
       console.log('[PolygonEOD] Supabase not configured or invalid; calling Polygon API directly from client');
     }
   }
 
   // Rate-limited request wrapper
   private async makeRequest(url: string): Promise<Response> {
+    console.log('[PolygonEOD] Making request to:', url.replace(this.apiKey, 'API_KEY_HIDDEN'));
+    console.log('[PolygonEOD] Using proxy:', this.useProxy);
+    
     return new Promise((resolve, reject) => {
       this.requestQueue = this.requestQueue.then(async () => {
         try {
@@ -101,6 +107,7 @@ export class PolygonEODService {
           this.lastRequestTime = Date.now();
           let response: Response;
           if (this.useProxy && this.proxyUrl) {
+            console.log('[PolygonEOD] Sending request through proxy:', this.proxyUrl);
             // Send through Supabase Edge Function; it injects the server-side POLYGON_API_KEY
             response = await fetch(this.proxyUrl, {
               method: 'POST',
@@ -108,10 +115,13 @@ export class PolygonEODService {
               body: JSON.stringify({ url }),
             });
           } else {
+            console.log('[PolygonEOD] Making direct API call to:', url.replace(this.apiKey, 'API_KEY_HIDDEN'));
             response = await fetch(url);
           }
+          console.log('[PolygonEOD] Response status:', response.status, response.statusText);
           resolve(response);
         } catch (error) {
+          console.error('[PolygonEOD] Request failed:', error);
           reject(error);
         }
       });
