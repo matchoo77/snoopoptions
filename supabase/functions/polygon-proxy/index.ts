@@ -60,9 +60,12 @@ Deno.serve(async (req) => {
     // Ensure our key is used (remove any client-provided apikey)
     const u = new URL(url);
     u.searchParams.delete('apikey');
-    u.searchParams.set('apikey', serverKey);
 
-    const upstream = await fetch(u.toString());
+    const upstream = await fetch(u.toString(), {
+      headers: {
+        'Authorization': `Bearer ${serverKey}`
+      }
+    });
     const text = await upstream.text();
     return corsResponse(text, upstream.status);
   } catch (e: any) {
