@@ -64,7 +64,7 @@ export function MarketOverview() {
               console.log(`[MarketOverview] ${symbol}: $${price.toFixed(2)} (${changePercent.toFixed(2)}%)`);
             }
             // Small delay to avoid rate limiting on free tier
-            await new Promise(r => setTimeout(r, 30000)); // 30 second delay for free tier
+            await new Promise(r => setTimeout(r, 1000)); // 1 second delay
           }
 
           console.log(`[MarketOverview] Fetched data for ${results.length} symbols`);

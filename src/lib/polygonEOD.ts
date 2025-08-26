@@ -317,7 +317,7 @@ export class PolygonEODService {
         const contractsToCheck = activeContracts.slice(0, 5); // Further reduced to prevent rate limiting
         
         // Get EOD data for each contract
-        for (const contract of contractsToCheck) {
+        const contractsToCheck = activeContracts.slice(0, Math.min(limit, 3)); // Reduced to 3 contracts
           const ticker = this.buildOptionsTicker(contract);
           console.log(`[PolygonEOD] Processing contract ${contractsToCheck.indexOf(contract) + 1}/${contractsToCheck.length}: ${ticker}`);
           const aggregates = await this.getOptionsAggregates(ticker, date);
@@ -340,7 +340,7 @@ export class PolygonEODService {
           }
           
           // Add delay between contract requests to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 45000)); // 45 second delay for free tier
+          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
         }
       } catch (error) {
         console.error(`[PolygonEOD] Error scanning ${symbol}:`, error);
@@ -632,7 +632,7 @@ export class PolygonEODService {
       allActivities.push(...unusualActivities);
       
       // Add delay between symbols to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, 60000)); // 60 second delay for free tier
+            await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
     }
     
     console.log(`[PolygonEOD] Total unusual activities across all symbols: ${allActivities.length}`);

@@ -61,15 +61,17 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       // If searching for a specific symbol, replace existing data
       // If loading default symbols, merge with existing data
       let unusualActivities;
-      if (targetSymbols && targetSymbols.length === 1) {
+      if (targetSymbols && targetSymbols.length > 0) {
         // For single symbol search, use getMostActiveOptions for better results
-        const singleSymbolActivities = await eodService.getMostActiveOptions(targetSymbols[0], undefined, 50);
+        const singleSymbolActivities = await eodService.getMostActiveOptions(targetSymbols[0], undefined, 10); // Reduced limit
         unusualActivities = singleSymbolActivities.filter(activity => activity.volume > 0); // Show all activities with volume
       } else {
-        unusualActivities = await eodService.getUnusualActivityMultiSymbol(finalSymbols);
+        // For initial load, just use a few symbols to avoid long delays
+        const limitedSymbols = finalSymbols.slice(0, 2); // Only load 2 symbols initially
+        unusualActivities = await eodService.getUnusualActivityMultiSymbol(limitedSymbols);
       }
       
-      if (targetSymbols && targetSymbols.length === 1) {
+      if (targetSymbols && targetSymbols.length > 0) {
         // Replace data for this specific symbol
         const searchSymbol = targetSymbols[0];
         setActivities(prev => {
