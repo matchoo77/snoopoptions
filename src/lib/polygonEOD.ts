@@ -333,9 +333,6 @@ export class PolygonEODService {
           } else {
             console.log(`[PolygonEOD] No aggregate data found for ${ticker} on ${date}`);
           }
-          
-          // Add delay to prevent rate limiting
-          await new Promise(resolve => setTimeout(resolve, 300)); // Increased delay
         }
       } catch (error) {
         console.error(`[PolygonEOD] Error scanning ${symbol}:`, error);
@@ -397,9 +394,6 @@ export class PolygonEODService {
               blockTrades.push(trade);
             }
           }
-          
-          // Add delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       } catch (error) {
         console.error(`Error getting block trades for ${symbol}:`, error);
@@ -599,9 +593,6 @@ export class PolygonEODService {
             activities.push(activity);
           }
         }
-        
-        // Add delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 300));
       }
       
       console.log(`[PolygonEOD] Generated ${activities.length} activities for ${symbol}`);
@@ -631,9 +622,6 @@ export class PolygonEODService {
       const unusualActivities = activities.filter(activity => activity.unusual);
       console.log(`[PolygonEOD] ${symbol}: Found ${activities.length} activities, ${unusualActivities.length} unusual`);
       allActivities.push(...unusualActivities);
-      
-      // Add delay between symbols to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
     console.log(`[PolygonEOD] Total unusual activities across all symbols: ${allActivities.length}`);
