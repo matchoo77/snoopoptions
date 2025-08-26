@@ -66,9 +66,11 @@ export class PolygonEODService {
   private baseUrl = 'https://api.polygon.io';
   private requestQueue: Promise<any> = Promise.resolve();
   private lastRequestTime = 0;
-  private minRequestInterval = 1000; // 1 second between requests to avoid rate limits
+  private minRequestInterval = 200; // Reduced to 200ms for faster loading
   private proxyUrl: string | null = null;
   private useProxy = false;
+  private cache: Map<string, any> = new Map();
+  private cacheExpiry = 5 * 60 * 1000; // 5 minutes cache
 
   constructor(apiKey: string) {
     this.apiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
@@ -84,6 +86,14 @@ export class PolygonEODService {
 
   // Rate-limited request wrapper
   private async makeRequest(url: string, options: RequestInit = {}): Promise<Response> {
+    // Check cache first
+    const cacheKey = url;
+    const cached = this.cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.cacheExpiry) {
+      console.log('[PolygonEOD] Using cached response for:', url.replace(this.apiKey, 'API_KEY_HIDDEN'));
+      return new Response(JSON.stringify(cached.data), { status: 200 });
+    }
+
     console.log('[PolygonEOD] Making request to:', url.replace(this.apiKey, 'API_KEY_HIDDEN'));
     console.log('[PolygonEOD] Using proxy:', this.useProxy);
     
@@ -121,6 +131,19 @@ export class PolygonEODService {
             response = await fetch(urlWithKey, options);
           }
           console.log('[PolygonEOD] Response status:', response.status, response.statusText);
+          
+          // Cache successful responses
+          if (response.ok) {
+            const responseText = await response.text();
+            const responseData = JSON.parse(responseText);
+            this.cache.set(cacheKey, {
+              data: responseData,
+              timestamp: Date.now()
+            });
+            resolve(new Response(responseText, { status: response.status }));
+          } else {
+            resolve(response);
+          }
           resolve(response);
         } catch (error) {
           console.error('[PolygonEOD] Request failed:', error);
@@ -308,13 +331,13 @@ export class PolygonEODService {
           const expDate = new Date(contract.expiration_date);
           const today = new Date(date);
           const daysToExp = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          return daysToExp > 0 && daysToExp <= 30; // 0-30 days to expiration (reduced for API efficiency)
+          return daysToExp > 0 && daysToExp <= 14; // 0-14 days to expiration for faster loading
         });
         
         console.log(`[PolygonEOD] Found ${activeContracts.length} active contracts for ${symbol}`);
 
-        // Limit to most liquid contracts for API efficiency
-        const contractsToCheck = activeContracts.slice(0, 5); // Further reduced to prevent rate limiting
+        // Limit to fewer contracts for much faster loading
+        const contractsToCheck = activeContracts.slice(0, 2); // Only check 2 contracts per symbol
         
         // Get EOD data for each contract
         for (const contract of contractsToCheck) {
@@ -340,7 +363,7 @@ export class PolygonEODService {
           }
           
           // Add delay between contract requests to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+          await new Promise(resolve => setTimeout(resolve, 300)); // Reduced to 300ms
         }
       } catch (error) {
         console.error(`[PolygonEOD] Error scanning ${symbol}:`, error);
@@ -588,7 +611,7 @@ export class PolygonEODService {
       const activities: OptionsActivity[] = [];
       
       // Get EOD data for each contract
-      const contractsToCheck = activeContracts.slice(0, Math.min(limit, 10));
+      const contractsToCheck = activeContracts.slice(0, Math.min(limit, 3)); // Only check 3 contracts for speed
       console.log(`[PolygonEOD] Checking ${contractsToCheck.length} contracts for ${symbol}`);
       
       for (const contract of contractsToCheck) {
@@ -601,6 +624,9 @@ export class PolygonEODService {
             activities.push(activity);
           }
         }
+        
+        // Reduced delay for faster loading
+        await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay
       }
       
       console.log(`[PolygonEOD] Generated ${activities.length} activities for ${symbol}`);
@@ -632,7 +658,7 @@ export class PolygonEODService {
       allActivities.push(...unusualActivities);
       
       // Add delay between symbols to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
+      await new Promise(resolve => setTimeout(resolve, 500)); // Reduced to 500ms
     }
     
     console.log(`[PolygonEOD] Total unusual activities across all symbols: ${allActivities.length}`);

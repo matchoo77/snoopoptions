@@ -17,7 +17,7 @@ export function MarketOverview() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const symbols = ['SPY', 'QQQ'];
+    const symbols = ['SPY']; // Reduced to 1 symbol for faster loading
 
     const apiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
     console.log('[MarketOverview] API Key check:', {
@@ -63,8 +63,6 @@ export function MarketOverview() {
               results.push({ symbol, price, change, changePercent, volume });
               console.log(`[MarketOverview] ${symbol}: $${price.toFixed(2)} (${changePercent.toFixed(2)}%)`);
             }
-            // Small delay to avoid rate limiting on free tier
-            await new Promise(r => setTimeout(r, 1000)); // 1 second delay
           }
 
           console.log(`[MarketOverview] Fetched data for ${results.length} symbols`);
@@ -76,15 +74,7 @@ export function MarketOverview() {
         }
       };
 
-      // Only fetch if we have less than 2 symbols to avoid rate limits
-      if (symbols.length <= 1) {
-        fetchData();
-      } else {
-        // Set mock data to avoid API calls
-        setMarketData([
-          { symbol: 'SPY', price: 580.25, change: 2.15, changePercent: 0.37, volume: 45000000 }
-        ]);
-      }
+      fetchData();
     }
 
     console.log('[MarketOverview] Setting market status...');

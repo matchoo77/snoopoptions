@@ -67,7 +67,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
         unusualActivities = singleSymbolActivities.filter(activity => activity.volume > 0); // Show all activities with volume
       } else {
         // For initial load, just use a few symbols to avoid long delays
-        const limitedSymbols = finalSymbols.slice(0, 2); // Only load 2 symbols initially
+        const limitedSymbols = finalSymbols.slice(0, 1); // Only load 1 symbol initially for speed
         unusualActivities = await eodService.getUnusualActivityMultiSymbol(limitedSymbols);
       }
       
