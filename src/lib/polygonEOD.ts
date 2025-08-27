@@ -1,6 +1,7 @@
 import { OptionsActivity } from '../types/options';
 import { BacktestTrade } from '../types/backtesting';
 import { getResolvedSupabaseUrl } from './supabase';
+import { globalRateLimiter } from './rateLimiter';
 
 interface PolygonOptionsContract {
   ticker: string;
@@ -86,6 +87,9 @@ export class PolygonEODService {
 
   // Rate-limited request wrapper
   private async makeRequest(url: string, options: RequestInit = {}): Promise<Response> {
+    // Use global rate limiter to prevent concurrent requests across components
+    await globalRateLimiter.throttle();
+    
     // Check cache first
     const cacheKey = url;
     const cached = this.cache.get(cacheKey);
@@ -186,7 +190,9 @@ export class PolygonEODService {
         if (response.status === 401) {
           throw new Error('Invalid Polygon.io API key - please check your VITE_POLYGON_API_KEY');
         } else if (response.status === 429) {
-          throw new Error('Polygon.io rate limit exceeded - please wait and try again');
+          console.warn('[PolygonEOD] Rate limit hit, waiting 5 seconds before retry...');
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          return []; // Return empty array to avoid cascading errors
         } else if (response.status === 403) {
           throw new Error('Polygon.io API access denied - please check your subscription tier');
         }
@@ -294,6 +300,10 @@ export class PolygonEODService {
       const response = await this.makeRequest(url);
       
       if (!response.ok) {
+        if (response.status === 429) {
+          console.warn(`[PolygonEOD] Rate limit hit for ${symbol}, skipping...`);
+          return []; // Return empty array instead of throwing error
+        }
         throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
       }
       
@@ -674,8 +684,10 @@ export class PolygonEODService {
       allActivities.push(...significantActivities);
       
       // Add delay between symbols to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 500)); // Reduced to 500ms
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Increased to 1.5 seconds
     }
     
     console.log(`[PolygonEOD] Total significant activities across all symbols: ${allActivities.length}`);
     return allActivities.sort((a, b) => b.premium - a.premium);
+  }
+}

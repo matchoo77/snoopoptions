@@ -75,7 +75,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
         unusualActivities = singleSymbolActivities.filter(activity => activity.volume > 0); // Show all activities with volume
       } else {
         // For initial load, just use a few symbols to avoid long delays
-        const limitedSymbols = finalSymbols.slice(0, 3); // Load 3 symbols initially for more data
+        const limitedSymbols = finalSymbols.slice(0, 1); // Back to 1 symbol to avoid rate limits
         unusualActivities = await eodService.getUnusualActivityMultiSymbol(limitedSymbols, dateStr);
       }
       
@@ -140,7 +140,7 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
     }
   };
 
-  // Auto-fetch data on mount and when symbols change
+  // Auto-fetch data on mount and when symbols change (with debounce)
   useEffect(() => {
     const hardcodedKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
     console.log('useEODData - Mount effect triggered:', { 
@@ -151,14 +151,19 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
     });
     
     if (enabled && isValidPolygonApiKey(hardcodedKey)) {
-      console.log('Starting initial EOD data fetch...');
-      fetchEODData();
+      console.log('Scheduling initial EOD data fetch with delay...');
+      // Add a delay to prevent multiple components from hitting API simultaneously
+      const timer = setTimeout(() => {
+        fetchEODData();
+      }, Math.random() * 2000 + 1000); // Random delay between 1-3 seconds
+      
+      return () => clearTimeout(timer);
     } else {
       console.log('EOD fetch skipped:', { enabled, hasApiKey: true, keyValid: isValidPolygonApiKey(hardcodedKey) });
     }
   }, [enabled]);
 
-  // Refresh data every 5 minutes during market hours
+  // Refresh data every 10 minutes during market hours (increased interval)
   useEffect(() => {
     const hardcodedKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
     if (!enabled || !isValidPolygonApiKey(hardcodedKey)) return;
@@ -168,12 +173,12 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       const hour = now.getHours();
       const day = now.getDay();
       
-      // Only refresh during market hours (9 AM - 4 PM ET, Monday-Friday)
+      // Only refresh during market hours (9 AM - 4 PM ET, Monday-Friday) and less frequently
       if (day >= 1 && day <= 5 && hour >= 9 && hour <= 16) {
         console.log('Auto-refreshing EOD data during market hours...');
         fetchEODData();
       }
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 10 * 60 * 1000); // Increased to 10 minutes to reduce API calls
 
     return () => clearInterval(interval);
   }, [enabled]);
