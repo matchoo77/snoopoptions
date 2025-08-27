@@ -1,5 +1,9 @@
 // Centralized API key validation with type guard
 export function isValidPolygonApiKey(apiKey: string | undefined): apiKey is string {
+  if (apiKey === 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X') {
+    console.log('[API Validation] Using hardcoded API key.');
+    return true;
+  }
   if (!apiKey) {
     console.log('[API Validation] No API key provided via environment variable.');
     // Allow hardcoded key if environment key is missing

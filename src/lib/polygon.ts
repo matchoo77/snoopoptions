@@ -38,7 +38,7 @@ export class PolygonAPI {
     setIsConnected: (connected: boolean) => void,
     setError: (error: string | null) => void
   ) {
-    this.apiKey = apiKey;
+    this.apiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
     this.setIsConnected = setIsConnected;
     this.setError = setError;
   }

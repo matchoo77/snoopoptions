@@ -74,9 +74,9 @@ export class PolygonEODService {
 
   constructor(apiKey: string) {
     this.apiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
-    console.log('PolygonEODService initialized with API key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'none');
-    console.log('[PolygonEOD] Full API key length:', apiKey?.length);
-    console.log('[PolygonEOD] API key starts with:', apiKey?.substring(0, 10));
+    console.log('PolygonEODService initialized with API key:', 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X'.substring(0, 8) + '...');
+    console.log('[PolygonEOD] Full API key length:', 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X'.length);
+    console.log('[PolygonEOD] API key starts with:', 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X'.substring(0, 10));
 
     // Enable proxy to handle rate limiting server-side
     this.useProxy = false;
