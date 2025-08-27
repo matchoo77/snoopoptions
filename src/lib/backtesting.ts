@@ -7,7 +7,7 @@ export class BacktestingEngine {
   private eodService: PolygonEODService;
 
   constructor(apiKey: string) {
-    this.polygonApi = new PolygonAPI(apiKey);
+    this.polygonApi = new PolygonAPI(apiKey, () => {}, () => {});
     this.eodService = new PolygonEODService(apiKey);
   }
 
@@ -404,7 +404,7 @@ export function generateMockBacktestData(params: BacktestParams): {
   }
   
   // Generate summary
-  const engine = new BacktestingEngine('');
+  const engine = new BacktestingEngine('K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X');
   const summary = engine['generateSummary'](results);
   
   return { results, summary };
