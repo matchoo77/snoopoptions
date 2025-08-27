@@ -13,8 +13,8 @@ export function BacktestingPanel() {
     endDate: new Date().toISOString().split('T')[0], // Today
     targetMovement: 5, // 5% movement
     timeHorizon: 7, // 7 days to measure outcome
-    minVolume: 1000,
-    minPremium: 100000,
+    minVolume: 10, // Reduced from 1000 to 10
+    minPremium: 500, // Reduced from 100000 to 500
     symbols: [], // All symbols
     optionTypes: ['call', 'put'],
     tradeLocations: ['below-bid', 'at-bid', 'midpoint', 'at-ask', 'above-ask'],

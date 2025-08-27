@@ -21,9 +21,16 @@ export function useBacktesting() {
       console.log('Running backtest with real Polygon.io data...');
       const engine = new BacktestingEngine(polygonApiKey);
       const { results: backtestResults, summary: backtestSummary } = await engine.runBacktest(params);
-      console.log('Real backtest completed:', { resultsCount: backtestResults.length, successRate: backtestSummary.successRate });
+      console.log('Real backtest completed:', { 
+        resultsCount: backtestResults.length, 
+        successRate: backtestSummary.successRate,
+        hasResults: backtestResults.length > 0,
+        hasSummary: !!backtestSummary
+      });
+      console.log('Setting results and summary...');
       setResults(backtestResults);
       setSummary(backtestSummary);
+      console.log('Results and summary set successfully');
     } catch (err) {
       console.error('Backtest error:', err);
       setError(err instanceof Error ? err.message : 'Failed to run backtest');
