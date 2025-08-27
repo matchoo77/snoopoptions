@@ -33,7 +33,8 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
     isUsingRealData, 
     dataSource,
     loading: dataLoading,
-    error 
+    error,
+    refreshData
   } = useOptionsData();
   
   const {
@@ -83,7 +84,8 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
           isUsingRealData={isUsingRealData} 
           dataSource={dataSource}
           loading={dataLoading}
-          error={error} 
+          error={error}
+          onRefresh={refreshData}
         />
         
         {/* Navigation Tabs */}

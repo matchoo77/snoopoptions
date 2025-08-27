@@ -9,6 +9,7 @@ interface DataSourceIndicatorProps {
   dataSource?: 'none' | 'realtime' | 'eod';
   loading?: boolean;
   error?: string | null;
+  onRefresh?: () => void;
 }
 
 export function DataSourceIndicator({ 
@@ -16,7 +17,8 @@ export function DataSourceIndicator({
   isUsingRealData, 
   dataSource = 'eod',
   loading = false,
-  error 
+  error,
+  onRefresh 
 }: DataSourceIndicatorProps) {
   // Check both API key and Supabase configuration
   const polygonApiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
@@ -208,6 +210,15 @@ export function DataSourceIndicator({
             }
           </p>
         </div>
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            disabled={loading}
+            className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
+          >
+            {loading ? 'Refreshing...' : 'Refresh Data'}
+          </button>
+        )}
       </div>
     </div>
   );

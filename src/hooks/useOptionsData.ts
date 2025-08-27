@@ -6,8 +6,8 @@ import { isSupabaseConfigured } from '../lib/supabase';
 
 export function useOptionsData() {
   const [filters, setFilters] = useState<FilterOptions>({
-    minVolume: 100,
-    minPremium: 1000,
+    minVolume: 5,
+    minPremium: 50,
     maxDaysToExpiration: 60,
     optionTypes: ['call', 'put'],
     sentiment: ['bullish', 'bearish', 'neutral'],
@@ -76,22 +76,17 @@ export function useOptionsData() {
   const refreshData = () => {
     if (isValidPolygonApiKey(polygonApiKey) && fetchEODData) {
       console.log('[useOptionsData] Manual refresh triggered');
-      fetchEODData(filters.searchSymbol ? [filters.searchSymbol] : []);
+      fetchEODData();
     }
   };
 
-  useEffect(() => {
-    console.log('[useOptionsData] Mount effect - triggering initial data fetch');
-    refreshData();
-  }, []);
-
-  // Trigger search when searchSymbol changes
+  // Only trigger search when searchSymbol changes, not on mount
   useEffect(() => {
     if (filters.searchSymbol && isValidPolygonApiKey(polygonApiKey) && fetchEODData) {
       console.log('[useOptionsData] Search symbol changed, fetching data for:', filters.searchSymbol);
       fetchEODData([filters.searchSymbol]);
     }
-  }, [filters.searchSymbol, polygonApiKey, fetchEODData]);
+  }, [filters.searchSymbol]);
 
   const filteredActivities = useMemo(() => {
     let filtered: OptionsActivity[] = allActivities;
@@ -147,5 +142,6 @@ export function useOptionsData() {
     dataSource,
     error,
     loading,
+    refreshData: fetchEODData, // Expose refresh function
   };
 }

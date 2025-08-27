@@ -17,7 +17,7 @@ export function MarketOverview() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const symbols = ['SPY']; // Reduced to 1 symbol for faster loading
+    const symbols = ['SPY', 'QQQ', 'AAPL', 'TSLA', 'NVDA']; // Multiple symbols for market overview
 
     const apiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
     console.log('[MarketOverview] API Key check:', {

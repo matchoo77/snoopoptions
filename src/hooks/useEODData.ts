@@ -54,21 +54,29 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
       console.log('[useEODData] API Key configured:', apiKey ? `Yes (${apiKey.substring(0, 8)}...)` : 'No');
       console.log('[useEODData] API Key length:', apiKey?.length || 0);
 
-      console.log('[useEODData] Starting EOD service scan...');
       // Get previous trading day data
       console.log('[useEODData] Calling getUnusualActivityMultiSymbol with symbols:', finalSymbols);
+      
+      // Calculate previous trading day
+      const today = new Date();
+      const prev = new Date(today);
+      prev.setDate(today.getDate() - 1);
+      if (today.getDay() === 1) prev.setDate(today.getDate() - 3); // Monday -> Friday  
+      if (today.getDay() === 0) prev.setDate(today.getDate() - 2); // Sunday -> Friday
+      const dateStr = prev.toISOString().split('T')[0];
+      console.log('[useEODData] Using date for data fetch:', dateStr);
       
       // If searching for a specific symbol, replace existing data
       // If loading default symbols, merge with existing data
       let unusualActivities;
       if (targetSymbols && targetSymbols.length > 0) {
         // For single symbol search, use getMostActiveOptions for better results
-        const singleSymbolActivities = await eodService.getMostActiveOptions(targetSymbols[0], undefined, 10); // Reduced limit
+        const singleSymbolActivities = await eodService.getMostActiveOptions(targetSymbols[0], dateStr, 20);
         unusualActivities = singleSymbolActivities.filter(activity => activity.volume > 0); // Show all activities with volume
       } else {
         // For initial load, just use a few symbols to avoid long delays
-        const limitedSymbols = finalSymbols.slice(0, 1); // Only load 1 symbol initially for speed
-        unusualActivities = await eodService.getUnusualActivityMultiSymbol(limitedSymbols);
+        const limitedSymbols = finalSymbols.slice(0, 3); // Load 3 symbols initially for more data
+        unusualActivities = await eodService.getUnusualActivityMultiSymbol(limitedSymbols, dateStr);
       }
       
       if (targetSymbols && targetSymbols.length > 0) {
@@ -109,13 +117,20 @@ export function useEODData({ apiKey, symbols = [], enabled = true }: UseEODDataP
 
     try {
       setError(null);
-      const symbolActivities = await eodService.getMostActiveOptions(symbol, undefined, 20);
+      const today = new Date();
+      const prev = new Date(today);
+      prev.setDate(today.getDate() - 1);
+      if (today.getDay() === 1) prev.setDate(today.getDate() - 3); // Monday -> Friday
+      if (today.getDay() === 0) prev.setDate(today.getDate() - 2); // Sunday -> Friday
+      const dateStr = prev.toISOString().split('T')[0];
+      
+      const symbolActivities = await eodService.getMostActiveOptions(symbol, dateStr, 20);
       
       // Update activities, replacing any existing data for this symbol
       setActivities(prev => {
         const filtered = prev.filter(activity => activity.symbol !== symbol);
-        const unusualSymbolActivities = symbolActivities.filter(activity => activity.unusual);
-        return [...unusualSymbolActivities, ...filtered].slice(0, 200);
+        // Show all activities, not just unusual ones
+        return [...symbolActivities, ...filtered].slice(0, 200);
       });
       
       console.log(`Fetched ${symbolActivities.length} activities for ${symbol}`);

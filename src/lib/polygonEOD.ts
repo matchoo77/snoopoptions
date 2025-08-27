@@ -66,7 +66,7 @@ export class PolygonEODService {
   private baseUrl = 'https://api.polygon.io';
   private requestQueue: Promise<any> = Promise.resolve();
   private lastRequestTime = 0;
-  private minRequestInterval = 200; // Reduced to 200ms for faster loading
+  private minRequestInterval = 1000; // Increased to 1 second to avoid rate limits
   private proxyUrl: string | null = null;
   private useProxy = false;
   private cache: Map<string, any> = new Map();
@@ -158,13 +158,20 @@ export class PolygonEODService {
     try {
       console.log(`[PolygonEOD] Fetching options contracts for ${symbol}...`);
       console.log(`[PolygonEOD] Using API key: ${this.apiKey ? `${this.apiKey.substring(0, 8)}...${this.apiKey.slice(-4)}` : 'NONE'}`);
+      
+      // For testing: Get contracts expiring within next 30 days to ensure we have data
+      const today = new Date();
+      const futureDate = new Date(today);
+      futureDate.setDate(today.getDate() + 30);
+      const expireLte = futureDate.toISOString().split('T')[0];
+      
       const params = new URLSearchParams({
         'underlying_ticker': symbol,
-        'limit': '1000',
+        'limit': '100', // Reduced limit for faster response
+        'expired.lte': expireLte
       });
       
       if (expiredGte) params.append('expired.gte', expiredGte);
-      if (expiredLte) params.append('expired.lte', expiredLte);
 
       const fullUrl = `${this.baseUrl}/v3/reference/options/contracts?${params}`;
       console.log(`[PolygonEOD] Contracts URL: ${fullUrl.replace(this.apiKey, 'API_KEY_HIDDEN')}`);
@@ -184,11 +191,19 @@ export class PolygonEODService {
           throw new Error('Polygon.io API access denied - please check your subscription tier');
         }
         
-        throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Polygon API error: ${response.status} ${response.statusText}: ${errorText}`);
       }
       
       const data = await response.json();
       console.log(`[PolygonEOD] Found ${data.results?.length || 0} contracts for ${symbol}`);
+      
+      if (!data.results || data.results.length === 0) {
+        console.log(`[PolygonEOD] No contracts found for ${symbol}. This could be because:`);
+        console.log('- Symbol does not have listed options');
+        console.log('- All contracts have expired');
+        console.log('- Market is closed and no recent data available');
+      }
+      
       return data.results || [];
     } catch (error) {
       console.error(`[PolygonEOD] Error fetching options contracts for ${symbol}:`, error);
@@ -540,7 +555,7 @@ export class PolygonEODService {
 
   // Detect unusual activity based on volume and premium
   private detectUnusualActivity(volume: number, premium: number): boolean {
-    const isUnusual = volume >= 1 || premium >= 100; // Show activities with any volume or $100+ premium
+    const isUnusual = volume >= 5 || premium >= 50; // More permissive: show activities with volume >= 5 or $50+ premium
     console.log(`[PolygonEOD] Unusual activity check: volume=${volume}, premium=${premium}, unusual=${isUnusual}`);
     return isUnusual;
   }
@@ -653,15 +668,14 @@ export class PolygonEODService {
     for (const symbol of symbols) {
       console.log(`[PolygonEOD] Processing ${symbol}...`);
       const activities = await this.getMostActiveOptions(symbol, date || '', 20); // Increased limit
-      const unusualActivities = activities.filter(activity => activity.unusual);
-      console.log(`[PolygonEOD] ${symbol}: Found ${activities.length} activities, ${unusualActivities.length} unusual`);
-      allActivities.push(...unusualActivities);
+      // Show all activities with decent volume, not just "unusual" ones
+      const significantActivities = activities.filter(activity => activity.volume >= 5 && activity.premium >= 50);
+      console.log(`[PolygonEOD] ${symbol}: Found ${activities.length} activities, ${significantActivities.length} significant`);
+      allActivities.push(...significantActivities);
       
       // Add delay between symbols to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 500)); // Reduced to 500ms
     }
     
-    console.log(`[PolygonEOD] Total unusual activities across all symbols: ${allActivities.length}`);
+    console.log(`[PolygonEOD] Total significant activities across all symbols: ${allActivities.length}`);
     return allActivities.sort((a, b) => b.premium - a.premium);
-  }
-}
