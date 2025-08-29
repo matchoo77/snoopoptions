@@ -12,11 +12,11 @@ export function AuthPage({ onSuccess, initialMode = 'login', onBack }: AuthPageP
   const [isLogin, setIsLogin] = useState(initialMode === 'login');
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="relative">
       {onBack && (
         <button
           onClick={onBack}
-          className="absolute top-6 left-6 text-gray-600 hover:text-gray-900 font-medium"
+          className="absolute top-6 left-6 z-10 text-white/80 hover:text-white font-medium px-4 py-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 transition-all duration-200"
         >
           ← Back to Home
         </button>

@@ -148,7 +148,7 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
     }
   }, [enabled]);
 
-  // Refresh data every 5 minutes during market hours (increased frequency for upgraded plan)
+  // Refresh data every 2 minutes during market hours (real-time feel for upgraded plan)
   useEffect(() => {
     if (!enabled) return;
 
@@ -156,18 +156,29 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
       const now = new Date();
       const hour = now.getHours();
       const day = now.getDay();
-
+      
       // Refresh during market hours (9 AM - 4 PM ET, Monday-Friday) and more frequently
       if (day >= 1 && day <= 5 && hour >= 9 && hour <= 16) {
-        console.log('Auto-refreshing EOD data during market hours...');
+        console.log('Auto-refreshing EOD data during market hours for real-time updates...');
         fetchEODData();
       }
-    }, 5 * 60 * 1000); // Reduced to 5 minutes for more frequent updates
+    }, 2 * 60 * 1000); // Reduced to 2 minutes for real-time feeling
 
     return () => clearInterval(interval);
   }, [enabled]);
 
-  return {
+  // Add a separate timer for activity feed updates
+  useEffect(() => {
+    if (!enabled) return;
+
+    const activityInterval = setInterval(() => {
+      // Simulate real-time activity by fetching fresh data
+      console.log('Fetching fresh activity data for real-time updates...');
+      fetchEODData();
+    }, 30 * 1000); // Every 30 seconds during active usage
+
+    return () => clearInterval(activityInterval);
+  }, [enabled]);  return {
     activities,
     loading,
     error,
