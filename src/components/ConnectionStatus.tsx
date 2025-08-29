@@ -1,5 +1,4 @@
-import React from 'react';
-import { Wifi, WifiOff, AlertTriangle, CheckCircle } from 'lucide-react';
+import { WifiOff, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export function ConnectionStatus() {
   const polygonApiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';

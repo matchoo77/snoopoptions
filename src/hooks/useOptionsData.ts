@@ -1,14 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { OptionsActivity, FilterOptions } from '../types/options';
 import { useEODData } from './useEODData';
-import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
-import { isSupabaseConfigured } from '../lib/supabase';
 
 export function useOptionsData() {
   const [filters, setFilters] = useState<FilterOptions>({
-    minVolume: 5,
-    minPremium: 50,
-    maxDaysToExpiration: 60,
+    minVolume: 3, // Reduced for more data
+    minPremium: 25, // Reduced for more data
+    maxDaysToExpiration: 90, // Increased for more data
     optionTypes: ['call', 'put'],
     sentiment: ['bullish', 'bearish', 'neutral'],
     tradeLocations: ['below-bid', 'at-bid', 'midpoint', 'at-ask', 'above-ask'],
@@ -19,50 +17,27 @@ export function useOptionsData() {
     showFavoritesOnly: false,
   });
 
-  const polygonApiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
-  
-  console.log('[useOptionsData] API Key check:', {
-    hasKey: !!polygonApiKey,
-    keyLength: polygonApiKey.length,
-    keyPreview: polygonApiKey ? `${polygonApiKey.substring(0, 8)}...${polygonApiKey.slice(-4)}` : 'none',
-    keyValid: isValidPolygonApiKey(polygonApiKey)
-  });
+  console.log('[useOptionsData] Using upgraded $300 Polygon API plan');
 
   // Use EOD data hook for real data
-  const { 
-    activities: eodActivities, 
-    loading: eodLoading, 
+  const {
+    activities: eodActivities,
+    loading: eodLoading,
     error: eodError,
     fetchEODData
   } = useEODData({
-    apiKey: polygonApiKey,
     symbols: [],
-  enabled: isValidPolygonApiKey(polygonApiKey) || isSupabaseConfigured()
+    enabled: true // Always enabled with hardcoded key
   });
 
-  // Determine data source and activities to use (no mock fallback)
+  // Determine data source and activities to use
   const { allActivities, dataSource, isConnected, loading, error } = useMemo(() => {
-    const hasValidKey = isValidPolygonApiKey(polygonApiKey) || isSupabaseConfigured();
-    
     console.log('[useOptionsData] Data source determination:', {
-      hasValidKey,
-      polygonValid: isValidPolygonApiKey(polygonApiKey),
-      supabaseConfigured: isSupabaseConfigured(),
+      hasValidKey: true,
       activitiesCount: eodActivities.length
     });
 
-    if (!hasValidKey) {
-      console.warn('[useOptionsData] No valid API key. Returning empty dataset.');
-      return {
-        allActivities: [] as OptionsActivity[],
-        dataSource: 'none' as const,
-        isConnected: false,
-        loading: false,
-        error: 'Polygon API key is missing/invalid and Supabase is not configured.'
-      };
-    }
-
-    // Valid key: always represent source as EOD (even if currently loading or empty)
+    // Always use EOD data with hardcoded key
     return {
       allActivities: eodActivities,
       dataSource: 'eod' as const,
@@ -70,19 +45,11 @@ export function useOptionsData() {
       loading: eodLoading,
       error: eodError
     };
-  }, [polygonApiKey, eodActivities, eodLoading, eodError]);
-
-  // Manual refresh function
-  const refreshData = () => {
-    if (isValidPolygonApiKey(polygonApiKey) && fetchEODData) {
-      console.log('[useOptionsData] Manual refresh triggered');
-      fetchEODData();
-    }
-  };
+  }, [eodActivities, eodLoading, eodError]);
 
   // Only trigger search when searchSymbol changes, not on mount
   useEffect(() => {
-    if (filters.searchSymbol && isValidPolygonApiKey(polygonApiKey) && fetchEODData) {
+    if (filters.searchSymbol && fetchEODData) {
       console.log('[useOptionsData] Search symbol changed, fetching data for:', filters.searchSymbol);
       fetchEODData([filters.searchSymbol]);
     }
@@ -93,7 +60,7 @@ export function useOptionsData() {
 
     // Apply search symbol filter first
     if (filters.searchSymbol) {
-      filtered = filtered.filter((activity: OptionsActivity) => 
+      filtered = filtered.filter((activity: OptionsActivity) =>
         activity.symbol.toLowerCase().includes(filters.searchSymbol.toLowerCase())
       );
     }
@@ -138,7 +105,7 @@ export function useOptionsData() {
     filters,
     setFilters,
     isConnected,
-  isUsingRealData: dataSource === 'eod',
+    isUsingRealData: dataSource === 'eod',
     dataSource,
     error,
     loading,

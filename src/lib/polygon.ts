@@ -34,7 +34,7 @@ export class PolygonAPI {
   private reconnectDelay = 1000;
 
   constructor(
-    apiKey: string,
+    _apiKey: string,
     setIsConnected: (connected: boolean) => void,
     setError: (error: string | null) => void
   ) {
@@ -77,7 +77,7 @@ export class PolygonAPI {
             if (msg.ev === 'status') {
               if (msg.status === 'auth_success') {
                 console.log('[Polygon] ✅ Authentication successful');
-                
+
                 // Subscribe to options trades
                 const subscribeMessage = {
                   action: 'subscribe',
@@ -108,7 +108,7 @@ export class PolygonAPI {
     this.ws.onclose = (event) => {
       console.log('[Polygon] WebSocket closed:', event.code, event.reason);
       this.setIsConnected(false);
-      
+
       if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
         console.log(`[Polygon] Attempting to reconnect (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})...`);
         setTimeout(() => {
@@ -140,11 +140,11 @@ export class PolygonAPI {
       const response = await fetch(
         `https://api.polygon.io/v3/reference/options/contracts?underlying_ticker=${symbol}&limit=1000&apikey=${this.apiKey}`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       return data.results || [];
     } catch (error) {
@@ -156,29 +156,26 @@ export class PolygonAPI {
   async getOptionsQuotes(tickers: string[]): Promise<OptionsQuote[]> {
     try {
       const quotes: OptionsQuote[] = [];
-      
-      // Batch requests to avoid rate limits
-      for (let i = 0; i < tickers.length; i += 10) {
-        const batch = tickers.slice(i, i + 10);
+
+      // Process in larger batches with upgraded plan
+      for (let i = 0; i < tickers.length; i += 50) { // Increased batch size
+        const batch = tickers.slice(i, i + 50);
         const tickerParam = batch.join(',');
-        
+
         const response = await fetch(
           `https://api.polygon.io/v3/snapshot/options/${tickerParam}?apikey=${this.apiKey}`
         );
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.results) {
             quotes.push(...data.results);
           }
         }
-        
-        // Small delay between batches
-        if (i + 10 < tickers.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
+
+        // No delay needed with upgraded plan
       }
-      
+
       return quotes;
     } catch (error) {
       console.error('Error fetching options quotes:', error);
@@ -196,7 +193,7 @@ export function detectUnusualActivity(
 ): boolean {
   const volumeRatio = avgVolume > 0 ? volume / avgVolume : 1;
   const oiRatio = openInterest > 0 ? volume / openInterest : 0;
-  
+
   return (
     volumeRatio >= 2 || // Volume 2x average
     oiRatio >= 0.5 || // Volume is 50%+ of open interest

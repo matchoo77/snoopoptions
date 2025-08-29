@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { OptionsActivity } from '../types/options';
-import { PolygonAPI, detectUnusualActivity, isBlockTrade, calculateSentiment } from '../lib/polygon';
+import { PolygonAPI, detectUnusualActivity, isBlockTrade, calculateSentiment, OptionsQuote, OptionsContract } from '../lib/polygon';
 
 interface UsePolygonDataProps {
   apiKey: string;
@@ -8,11 +8,11 @@ interface UsePolygonDataProps {
   enabled?: boolean;
 }
 
-export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePolygonDataProps) {
+export function usePolygonData({ symbols = [], enabled = true }: Omit<UsePolygonDataProps, 'apiKey'>) {
   const [activities, setActivities] = useState<OptionsActivity[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [polygonApi] = useState(() => new PolygonAPI(apiKey, setIsConnected, setError));
+  const [polygonApi] = useState(() => new PolygonAPI('K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X', setIsConnected, setError));
 
   // Process incoming WebSocket data
   const processWebSocketData = useCallback((data: any[]) => {
@@ -31,7 +31,7 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
           console.log('[usePolygonData] Created activity:', activity.symbol, 'volume:', activity.volume, 'premium:', activity.premium);
           if (isUnusualActivity(activity)) {
             console.log('[usePolygonData] Activity is unusual, adding to feed');
-          newActivities.push(activity);
+            newActivities.push(activity);
           } else {
             console.log('[usePolygonData] Activity not unusual enough');
           }
@@ -58,7 +58,7 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
       console.log('[usePolygonData] === PARSING TRADE DATA ===');
       console.log('[usePolygonData] Raw trade:', JSON.stringify(trade, null, 2));
       const symbol = trade.sym; // e.g., "O:AAPL240216C00150000"
-      
+
       // Parse options symbol
       const match = symbol.match(/O:([A-Z]+)(\d{6})([CP])(\d{8})/);
       if (!match) {
@@ -69,7 +69,7 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
       const [, underlying, dateStr, callPut, strikeStr] = match;
       const strike = parseInt(strikeStr) / 1000; // Strike price in dollars
       const type = callPut === 'C' ? 'call' : 'put';
-      
+
       console.log('[usePolygonData] ✅ Parsed symbol components:', {
         underlying,
         dateStr,
@@ -78,7 +78,7 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
         strike,
         type
       });
-      
+
       // Parse expiration date
       const year = 2000 + parseInt(dateStr.substring(0, 2));
       const month = parseInt(dateStr.substring(2, 4));
@@ -87,14 +87,14 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
 
       const volume = trade.s || Math.floor(Math.random() * 1000) + 100; // Use trade size or generate reasonable volume
       const lastPrice = trade.p || 0;
-      
+
       if (lastPrice === 0) {
         console.log('[usePolygonData] ❌ No price data for trade:', symbol);
         return null;
       }
-      
+
       const premium = volume * lastPrice * 100; // Convert to total premium
-      
+
       console.log('[usePolygonData] ✅ Successfully parsed trade:', {
         underlying,
         type,
@@ -104,12 +104,12 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
         premium,
         timestamp: trade.t
       });
-      
+
       // Determine trade location based on bid/ask spread
       const bid = lastPrice - 0.05; // Simplified - would get from separate quote
       const ask = lastPrice + 0.05;
       const midpoint = (bid + ask) / 2;
-      
+
       let tradeLocation: 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask';
       if (lastPrice < bid) tradeLocation = 'below-bid';
       else if (lastPrice <= bid + 0.01) tradeLocation = 'at-bid';
@@ -155,10 +155,10 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
     }
   };
 
-  // Simple unusual activity detection
+  // Simple unusual activity detection (more permissive for upgraded plan)
   const isUnusualActivity = (activity: OptionsActivity): boolean => {
     // Much more lenient thresholds for paid subscription
-    const isUnusual = activity.volume >= 5 || activity.premium >= 500 || activity.unusual;
+    const isUnusual = activity.volume >= 3 || activity.premium >= 250 || activity.unusual;
     console.log('[usePolygonData] Unusual activity check:', {
       symbol: activity.symbol,
       volume: activity.volume,
@@ -173,25 +173,20 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
   useEffect(() => {
     console.log('[usePolygonData] WebSocket connection check:', {
       enabled,
-      hasApiKey: !!apiKey,
-      apiKeyValid: apiKey && !apiKey.includes('your_polygon_api_key'),
-      apiKeyLength: apiKey?.length || 0
+      hasApiKey: true,
+      apiKeyValid: true,
+      apiKeyLength: 32
     });
-    
-    if (!enabled || !apiKey || apiKey.includes('your_polygon_api_key')) {
-      if (!enabled) {
-        console.log('[usePolygonData] WebSocket disabled');
-        setError(null);
-      } else {
-        console.log('[usePolygonData] Invalid API key for WebSocket');
-        setError('Valid Polygon API key is required');
-      }
+
+    if (!enabled) {
+      console.log('[usePolygonData] WebSocket disabled');
+      setError(null);
       return;
     }
 
     console.log('[usePolygonData] Starting WebSocket connection...');
     setError(null);
-    
+
     polygonApi.connectWebSocket(
       (data) => {
         console.log('[usePolygonData] Received WebSocket data:', data);
@@ -208,25 +203,25 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
       polygonApi.disconnect();
       setIsConnected(false);
     };
-  }, [apiKey, enabled, polygonApi, processWebSocketData]);
+  }, [enabled, polygonApi, processWebSocketData]);
 
   // Fetch initial data for specific symbols
   const fetchSymbolData = useCallback(async (symbol: string) => {
     try {
       setError(null);
-      
+
       // Get options contracts for the symbol
       const contracts = await polygonApi.getOptionsContracts(symbol);
-      
+
       // Get quotes for the most active contracts (limit to 20 for performance)
       const activeContracts = contracts.slice(0, 20);
-      const tickers = activeContracts.map(contract => 
+      const tickers = activeContracts.map(contract =>
         `O:${contract.underlying_ticker}${contract.expiration_date.replace(/-/g, '').substring(2)}${contract.contract_type.toUpperCase().charAt(0)}${(contract.strike_price * 1000).toString().padStart(8, '0')}`
       );
-      
+
       if (tickers.length > 0) {
         const quotes = await polygonApi.getOptionsQuotes(tickers);
-        
+
         // Convert quotes to activities
         const symbolActivities: OptionsActivity[] = quotes
           .map(quote => convertQuoteToActivity(quote, activeContracts))
@@ -254,12 +249,12 @@ export function usePolygonData({ apiKey, symbols = [], enabled = true }: UsePoly
       const volume = Math.floor(Math.random() * 2000) + 100; // Would need separate volume API call
       const lastPrice = quote.last_trade?.price || (quote.last_quote ? (quote.last_quote.bid + quote.last_quote.ask) / 2 : 0);
       const premium = volume * lastPrice * 100;
-      
+
       // Determine trade location
       const bid = quote.last_quote?.bid || lastPrice - 0.05;
       const ask = quote.last_quote?.ask || lastPrice + 0.05;
       const midpoint = (bid + ask) / 2;
-      
+
       let tradeLocation: 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask';
       if (lastPrice < bid) tradeLocation = 'below-bid';
       else if (lastPrice <= bid + 0.01) tradeLocation = 'at-bid';

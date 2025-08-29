@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { BacktestParams, BacktestResult, BacktestSummary } from '../types/backtesting';
 import { BacktestingEngine } from '../lib/backtesting';
-import { isValidPolygonApiKey } from '../lib/apiKeyValidation';
 
 export function useBacktesting() {
   const [results, setResults] = useState<BacktestResult[]>([]);
@@ -12,7 +11,7 @@ export function useBacktesting() {
   const runBacktest = async (params: BacktestParams) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const polygonApiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
       console.log('Attempting to run backtest with hardcoded Polygon API key.');
@@ -21,8 +20,8 @@ export function useBacktesting() {
       console.log('Running backtest with real Polygon.io data...');
       const engine = new BacktestingEngine(polygonApiKey);
       const { results: backtestResults, summary: backtestSummary } = await engine.runBacktest(params);
-      console.log('Real backtest completed:', { 
-        resultsCount: backtestResults.length, 
+      console.log('Real backtest completed:', {
+        resultsCount: backtestResults.length,
         successRate: backtestSummary.successRate,
         hasResults: backtestResults.length > 0,
         hasSummary: !!backtestSummary
