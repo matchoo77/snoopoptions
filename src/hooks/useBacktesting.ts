@@ -16,8 +16,8 @@ export function useBacktesting() {
       console.log('Running backtest with real-time Polygon API data...');
       const engine = new BacktestingEngine();
       const { results: backtestResults, summary: backtestSummary } = await engine.runBacktest(params);
-      console.log('Real-time backtest completed:', { 
-        resultsCount: backtestResults.length, 
+      console.log('Real-time backtest completed:', {
+        resultsCount: backtestResults.length,
         successRate: backtestSummary.successRate,
         hasResults: backtestResults.length > 0,
         hasSummary: !!backtestSummary

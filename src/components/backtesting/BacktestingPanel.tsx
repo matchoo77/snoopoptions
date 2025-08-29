@@ -67,7 +67,7 @@ export function BacktestingPanel() {
           <h2 className="text-xl font-semibold text-gray-900">Block Trade Backtesting</h2>
           <span className="text-sm">📊 Test your hunting strategy</span>
         </div>
-        
+
         {(results.length > 0 || summary) && (
           <button
             onClick={clearResults}
@@ -253,9 +253,9 @@ export function BacktestingPanel() {
 
       {/* Results */}
       {summary && (
-        <BacktestResults 
-          results={results} 
-          summary={summary} 
+        <BacktestResults
+          results={results}
+          summary={summary}
           params={params}
           onCreateAlert={() => setShowAlertSetup(true)}
         />
@@ -276,18 +276,9 @@ export function BacktestingPanel() {
           How Pattern Recognition Works
         </h3>
         <p className="text-sm text-blue-700">
-          This tool identifies patterns of unusual options activity that occurred 1-3 days BEFORE significant stock moves. 
-          It searches for clusters of block trades that preceded your target % movement, helping you recognize early warning signals. 
+          This tool identifies patterns of unusual options activity that occurred 1-3 days BEFORE significant stock moves.
+          It searches for clusters of block trades that preceded your target % movement, helping you recognize early warning signals.
           If no such patterns exist, try adjusting your parameters (lower thresholds, different time periods, etc.).
-        </p>
-        <p className="text-xs text-blue-600 mt-2">
-          {isValidPolygonApiKey('K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X')
-            ? '✓ Using Polygon.io data'
-            : '⚠️ Configure VITE_POLYGON_API_KEY to run backtests'
-          }
-        </p>
-        <p className="text-xs text-gray-500 mt-1">
-          API Key Status: Configured (hardcoded)
         </p>
       </div>
     </div>

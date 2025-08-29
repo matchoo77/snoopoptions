@@ -156,7 +156,7 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
       const now = new Date();
       const hour = now.getHours();
       const day = now.getDay();
-      
+
       // Refresh during market hours (9 AM - 4 PM ET, Monday-Friday) and more frequently
       if (day >= 1 && day <= 5 && hour >= 9 && hour <= 16) {
         console.log('Auto-refreshing EOD data during market hours for real-time updates...');
@@ -178,7 +178,7 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
     }, 30 * 1000); // Every 30 seconds during active usage
 
     return () => clearInterval(activityInterval);
-  }, [enabled]);  return {
+  }, [enabled]); return {
     activities,
     loading,
     error,
