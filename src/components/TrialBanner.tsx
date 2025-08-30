@@ -1,4 +1,3 @@
-import React from 'react';
 import { Clock, Crown, CreditCard } from 'lucide-react';
 
 interface TrialBannerProps {
@@ -20,23 +19,23 @@ export function TrialBanner({ daysRemaining, onUpgrade }: TrialBannerProps) {
   };
 
   return (
-    <div className={`border rounded-lg p-4 mb-6 ${getUrgencyColor()}`}>
+    <div className={`border rounded-lg p-3 mb-4 ${getUrgencyColor()}`}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           {getUrgencyIcon()}
           <div>
-            <h3 className="font-semibold">
+            <h3 className="font-semibold text-sm">
               {daysRemaining > 0 ? (
-                <>🐕 Free Trial - {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} of sniffing left!</>
+                <>🐕 Free Trial - {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left!</>
               ) : (
-                '🐕 Your pup needs a subscription to keep hunting!'
+                '🐕 Your pup needs a subscription!'
               )}
             </h3>
-            <p className="text-sm opacity-90">
+            <p className="text-xs opacity-90">
               {daysRemaining > 0 ? (
-                'Keep your trading dog well-fed with a subscription to continue the hunt for big trades!'
+                'Keep your trading dog well-fed with a subscription!'
               ) : (
-                'Subscribe now to get your trading companion back on the scent trail!'
+                'Subscribe now to get back on the scent trail!'
               )}
             </p>
           </div>
@@ -44,14 +43,14 @@ export function TrialBanner({ daysRemaining, onUpgrade }: TrialBannerProps) {
         
         <button
           onClick={onUpgrade}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-colors ${
+          className={`flex items-center space-x-1 px-3 py-1 text-sm rounded font-medium transition-colors ${
             daysRemaining <= 1 
               ? 'bg-red-600 text-white hover:bg-red-700'
               : 'bg-white text-gray-900 hover:bg-gray-50 border border-gray-300'
           }`}
         >
-          <CreditCard className="w-4 h-4" />
-          <span>Upgrade Now</span>
+          <CreditCard className="w-3 h-3" />
+          <span>Upgrade</span>
         </button>
       </div>
     </div>
