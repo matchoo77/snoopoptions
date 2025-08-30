@@ -4,10 +4,9 @@ import { OptionsActivity } from '../types/options';
 
 interface TopMoversProps {
   activities: OptionsActivity[];
-  onRefresh?: () => void;
 }
 
-export function TopMovers({ activities, onRefresh }: TopMoversProps) {
+export function TopMovers({ activities }: TopMoversProps) {
   console.log('[TopMovers] Received activities:', activities.length);
   
   const topMovers = useMemo(() => {
@@ -76,18 +75,9 @@ export function TopMovers({ activities, onRefresh }: TopMoversProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 mb-6 border">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center">
-          <Flame className="w-5 h-5 text-orange-500 mr-2" />
-          <h3 className="text-lg font-semibold text-gray-900">Top Movers by Premium</h3>
-        </div>
-        <button 
-          onClick={onRefresh}
-          disabled={!onRefresh}
-          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Refresh Data
-        </button>
+      <div className="flex items-center mb-4">
+        <Flame className="w-5 h-5 text-orange-500 mr-2" />
+        <h3 className="text-lg font-semibold text-gray-900">Top Movers by Premium</h3>
       </div>
 
       <div className="space-y-3">

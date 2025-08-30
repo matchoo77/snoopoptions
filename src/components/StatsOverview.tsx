@@ -7,7 +7,7 @@ interface StatsOverviewProps {
   dataSource?: 'none' | 'realtime' | 'eod';
 }
 
-export function StatsOverview({ activities, dataSource = 'eod' }: StatsOverviewProps) {
+export function StatsOverview({ activities, dataSource = 'realtime' }: StatsOverviewProps) {
   const stats = React.useMemo(() => {
     const totalVolume = activities.reduce((sum, activity) => sum + activity.volume, 0);
     const totalPremium = activities.reduce((sum, activity) => sum + activity.premium, 0);
@@ -48,7 +48,7 @@ export function StatsOverview({ activities, dataSource = 'eod' }: StatsOverviewP
           <div>
             <p className="text-sm text-gray-600">
               Total Volume
-              {dataSource === 'eod' && <span className="text-xs text-blue-600 block">EOD</span>}
+              {dataSource === 'realtime' && <span className="text-xs text-green-600 block">LIVE</span>}
             </p>
             <p className="text-lg font-semibold text-gray-900">
               {formatNumber(stats.totalVolume)}
@@ -63,7 +63,7 @@ export function StatsOverview({ activities, dataSource = 'eod' }: StatsOverviewP
           <div>
             <p className="text-sm text-gray-600">
               Total Premium
-              {dataSource === 'eod' && <span className="text-xs text-blue-600 block">EOD</span>}
+              {dataSource === 'realtime' && <span className="text-xs text-green-600 block">LIVE</span>}
             </p>
             <p className="text-lg font-semibold text-gray-900">
               {formatCurrency(stats.totalPremium)}

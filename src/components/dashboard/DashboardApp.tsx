@@ -67,13 +67,13 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
 
   const [showBacktesting, setShowBacktesting] = useState(false);
 
-  // Auto-refresh every 5 seconds for live data feel
+  // Auto-refresh every 2 seconds for live data feel
   useEffect(() => {
     if (!showBacktesting) {
       const interval = setInterval(() => {
-        console.log('[DashboardApp] Auto-refreshing data every 5 seconds');
+        console.log('[DashboardApp] Auto-refreshing data every 2 seconds');
         refreshData();
-      }, 5000); // 5 seconds
+      }, 2000); // 2 seconds
 
       return () => clearInterval(interval);
     }
@@ -142,12 +142,11 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
             
             <FilterPanel filters={filters} onFiltersChange={setFilters} />
             
-            <StatsOverview activities={displayActivities} />
             <StatsOverview activities={displayActivities} dataSource={dataSource} />
             
             <MarketOverview />
             
-            <TopMovers activities={displayActivities} onRefresh={refreshData} />
+            <TopMovers activities={displayActivities} />
             
             <ActivityFeed
               activities={displayActivities}
