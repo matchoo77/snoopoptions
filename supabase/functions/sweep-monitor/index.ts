@@ -157,7 +157,7 @@ async function sendEmailAlert(email: string, sweep: LiveSweep, alertCriteria: Us
 
 async function checkAlertsAndNotify(sweeps: LiveSweep[]) {
   try {
-    // Get all active alerts
+    // Get all active alerts with user email
     const { data: alerts, error } = await supabase
       .from('user_alerts')
       .select(`

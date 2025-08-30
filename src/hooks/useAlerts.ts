@@ -28,7 +28,19 @@ export function useAlerts() {
       if (error) {
         setError(error.message);
       } else {
-        setAlerts(data || []);
+        // Transform database format to frontend format
+        const transformedAlerts: AlertCriteria[] = (data || []).map(alert => ({
+          id: alert.id,
+          userId: alert.user_id,
+          ticker: alert.ticker,
+          tradeLocations: alert.trade_locations,
+          minWinRate: alert.min_win_rate,
+          notificationType: alert.notification_type,
+          isActive: alert.is_active,
+          createdAt: alert.created_at,
+        }));
+        
+        setAlerts(transformedAlerts);
       }
     } catch (err) {
       setError('Failed to fetch alerts');
@@ -76,7 +88,13 @@ export function useAlerts() {
     try {
       const { error } = await supabase
         .from('user_alerts')
-        .update(updates)
+        .update({
+          ticker: updates.ticker,
+          trade_locations: updates.tradeLocations,
+          min_win_rate: updates.minWinRate,
+          notification_type: updates.notificationType,
+          is_active: updates.isActive,
+        })
         .eq('id', id);
 
       if (error) {

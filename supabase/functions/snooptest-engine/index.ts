@@ -120,12 +120,19 @@ async function fetchOptionsSweeps(params: SnoopTestParams): Promise<OptionsSweep
   const sweeps: OptionsSweep[] = [];
   
   try {
-    // Get options trades from Polygon API
-    const tradesUrl = `https://api.polygon.io/v3/trades/options?ticker.gte=O:${params.ticker}&timestamp.gte=${params.startDate}&timestamp.lte=${params.endDate}&limit=1000&order=desc`;
+    // Convert dates to timestamps for Polygon API
+    const startTimestamp = new Date(params.startDate).toISOString();
+    const endTimestamp = new Date(params.endDate + 'T23:59:59').toISOString();
     
+    // Fetch options trades from Polygon API
+    const tradesUrl = `https://api.polygon.io/v3/trades/options?ticker.gte=O:${params.ticker}&timestamp.gte=${startTimestamp}&timestamp.lte=${endTimestamp}&limit=1000&order=desc`;
+    
+    console.log('Fetching from Polygon API:', tradesUrl.replace(POLYGON_API_KEY, 'API_KEY_HIDDEN'));
     const tradesData = await makePolygonRequest(tradesUrl);
     
     if (tradesData.results) {
+      console.log(`Found ${tradesData.results.length} options trades`);
+      
       for (const trade of tradesData.results) {
         // Parse options ticker (e.g., O:SPY240216C00420000)
         const tickerMatch = trade.ticker.match(/O:([A-Z]+)(\d{6})([CP])(\d{8})/);
@@ -177,12 +184,44 @@ async function fetchOptionsSweeps(params: SnoopTestParams): Promise<OptionsSweep
       }
     }
     
-    console.log(`Found ${sweeps.length} sweeps for ${params.ticker}`);
+    console.log(`Found ${sweeps.length} qualifying sweeps for ${params.ticker}`);
+    
+    // Store sweeps in database for future reference
+    if (sweeps.length > 0) {
+      const sweepInserts = sweeps.map(sweep => ({
+        ticker: sweep.ticker,
+        trade_date: sweep.tradeDate,
+        option_type: sweep.optionType,
+        strike_price: sweep.strikePrice,
+        expiration_date: sweep.expirationDate,
+        volume: sweep.volume,
+        price: sweep.price,
+        bid: sweep.bid,
+        ask: sweep.ask,
+        trade_location: sweep.tradeLocation,
+        inferred_side: sweep.inferredSide,
+        premium: sweep.premium,
+      }));
+      
+      const { error: insertError } = await supabase
+        .from('options_sweeps')
+        .upsert(sweepInserts, { 
+          onConflict: 'ticker,trade_date,option_type,strike_price,volume',
+          ignoreDuplicates: true 
+        });
+      
+      if (insertError) {
+        console.error('Error storing sweeps:', insertError);
+      } else {
+        console.log(`Stored ${sweeps.length} sweeps in database`);
+      }
+    }
+    
     return sweeps;
     
   } catch (error) {
     console.error('Error fetching options sweeps:', error);
-    // Return synthetic data for demo
+    // Return synthetic data for demo if API fails
     return generateSyntheticSweeps(params);
   }
 }
@@ -237,13 +276,17 @@ async function fetchStockPrices(ticker: string, dates: string[]): Promise<Record
       await rateLimiter.throttle();
       
       const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${date}/${date}`;
+      console.log(`Fetching stock price for ${ticker} on ${date}`);
+      
       const data = await makePolygonRequest(url);
       
       if (data.results && data.results.length > 0) {
         prices[date] = data.results[0].c; // closing price
+        console.log(`${ticker} ${date}: $${prices[date]}`);
       } else {
         // Use synthetic price if no data
         prices[date] = getBasePriceForTicker(ticker) * (0.95 + Math.random() * 0.1);
+        console.log(`${ticker} ${date}: $${prices[date]} (synthetic)`);
       }
     }
   } catch (error) {
@@ -288,6 +331,7 @@ async function analyzeSweepOutcomes(sweeps: OptionsSweep[], holdPeriod: number):
   
   if (!ticker) return results;
   
+  console.log(`Fetching stock prices for ${allDates.length} dates`);
   const stockPrices = await fetchStockPrices(ticker, allDates);
   
   for (const sweep of sweeps) {
@@ -332,6 +376,7 @@ async function analyzeSweepOutcomes(sweeps: OptionsSweep[], holdPeriod: number):
     });
   }
   
+  console.log(`Analyzed ${results.length} non-neutral sweeps`);
   return results;
 }
 
@@ -412,6 +457,10 @@ Deno.serve(async (req) => {
 
     if (params.holdPeriod < 1 || params.holdPeriod > 30) {
       return corsResponse({ error: 'Hold period must be between 1 and 30 days' }, 400);
+    }
+
+    if (!POLYGON_API_KEY) {
+      return corsResponse({ error: 'Polygon API key not configured' }, 500);
     }
 
     console.log('Running SnoopTest with params:', params);

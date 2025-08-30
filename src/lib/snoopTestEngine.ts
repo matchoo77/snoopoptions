@@ -1,4 +1,4 @@
-import { SnoopTestParams, SnoopTestResult, SnoopTestSummary, OptionsSweep, TradeLocation } from '../types/snooptest';
+import { SnoopTestParams, SnoopTestResult, SnoopTestSummary, TradeLocation } from '../types/snooptest';
 import { supabase } from './supabase';
 
 export class SnoopTestEngine {
@@ -81,6 +81,9 @@ export class SnoopTestEngine {
         new Date(params.startDate).getTime() + 
         Math.random() * (new Date(params.endDate).getTime() - new Date(params.startDate).getTime())
       );
+      
+      // Skip weekends
+      if (randomDate.getDay() === 0 || randomDate.getDay() === 6) continue;
       
       const optionType = Math.random() > 0.5 ? 'call' : 'put';
       const tradeLocation = params.tradeLocations[Math.floor(Math.random() * params.tradeLocations.length)];
