@@ -9,7 +9,7 @@ import { SuccessPage } from './components/subscription/SuccessPage';
 
 function App() {
   const { user, loading: authLoading } = useAuth();
-  const [currentView, setCurrentView] = useState<'marketing' | 'login' | 'signup' | 'dashboard' | 'subscription' | 'success'>('marketing');
+  const [currentView, setCurrentView] = useState<'marketing' | 'login' | 'signup' | 'dashboard' | 'subscription' | 'success' | 'auth'>('marketing');
 
   // Check URL parameters for payment success/cancel
   useEffect(() => {
@@ -28,7 +28,7 @@ function App() {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('success') === 'true') {
           setCurrentView('success');
-        } else if (currentView === 'auth') {
+        } else if (currentView === 'login') {
           setCurrentView('dashboard');
         }
       } else if (currentView === 'dashboard') {
@@ -102,7 +102,7 @@ function App() {
 
     case 'subscription':
       return user ? (
-        <SubscriptionPage 
+        <SubscriptionPage
           userToken={''}
           onBack={handleBackToDashboard}
         />
@@ -130,7 +130,7 @@ function App() {
 
       // For now, always allow dashboard access (simplified trial logic)
       return (
-        <DashboardApp 
+        <DashboardApp
           trialStatus={{
             hasActiveTrial: true,
             hasActiveSubscription: false,

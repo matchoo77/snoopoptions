@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { OptionsActivity, FilterOptions } from '../types/options';
-import { useEODData } from './useEODData';
+import { useRealTimeData } from './useRealTimeData';
 
 export function useOptionsData() {
   const [filters, setFilters] = useState<FilterOptions>({
@@ -17,41 +17,41 @@ export function useOptionsData() {
     showFavoritesOnly: false,
   });
 
-  console.log('[useOptionsData] Using upgraded $300 Polygon API plan');
+  console.log('[useOptionsData] Using premium market data plan');
 
-  // Use EOD data hook for real data
+  // Use real-time data hook for live data
   const {
-    activities: eodActivities,
-    loading: eodLoading,
-    error: eodError,
-    fetchEODData
-  } = useEODData({
+    activities: realTimeActivities,
+    loading: realTimeLoading,
+    error: realTimeError,
+    fetchRealTimeData
+  } = useRealTimeData({
     symbols: [],
-    enabled: true // Always enabled with hardcoded key
+    enabled: true // Always enabled with configured key
   });
 
   // Determine data source and activities to use
   const { allActivities, dataSource, isConnected, loading, error } = useMemo(() => {
     console.log('[useOptionsData] Data source determination:', {
       hasValidKey: true,
-      activitiesCount: eodActivities.length
+      activitiesCount: realTimeActivities.length
     });
 
-    // Always use EOD data with hardcoded key
+    // Always use real-time data with configured key
     return {
-      allActivities: eodActivities,
-      dataSource: 'eod' as const,
+      allActivities: realTimeActivities,
+      dataSource: 'realtime' as const,
       isConnected: true,
-      loading: eodLoading,
-      error: eodError
+      loading: realTimeLoading,
+      error: realTimeError
     };
-  }, [eodActivities, eodLoading, eodError]);
+  }, [realTimeActivities, realTimeLoading, realTimeError]);
 
   // Only trigger search when searchSymbol changes, not on mount
   useEffect(() => {
-    if (filters.searchSymbol && fetchEODData) {
+    if (filters.searchSymbol && fetchRealTimeData) {
       console.log('[useOptionsData] Search symbol changed, fetching data for:', filters.searchSymbol);
-      fetchEODData([filters.searchSymbol]);
+      fetchRealTimeData([filters.searchSymbol]);
     }
   }, [filters.searchSymbol]);
 
@@ -105,10 +105,10 @@ export function useOptionsData() {
     filters,
     setFilters,
     isConnected,
-    isUsingRealData: dataSource === 'eod',
+    isUsingRealData: dataSource === 'realtime',
     dataSource,
     error,
     loading,
-    refreshData: fetchEODData, // Expose refresh function
+    refreshData: fetchRealTimeData, // Expose refresh function
   };
 }
