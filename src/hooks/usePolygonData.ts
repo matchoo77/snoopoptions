@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { OptionsActivity } from '../types/options';
 import { PolygonAPI, detectUnusualActivity, isBlockTrade, calculateSentiment, OptionsQuote, OptionsContract } from '../lib/polygon';
+import { getPolygonApiKey } from '../config/api';
 
 interface UsePolygonDataProps {
   apiKey: string;
@@ -12,7 +13,7 @@ export function usePolygonData({ symbols = [], enabled = true }: Omit<UsePolygon
   const [activities, setActivities] = useState<OptionsActivity[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [polygonApi] = useState(() => new PolygonAPI('K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X', setIsConnected, setError));
+  const [polygonApi] = useState(() => new PolygonAPI(getPolygonApiKey(), setIsConnected, setError));
 
   // Process incoming WebSocket data
   const processWebSocketData = useCallback((data: any[]) => {

@@ -1,5 +1,6 @@
 import { OptionsActivity } from '../types/options';
 import { BacktestTrade } from '../types/backtesting';
+import { getPolygonApiKey, API_CONFIG } from '../config/api';
 
 interface PolygonOptionsContract {
   ticker: string;
@@ -62,13 +63,13 @@ interface PolygonOptionsSnapshot {
 
 export class PolygonEODService {
   private apiKey: string;
-  private baseUrl = 'https://api.polygon.io';
+  private baseUrl = API_CONFIG.POLYGON_BASE_URL;
   private cache: Map<string, any> = new Map();
   private cacheExpiry = 2 * 60 * 1000; // 2 minutes cache for faster updates
 
   constructor() {
-    this.apiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
-    console.log('PolygonEODService initialized with upgraded $300 plan API key');
+    this.apiKey = getPolygonApiKey();
+    console.log('PolygonEODService initialized with centralized API key configuration');
     console.log('[PolygonEOD] Full API key length:', this.apiKey.length);
     console.log('[PolygonEOD] API key starts with:', this.apiKey.substring(0, 10));
     console.log('[PolygonEOD] Using direct API calls (rate limiting disabled for upgraded plan)');

@@ -1,4 +1,6 @@
 // Polygon.io API client for options data
+import { getPolygonApiKey } from '../config/api';
+
 export interface OptionsContract {
   underlying_ticker: string;
   expiration_date: string;
@@ -34,11 +36,11 @@ export class PolygonAPI {
   private reconnectDelay = 1000;
 
   constructor(
-    _apiKey: string,
+    apiKey: string,
     setIsConnected: (connected: boolean) => void,
     setError: (error: string | null) => void
   ) {
-    this.apiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
+    this.apiKey = apiKey || getPolygonApiKey();
     this.setIsConnected = setIsConnected;
     this.setError = setError;
   }
