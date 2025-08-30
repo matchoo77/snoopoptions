@@ -78,14 +78,14 @@ export function SnoopTestPanel() {
           <div>
             <h3 className="text-sm font-medium text-blue-300 mb-1">How SnoopTest Works</h3>
             <p className="text-sm text-blue-200 leading-relaxed mb-2">
-              SnoopTest evaluates if the stock price moves in the direction implied by unusual options sweeps 
-              (e.g., Buy Calls at/above ask or Sell Puts at/below bid expect stock up; Sell Calls at/below bid 
+              SnoopTest evaluates if the stock price moves in the direction implied by unusual options sweeps
+              (e.g., Buy Calls at/above ask or Sell Puts at/below bid expect stock up; Sell Calls at/below bid
               or Buy Puts at/above ask expect stock down) over your selected hold period.
             </p>
             <div className="bg-green-900/30 border border-green-700/50 rounded p-2 mt-2">
               <p className="text-xs text-green-200">
-                <strong>Data Sources:</strong> ✅ Real stock prices from Polygon.io API • 
-                ✅ Real options contracts validation • 
+                <strong>Data Sources:</strong> ✅ Real stock prices from Polygon.io API •
+                ✅ Real options contracts validation •
                 ⚠️ Synthetic options sweep data (real trades require special API access)
               </p>
             </div>
