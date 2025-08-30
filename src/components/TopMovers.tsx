@@ -1,13 +1,18 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Flame } from 'lucide-react';
 import { OptionsActivity } from '../types/options';
 
 interface TopMoversProps {
   activities: OptionsActivity[];
+  onRefresh?: () => void;
 }
 
-export function TopMovers({ activities }: TopMoversProps) {
+export function TopMovers({ activities, onRefresh }: TopMoversProps) {
+  console.log('[TopMovers] Received activities:', activities.length);
+  
   const topMovers = useMemo(() => {
+    console.log('[TopMovers] Processing activities:', activities.length);
+    
     // Group activities by symbol and calculate totals
     const symbolData = activities.reduce((acc, activity) => {
       if (!acc[activity.symbol]) {
@@ -34,10 +39,15 @@ export function TopMovers({ activities }: TopMoversProps) {
       return acc;
     }, {} as Record<string, any>);
 
+    console.log('[TopMovers] Symbol data keys:', Object.keys(symbolData));
+
     // Sort by total premium and take top 10
-    return Object.values(symbolData)
+    const sorted = Object.values(symbolData)
       .sort((a: any, b: any) => b.totalPremium - a.totalPremium)
       .slice(0, 10);
+      
+    console.log('[TopMovers] Top movers:', sorted.length);
+    return sorted;
   }, [activities]);
 
   const formatCurrency = (value: number) => {
@@ -66,61 +76,79 @@ export function TopMovers({ activities }: TopMoversProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 mb-6 border">
-      <div className="flex items-center mb-4">
-        <Flame className="w-5 h-5 text-orange-500 mr-2" />
-        <h3 className="text-lg font-semibold text-gray-900">Top Movers by Premium</h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <Flame className="w-5 h-5 text-orange-500 mr-2" />
+          <h3 className="text-lg font-semibold text-gray-900">Top Movers by Premium</h3>
+        </div>
+        <button 
+          onClick={onRefresh}
+          disabled={!onRefresh}
+          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Refresh Data
+        </button>
       </div>
 
       <div className="space-y-3">
-        {topMovers.map((mover: any, index) => (
-          <div key={mover.symbol} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">
-                {index + 1}
-              </div>
-              <div>
-                <div className="font-semibold text-gray-900">{mover.symbol}</div>
-                <div className="text-xs text-gray-500">
-                  {mover.activities.length} alert{mover.activities.length > 1 ? 's' : ''}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-6 text-sm">
-              <div className="text-center">
-                <div className="text-gray-500 text-xs">Volume</div>
-                <div className="font-semibold text-gray-900">
-                  {formatNumber(mover.totalVolume)}
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-gray-500 text-xs">Premium</div>
-                <div className="font-semibold text-gray-900">
-                  {formatCurrency(mover.totalPremium)}
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-gray-500 text-xs">C/P Ratio</div>
-                <div className={`font-semibold ${getSentimentColor(mover.callVolume, mover.putVolume)}`}>
-                  {getCallPutRatio(mover.callVolume, mover.putVolume)}
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-gray-500 text-xs">Sentiment</div>
-                <div className="flex items-center">
-                  {mover.callVolume > mover.putVolume ? (
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-red-600" />
-                  )}
-                </div>
-              </div>
+        {topMovers.length === 0 ? (
+          <div className="flex items-center justify-center p-8 text-gray-500">
+            <div className="text-center">
+              <div className="text-sm">Loading unusual options activity...</div>
+              <div className="text-xs mt-1">Real-time data is being processed</div>
             </div>
           </div>
-        ))}
+        ) : (
+          topMovers.map((mover: any, index) => (
+            <div key={mover.symbol} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">
+                  {index + 1}
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-900">{mover.symbol}</div>
+                  <div className="text-xs text-gray-500">
+                    {mover.activities.length} alert{mover.activities.length > 1 ? 's' : ''}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-6 text-sm">
+                <div className="text-center">
+                  <div className="text-gray-500 text-xs">Volume</div>
+                  <div className="font-semibold text-gray-900">
+                    {formatNumber(mover.totalVolume)}
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-gray-500 text-xs">Premium</div>
+                  <div className="font-semibold text-gray-900">
+                    {formatCurrency(mover.totalPremium)}
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-gray-500 text-xs">C/P Ratio</div>
+                  <div className={`font-semibold ${getSentimentColor(mover.callVolume, mover.putVolume)}`}>
+                    {getCallPutRatio(mover.callVolume, mover.putVolume)}
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-gray-500 text-xs">Sentiment</div>
+                  <div className="flex items-center">
+                    {mover.callVolume > mover.putVolume ? (
+                      <TrendingUp className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4 text-red-600" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

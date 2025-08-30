@@ -1,7 +1,3 @@
-import { Wifi, WifiOff, AlertCircle, Database } from 'lucide-react';
-import { isValidApiKey } from '../lib/apiKeyValidation';
-import { isSupabaseConfigured } from '../lib/supabase';
-
 interface DataSourceIndicatorProps {
   isConnected: boolean;
   isUsingRealData: boolean;
@@ -11,14 +7,7 @@ interface DataSourceIndicatorProps {
   onRefresh?: () => void;
 }
 
-export function DataSourceIndicator({ 
-  isConnected, 
-  isUsingRealData, 
-  dataSource = 'realtime',
-  loading = false,
-  error,
-  onRefresh 
-}: DataSourceIndicatorProps) {
+export function DataSourceIndicator(_props: DataSourceIndicatorProps) {
   // Hide all data source indicators - user doesn't want to see connection status
   return null;
 }

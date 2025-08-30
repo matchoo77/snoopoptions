@@ -4,9 +4,9 @@ import { useRealTimeData } from './useRealTimeData';
 
 export function useOptionsData() {
   const [filters, setFilters] = useState<FilterOptions>({
-    minVolume: 3, // Reduced for more data
-    minPremium: 25, // Reduced for more data
-    maxDaysToExpiration: 90, // Increased for more data
+    minVolume: 1, // Reduced from 3 for more data
+    minPremium: 1, // Reduced from 25 for more data
+    maxDaysToExpiration: 365, // Increased from 90 for more data
     optionTypes: ['call', 'put'],
     sentiment: ['bullish', 'bearish', 'neutral'],
     tradeLocations: ['below-bid', 'at-bid', 'midpoint', 'at-ask', 'above-ask'],
@@ -56,6 +56,16 @@ export function useOptionsData() {
   }, [filters.searchSymbol]);
 
   const filteredActivities = useMemo(() => {
+    console.log('[useOptionsData] Filtering activities:', {
+      totalActivities: allActivities.length,
+      filters: {
+        minVolume: filters.minVolume,
+        minPremium: filters.minPremium,
+        searchSymbol: filters.searchSymbol,
+        maxDaysToExpiration: filters.maxDaysToExpiration
+      }
+    });
+
     let filtered: OptionsActivity[] = allActivities;
 
     // Apply search symbol filter first
@@ -63,9 +73,10 @@ export function useOptionsData() {
       filtered = filtered.filter((activity: OptionsActivity) =>
         activity.symbol.toLowerCase().includes(filters.searchSymbol.toLowerCase())
       );
+      console.log('[useOptionsData] After search filter:', filtered.length);
     }
 
-    return filtered.filter((activity: OptionsActivity) => {
+    const finalFiltered = filtered.filter((activity: OptionsActivity) => {
       // Volume filter
       if (activity.volume < filters.minVolume) return false;
 
@@ -98,6 +109,13 @@ export function useOptionsData() {
 
       return true;
     });
+
+    console.log('[useOptionsData] Final filtered activities:', finalFiltered.length);
+    if (finalFiltered.length > 0) {
+      console.log('[useOptionsData] Sample activity:', finalFiltered[0]);
+    }
+
+    return finalFiltered;
   }, [allActivities, filters]);
 
   return {

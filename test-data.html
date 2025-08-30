@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnoopOptions Data Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .activity { border: 1px solid #ccc; padding: 10px; margin: 5px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>SnoopOptions Data Generation Test</h1>
+    
+    <div class="debug">
+        <h3>Debug Console:</h3>
+        <div id="console-output"></div>
+    </div>
+    
+    <button onclick="testDataGeneration()">Generate Test Data</button>
+    
+    <div id="activities-container">
+        <h3>Generated Activities:</h3>
+        <div id="activities-list"></div>
+    </div>
+
+    <script>
+        // Console override to capture logs
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            const output = document.getElementById('console-output');
+            const div = document.createElement('div');
+            div.textContent = args.join(' ');
+            output.appendChild(div);
+        };
+
+        // Simulate the data generation
+        function generateSyntheticActivity(symbol, index) {
+            const types = ['call', 'put'];
+            const strikes = [400, 410, 420, 430, 440, 450];
+            const expDates = ['2025-09-20', '2025-10-18', '2025-11-15'];
+            
+            const type = types[index % types.length];
+            const strike = strikes[index % strikes.length];
+            const expDate = expDates[index % expDates.length];
+            
+            const volume = Math.floor(Math.random() * 400) + 100;
+            const price = Math.random() * 8 + 1;
+            const premium = Math.round(price * volume * 100);
+            
+            return {
+                id: `${symbol}_${type}_${strike}_${index}_${Date.now()}`,
+                symbol: symbol,
+                type: type,
+                strike: strike,
+                expiration: expDate,
+                lastPrice: Math.round(price * 100) / 100,
+                volume: volume,
+                premium: premium,
+                openInterest: Math.floor(volume * 1.5),
+                bid: Math.round(price * 0.95 * 100) / 100,
+                ask: Math.round(price * 1.05 * 100) / 100,
+                timestamp: new Date(Date.now() - Math.random() * 3600000).toISOString(),
+                sentiment: type === 'call' ? 'bullish' : 'bearish',
+                tradeLocation: 'at-ask',
+                blockTrade: volume > 250,
+                unusual: volume > 200 || premium > 50000,
+                impliedVolatility: 0.15 + Math.random() * 0.5,
+            };
+        }
+
+        function testDataGeneration() {
+            console.log('=== Starting Data Generation Test ===');
+            
+            const symbols = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'GOOGL'];
+            const allActivities = [];
+            
+            symbols.forEach((symbol, symbolIndex) => {
+                console.log(`Generating data for ${symbol}`);
+                
+                for (let i = 0; i < 10; i++) {
+                    const activity = generateSyntheticActivity(symbol, i);
+                    allActivities.push(activity);
+                }
+            });
+            
+            console.log(`Generated ${allActivities.length} total activities`);
+            
+            // Display activities
+            const activitiesList = document.getElementById('activities-list');
+            activitiesList.innerHTML = '';
+            
+            allActivities.slice(0, 20).forEach(activity => {
+                const div = document.createElement('div');
+                div.className = 'activity';
+                div.innerHTML = `
+                    <strong>${activity.symbol}</strong> ${activity.type.toUpperCase()} $${activity.strike} 
+                    ${activity.expiration} - Volume: ${activity.volume}, Premium: $${activity.premium.toLocaleString()}
+                `;
+                activitiesList.appendChild(div);
+            });
+            
+            console.log('=== Data Generation Complete ===');
+        }
+    </script>
+</body>
+</html>
