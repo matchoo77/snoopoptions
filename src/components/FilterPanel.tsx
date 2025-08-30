@@ -157,33 +157,30 @@ export function FilterPanel({ filters, onFiltersChange }: FilterPanelProps) {
           <div className="flex space-x-1">
             <button
               onClick={() => toggleSentiment('bullish')}
-              className={`flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${
-                filters.sentiment.includes('bullish')
+              className={`flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${filters.sentiment.includes('bullish')
                   ? 'bg-green-100 text-green-800 border border-green-300'
                   : 'bg-gray-100 text-gray-600 border border-gray-300'
-              }`}
+                }`}
             >
               <TrendingUp className="w-3 h-3 mr-1" />
               Bull
             </button>
             <button
               onClick={() => toggleSentiment('bearish')}
-              className={`flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${
-                filters.sentiment.includes('bearish')
+              className={`flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${filters.sentiment.includes('bearish')
                   ? 'bg-red-100 text-red-800 border border-red-300'
                   : 'bg-gray-100 text-gray-600 border border-gray-300'
-              }`}
+                }`}
             >
               <TrendingDown className="w-3 h-3 mr-1" />
               Bear
             </button>
             <button
               onClick={() => toggleSentiment('neutral')}
-              className={`flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${
-                filters.sentiment.includes('neutral')
+              className={`flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${filters.sentiment.includes('neutral')
                   ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
                   : 'bg-gray-100 text-gray-600 border border-gray-300'
-              }`}
+                }`}
             >
               <Minus className="w-3 h-3 mr-1" />
               Neu

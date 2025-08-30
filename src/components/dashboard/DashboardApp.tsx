@@ -25,18 +25,18 @@ interface DashboardAppProps {
 }
 
 export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
-  const { 
-    activities, 
-    filters, 
-    setFilters, 
-    isConnected, 
-    isUsingRealData, 
+  const {
+    activities,
+    filters,
+    setFilters,
+    isConnected,
+    isUsingRealData,
     dataSource,
     loading: dataLoading,
     error,
     refreshData
   } = useOptionsData();
-  
+
   const {
     favorites,
     addToFavorites,
@@ -47,7 +47,7 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
   } = useFavorites();
 
   // Filter activities based on favorites filter
-  const displayActivities = filters.showFavoritesOnly 
+  const displayActivities = filters.showFavoritesOnly
     ? activities.filter(activity => isFavorite(activity.id))
     : activities;
 
@@ -82,99 +82,97 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Show trial banner if user is on trial */}
         {trialStatus && trialStatus.hasActiveTrial && onUpgrade && (
-          <TrialBanner 
+          <TrialBanner
             daysRemaining={trialStatus.trialDaysRemaining}
             onUpgrade={onUpgrade}
           />
         )}
-        
-        <DataSourceIndicator 
-          isConnected={isConnected} 
-          isUsingRealData={isUsingRealData} 
+
+        <DataSourceIndicator
+          isConnected={isConnected}
+          isUsingRealData={isUsingRealData}
           dataSource={dataSource}
           loading={dataLoading}
           error={error}
           onRefresh={refreshData}
         />
-        
-        {/* Compact Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow-sm p-1 mb-2 sm:mb-4 border">
+
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-lg shadow-sm p-1 mb-4 border">
           <div className="flex space-x-1">
             <button
               onClick={() => setShowBacktesting(false)}
-              className={`flex-1 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${
-                !showBacktesting
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${!showBacktesting
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
             >
               Live Scanner
             </button>
             <button
               onClick={() => setShowBacktesting(true)}
-              className={`flex-1 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${
-                showBacktesting
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${showBacktesting
+                ? 'bg-purple-600 text-white'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
             >
               Backtesting Lab
             </button>
           </div>
         </div>
-        
+
         {showBacktesting ? (
           <BacktestingPanel />
         ) : (
           <>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 sm:gap-4 mb-2 sm:mb-4">
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-2 sm:space-y-4">
-            <SearchBar
-              searchSymbol={filters.searchSymbol}
-              onSearchChange={(symbol) => setFilters(prev => ({ ...prev, searchSymbol: symbol }))}
-              showFavoritesOnly={filters.showFavoritesOnly}
-              onToggleFavorites={(show) => setFilters(prev => ({ ...prev, showFavoritesOnly: show }))}
-              favoriteCount={favorites.length}
-            />
-            
-            <FilterPanel filters={filters} onFiltersChange={setFilters} />
-            
-            <StatsOverview activities={displayActivities} dataSource={dataSource} />
-            
-            <MarketOverview />
-          </div>
-          
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-2 sm:space-y-4">
-            <AlertsPanel activities={activities} />
-            
-            <WatchlistPanel 
-              activities={activities} 
-              onSymbolSelect={handleSymbolSelect}
-            />
-          </div>
-        </div>
-        
-        {/* Compact Full Width Top Movers */}
-        <div className="w-full mb-2 sm:mb-4">
-            <TopMovers activities={displayActivities} />
-        </div>
-        
-        {/* Compact Full Width Activity Feed */}
-        <div className="w-full">
-            <ActivityFeed
-              activities={displayActivities}
-              favoriteActivityIds={favoriteActivityIds}
-              onToggleFavorite={handleToggleFavorite}
-              onUpdateNote={updateFavoriteNote}
-              getFavoriteNote={getFavoriteNote}
-            />
-        </div>
-        </>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+              {/* Main Content */}
+              <div className="lg:col-span-3 space-y-6">
+                <SearchBar
+                  searchSymbol={filters.searchSymbol}
+                  onSearchChange={(symbol) => setFilters(prev => ({ ...prev, searchSymbol: symbol }))}
+                  showFavoritesOnly={filters.showFavoritesOnly}
+                  onToggleFavorites={(show) => setFilters(prev => ({ ...prev, showFavoritesOnly: show }))}
+                  favoriteCount={favorites.length}
+                />
+
+                <FilterPanel filters={filters} onFiltersChange={setFilters} />
+
+                <StatsOverview activities={displayActivities} dataSource={dataSource} />
+
+                <MarketOverview />
+              </div>
+
+              {/* Sidebar */}
+              <div className="lg:col-span-1 space-y-6">
+                <AlertsPanel activities={activities} />
+
+                <WatchlistPanel
+                  activities={activities}
+                  onSymbolSelect={handleSymbolSelect}
+                />
+              </div>
+            </div>
+
+            {/* Full Width Top Movers */}
+            <div className="w-full mb-6">
+              <TopMovers activities={displayActivities} />
+            </div>
+
+            {/* Full Width Activity Feed */}
+            <div className="w-full">
+              <ActivityFeed
+                activities={displayActivities}
+                favoriteActivityIds={favoriteActivityIds}
+                onToggleFavorite={handleToggleFavorite}
+                onUpdateNote={updateFavoriteNote}
+                getFavoriteNote={getFavoriteNote}
+              />
+            </div>
+          </>
         )}
       </main>
     </div>

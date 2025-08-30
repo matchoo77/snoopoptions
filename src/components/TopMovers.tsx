@@ -8,10 +8,10 @@ interface TopMoversProps {
 
 export function TopMovers({ activities }: TopMoversProps) {
   console.log('[TopMovers] Received activities:', activities.length);
-  
+
   const topMovers = useMemo(() => {
     console.log('[TopMovers] Processing activities:', activities.length);
-    
+
     // Group activities by symbol and calculate totals
     const symbolData = activities.reduce((acc, activity) => {
       if (!acc[activity.symbol]) {
@@ -24,17 +24,17 @@ export function TopMovers({ activities }: TopMoversProps) {
           activities: [],
         };
       }
-      
+
       acc[activity.symbol].totalVolume += activity.volume;
       acc[activity.symbol].totalPremium += activity.premium;
       acc[activity.symbol].activities.push(activity);
-      
+
       if (activity.type === 'call') {
         acc[activity.symbol].callVolume += activity.volume;
       } else {
         acc[activity.symbol].putVolume += activity.volume;
       }
-      
+
       return acc;
     }, {} as Record<string, any>);
 
@@ -44,7 +44,7 @@ export function TopMovers({ activities }: TopMoversProps) {
     const sorted = Object.values(symbolData)
       .sort((a: any, b: any) => b.totalPremium - a.totalPremium)
       .slice(0, 10);
-      
+
     console.log('[TopMovers] Top movers:', sorted.length);
     return sorted;
   }, [activities]);
@@ -99,14 +99,14 @@ export function TopMovers({ activities }: TopMoversProps) {
                       {formatNumber(mover.totalVolume)}
                     </div>
                   </div>
-                  
+
                   <div className="text-center">
                     <div className="text-gray-500 text-xs">Premium</div>
                     <div className="font-semibold text-gray-900">
                       {formatCurrency(mover.totalPremium)}
                     </div>
                   </div>
-                  
+
                   <div className="text-center">
                     <div className="text-gray-500 text-xs">Sentiment</div>
                     <div className="flex items-center">

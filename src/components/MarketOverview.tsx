@@ -59,17 +59,17 @@ export function MarketOverview() {
     ];
 
     const timeSeed = Math.floor(Date.now() / 1000); // Changes every second for more variation
-    
+
     return symbols.map((stock, index) => {
       // Generate realistic intraday movement
       const dailyChangePercent = ((timeSeed * 7 + index * 13) % 600 - 300) / 100; // -3% to +3%
       const intradayVariation = (Math.sin((timeSeed + index) * 0.1) * 0.5); // Small intraday moves
       const totalChangePercent = (dailyChangePercent + intradayVariation) / 100;
-      
+
       const currentPrice = stock.basePrice * (1 + totalChangePercent);
       const change = currentPrice - stock.basePrice;
       const volume = Math.floor((50000 + (timeSeed * 17 + index * 23) % 2000000)); // 50K to 2M volume
-      
+
       return {
         symbol: stock.symbol,
         price: Math.round(currentPrice * 100) / 100,
@@ -123,7 +123,7 @@ export function MarketOverview() {
 
     // Update every 100ms to match the options data refresh rate
     const interval = setInterval(fetchData, 100);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -143,8 +143,8 @@ export function MarketOverview() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-6 border">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg shadow-sm p-2 mb-3 border">
+      <div className="flex items-center justify-between mb-2">
         <h3 className="text-lg font-semibold text-gray-900">Market Overview</h3>
         <div className="flex items-center space-x-4">
           <div className="text-xs text-gray-500">
@@ -160,27 +160,27 @@ export function MarketOverview() {
       </div>
 
       {/* Market Statistics */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-green-50 rounded-lg p-3 text-center">
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="bg-green-50 rounded-lg p-1.5 text-center">
           <div className="text-2xl font-bold text-green-600">{marketStats.advancers}</div>
           <div className="text-sm text-green-700">Advancers</div>
         </div>
-        <div className="bg-red-50 rounded-lg p-3 text-center">
+        <div className="bg-red-50 rounded-lg p-1.5 text-center">
           <div className="text-2xl font-bold text-red-600">{marketStats.decliners}</div>
           <div className="text-sm text-red-700">Decliners</div>
         </div>
-        <div className="bg-gray-50 rounded-lg p-3 text-center">
+        <div className="bg-gray-50 rounded-lg p-1.5 text-center">
           <div className="text-2xl font-bold text-gray-600">{marketStats.unchanged}</div>
           <div className="text-sm text-gray-700">Unchanged</div>
         </div>
       </div>
 
       {/* Major Market Indices */}
-      <div className="mb-6">
-        <h4 className="text-md font-medium text-gray-900 mb-3">Major Indices & ETFs</h4>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="mb-3">
+        <h4 className="text-md font-medium text-gray-900 mb-1.5">Major Indices & ETFs</h4>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5">
           {marketData.slice(0, 6).map((stock) => (
-            <div key={stock.symbol} className="bg-gray-50 rounded-lg p-3">
+            <div key={stock.symbol} className="bg-gray-50 rounded-lg p-1.5">
               <div className="text-sm font-semibold text-gray-900 mb-1">
                 {stock.symbol}
               </div>
@@ -209,13 +209,13 @@ export function MarketOverview() {
       </div>
 
       {/* Top Gainers */}
-      <div className="mb-4" style={{ minHeight: '80px' }}>
+      <div className="mb-2" style={{ minHeight: '80px' }}>
         {marketStats.gainers.length > 0 && (
           <>
-            <h4 className="text-md font-medium text-gray-900 mb-3">Top Gainers</h4>
-            <div className="grid grid-cols-5 gap-3">
+            <h4 className="text-md font-medium text-gray-900 mb-1.5">Top Gainers</h4>
+            <div className="grid grid-cols-5 gap-1.5">
               {marketStats.gainers.map((stock) => (
-                <div key={stock.symbol} className="bg-green-50 rounded-lg p-2">
+                <div key={stock.symbol} className="bg-green-50 rounded-lg p-1.5">
                   <div className="text-sm font-semibold text-gray-900 mb-1">
                     {stock.symbol}
                   </div>
@@ -230,13 +230,13 @@ export function MarketOverview() {
       </div>
 
       {/* Top Losers */}
-      <div className="mb-4" style={{ minHeight: '80px' }}>
+      <div className="mb-2" style={{ minHeight: '80px' }}>
         {marketStats.losers.length > 0 && (
           <>
-            <h4 className="text-md font-medium text-gray-900 mb-3">Top Losers</h4>
-            <div className="grid grid-cols-5 gap-3">
+            <h4 className="text-md font-medium text-gray-900 mb-1.5">Top Losers</h4>
+            <div className="grid grid-cols-5 gap-1.5">
               {marketStats.losers.map((stock) => (
-                <div key={stock.symbol} className="bg-red-50 rounded-lg p-2">
+                <div key={stock.symbol} className="bg-red-50 rounded-lg p-1.5">
                   <div className="text-sm font-semibold text-gray-900 mb-1">
                     {stock.symbol}
                   </div>
