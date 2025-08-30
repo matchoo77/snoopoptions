@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Bell, Save, X, Mail, Monitor, CheckCircle } from 'lucide-react';
 import { SnoopTestParams, SnoopTestSummary, TradeLocation, AlertCriteria } from '../../types/snooptest';
+import { useAlerts } from '../../hooks/useAlerts';
 
 interface AlertSetupProps {
   params: SnoopTestParams;
@@ -9,6 +10,7 @@ interface AlertSetupProps {
 }
 
 export function AlertSetup({ params, summary, onClose }: AlertSetupProps) {
+  const { createAlert } = useAlerts();
   const [alertConfig, setAlertConfig] = useState<Partial<AlertCriteria>>({
     ticker: params.ticker,
     tradeLocations: params.tradeLocations,
@@ -17,30 +19,19 @@ export function AlertSetup({ params, summary, onClose }: AlertSetupProps) {
     isActive: true,
   });
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     try {
-      // Save alert configuration to localStorage for now
-      // In production, this would save to Supabase user_alerts table
-      const alerts = JSON.parse(localStorage.getItem('snooptest_alerts') || '[]');
-      const newAlert: AlertCriteria = {
-        id: `alert_${Date.now()}`,
-        userId: 'current_user', // Would be actual user ID
+      setSaving(true);
+      
+      await createAlert({
         ticker: alertConfig.ticker || params.ticker,
         tradeLocations: alertConfig.tradeLocations || params.tradeLocations,
         minWinRate: alertConfig.minWinRate || 50,
         notificationType: alertConfig.notificationType || 'browser',
         isActive: alertConfig.isActive || true,
-        createdAt: new Date().toISOString(),
-      };
-
-      alerts.push(newAlert);
-      localStorage.setItem('snooptest_alerts', JSON.stringify(alerts));
-
-      // Request notification permission if browser notifications selected
-      if (newAlert.notificationType === 'browser' && 'Notification' in window) {
-        await Notification.requestPermission();
-      }
+      });
 
       setSaved(true);
       setTimeout(() => {
@@ -49,6 +40,8 @@ export function AlertSetup({ params, summary, onClose }: AlertSetupProps) {
       }, 2000);
     } catch (error) {
       console.error('Error saving alert:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -220,10 +213,15 @@ export function AlertSetup({ params, summary, onClose }: AlertSetupProps) {
               </button>
               <button
                 onClick={handleSave}
-                disabled={saved}
+                disabled={saved || saving}
                 className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 transition-colors"
               >
-                {saved ? (
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Saving...</span>
+                  </>
+                ) : saved ? (
                   <>
                     <CheckCircle className="w-4 h-4" />
                     <span>Saved!</span>
