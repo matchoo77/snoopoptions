@@ -12,6 +12,7 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
   const [activities, setActivities] = useState<OptionsActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
   const marketService = useMemo(() => new MarketDataService(), []);
 
@@ -77,11 +78,27 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
 
       console.log('[useRealTimeData] Enhanced activities:', enhancedActivities.length);
       
-      // Force set activities even if empty for debugging
-      setActivities(enhancedActivities);
+      // Add new data on top of existing data instead of replacing it
+      setActivities(prevActivities => {
+        // Remove duplicates by ID to avoid duplicate entries
+        const existingIds = new Set(prevActivities.map(a => a.id));
+        const newActivities = enhancedActivities.filter(a => !existingIds.has(a.id));
+        
+        // Combine new activities on top, keep only last 200 activities for performance
+        const combined = [...newActivities, ...prevActivities].slice(0, 200);
+        
+        console.log('[useRealTimeData] Combined activities:', {
+          new: newActivities.length,
+          existing: prevActivities.length,
+          total: combined.length
+        });
+        
+        return combined;
+      });
+      
+      setLastFetchTime(Date.now());
       
       console.log('[useRealTimeData] === REAL-TIME DATA FETCH COMPLETE ===');
-      console.log('[useRealTimeData] Activities set in state:', enhancedActivities.length);
 
       if (enhancedActivities.length === 0) {
         console.log('[useRealTimeData] No activities found - this could be due to:');
@@ -124,7 +141,10 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
         }
         
         console.log('[useRealTimeData] Setting fallback activities:', fallbackActivities.length);
-        setActivities(fallbackActivities);
+        setActivities(prevActivities => {
+          const combined = [...fallbackActivities, ...prevActivities].slice(0, 200);
+          return combined;
+        });
       }
 
     } catch (err) {
@@ -157,7 +177,10 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
       }];
       
       console.log('[useRealTimeData] Setting error fallback activities');
-      setActivities(errorFallbackActivities);
+      setActivities(prevActivities => {
+        const combined = [...errorFallbackActivities, ...prevActivities].slice(0, 200);
+        return combined;
+      });
     } finally {
       setLoading(false);
     }
@@ -216,24 +239,8 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
     }
   }, []); // Empty dependency array to run only once on mount
 
-  // Real-time updates every 15 seconds for live feel
-  useEffect(() => {
-    if (!enabled) return;
-
-    const interval = setInterval(() => {
-      const now = new Date();
-      const hour = now.getHours();
-      const day = now.getDay();
-      
-      // Update more frequently during market hours
-      if (day >= 1 && day <= 5 && hour >= 9 && hour <= 16) {
-        console.log('Auto-refreshing real-time data for live updates...');
-        fetchRealTimeData();
-      }
-    }, 15000); // 15 second updates for real-time feel
-
-    return () => clearInterval(interval);
-  }, [enabled]);
+  // Real-time updates - removed automatic interval since dashboard handles refresh
+  // The dashboard will call fetchRealTimeData every 5 seconds
 
   // Manual refresh on symbols change
   useEffect(() => {

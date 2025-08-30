@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../Header';
 import { TrialBanner } from '../TrialBanner';
 import { useOptionsData } from '../../hooks/useOptionsData';
@@ -66,6 +66,18 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
   };
 
   const [showBacktesting, setShowBacktesting] = useState(false);
+
+  // Auto-refresh every 5 seconds for live data feel
+  useEffect(() => {
+    if (!showBacktesting) {
+      const interval = setInterval(() => {
+        console.log('[DashboardApp] Auto-refreshing data every 5 seconds');
+        refreshData();
+      }, 5000); // 5 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [showBacktesting, refreshData]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -135,7 +147,7 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
             
             <MarketOverview />
             
-            <TopMovers activities={displayActivities} />
+            <TopMovers activities={displayActivities} onRefresh={refreshData} />
             
             <ActivityFeed
               activities={displayActivities}

@@ -48,7 +48,8 @@ export class MarketDataService {
   private cacheTimeout = 60000; // 1 minute cache
 
   constructor() {
-    console.log('MarketDataService initialized with premium API plan');
+    console.log('MarketDataService initialized - Using synthetic data with realistic characteristics');
+    console.log('NOTE: Currently generating realistic mock data. Real Polygon API integration available but volume data often empty for current contracts.');
   }
 
   private async makeRequest(url: string): Promise<any> {
@@ -146,45 +147,53 @@ export class MarketDataService {
     // Generate immediate synthetic data to ensure something always shows
     const activities: OptionsActivity[] = [];
     
-    // Create realistic options data for the symbol
-    const strikes = [400, 410, 420, 430, 440, 450, 460, 470, 480];
+    // Create realistic options data for the symbol with time-based variation
+    const baseStrikes = this.getBaseStrikes(symbol);
     const types: ('call' | 'put')[] = ['call', 'put'];
-    const expDates = ['2025-09-20', '2025-10-18', '2025-11-15'];
+    const expDates = ['2025-09-06', '2025-09-13', '2025-09-20', '2025-10-18', '2025-11-15'];
     
     console.log(`[MarketDataService] Generating synthetic data for ${symbol}`);
     
-    for (let i = 0; i < Math.min(limit, 15); i++) {
-      const strike = strikes[i % strikes.length];
+    // Use time-based seed for variation but consistency within same refresh
+    const timeSeed = Math.floor(Date.now() / 10000); // Changes every 10 seconds
+    
+    for (let i = 0; i < Math.min(limit, 12); i++) {
+      const strikeIndex = (i + timeSeed) % baseStrikes.length;
+      const strike = baseStrikes[strikeIndex];
       const type = types[i % types.length];
       const expDate = expDates[i % expDates.length];
       
-      // Generate realistic volume and pricing
-      const volume = Math.floor(Math.random() * 400) + 100; // 100-500 volume
-      const price = Math.random() * 8 + 1; // $1-$9 price
-      const premium = Math.round(price * volume * 100);
+      // Generate realistic volume and pricing with time variation
+      const volumeBase = 150 + (timeSeed * 17) % 400; // Varies with time
+      const volume = Math.floor(volumeBase + Math.random() * 100); // 150-650 volume
       
+      const priceBase = 2 + ((timeSeed * 13 + i * 7) % 600) / 100; // $2-$8 base price
+      const price = priceBase + (Math.random() - 0.5) * 2; // Add some random variation
+      const premium = Math.round(Math.max(price, 0.5) * volume * 100);
+      
+      // Create unique but realistic activity
       const activity: OptionsActivity = {
-        id: `${symbol}_${type}_${strike}_${i}_${Date.now()}`,
+        id: `${symbol}_${type}_${strike}_${expDate}_${timeSeed}_${i}`,
         symbol: symbol,
         type: type,
         strike: strike,
         expiration: expDate,
-        lastPrice: Math.round(price * 100) / 100,
+        lastPrice: Math.round(Math.max(price, 0.05) * 100) / 100,
         volume: volume,
         premium: premium,
-        openInterest: Math.floor(volume * (1.2 + Math.random() * 0.8)), // 1.2x to 2x volume
-        bid: Math.round(price * 0.95 * 100) / 100,
-        ask: Math.round(price * 1.05 * 100) / 100,
-        timestamp: new Date(Date.now() - Math.random() * 3600000).toISOString(), // Random time within last hour
-        sentiment: type === 'call' ? (Math.random() > 0.3 ? 'bullish' : 'neutral') : (Math.random() > 0.3 ? 'bearish' : 'neutral'),
-        tradeLocation: ['below-bid', 'at-bid', 'midpoint', 'at-ask', 'above-ask'][Math.floor(Math.random() * 5)] as any,
-        blockTrade: volume > 250,
-        unusual: volume > 200 || premium > 50000,
-        impliedVolatility: 0.15 + Math.random() * 0.5, // 15-65% IV
-        delta: type === 'call' ? 0.2 + Math.random() * 0.6 : -0.8 + Math.random() * 0.6,
-        gamma: Math.random() * 0.1,
-        theta: -Math.random() * 0.05,
-        vega: Math.random() * 0.3,
+        openInterest: Math.floor(volume * (1.2 + Math.random() * 0.8)),
+        bid: Math.round(Math.max(price * 0.96, 0.01) * 100) / 100,
+        ask: Math.round((price * 1.04) * 100) / 100,
+        timestamp: new Date(Date.now() - Math.random() * 1800000).toISOString(),
+        sentiment: this.getSentiment(type, symbol, timeSeed + i),
+        tradeLocation: this.getTradeLocation(timeSeed + i),
+        blockTrade: volume > 300,
+        unusual: volume > 250 || premium > 75000,
+        impliedVolatility: 0.2 + ((timeSeed + i * 3) % 40) / 100, // 20-60% IV
+        delta: type === 'call' ? 0.3 + Math.random() * 0.5 : -0.7 + Math.random() * 0.5,
+        gamma: Math.random() * 0.08,
+        theta: -Math.random() * 0.04,
+        vega: Math.random() * 0.25,
       };
       
       activities.push(activity);
@@ -194,9 +203,38 @@ export class MarketDataService {
     const sortedActivities = activities.sort((a, b) => b.volume - a.volume);
     
     console.log(`[MarketDataService] Generated ${sortedActivities.length} activities for ${symbol}`);
-    console.log(`[MarketDataService] Sample activity:`, sortedActivities[0]);
     
     return sortedActivities;
+  }
+
+  private getBaseStrikes(symbol: string): number[] {
+    // Different base strikes for different symbols to make it more realistic
+    switch (symbol) {
+      case 'SPY': return [560, 565, 570, 575, 580, 585, 590, 595];
+      case 'QQQ': return [480, 485, 490, 495, 500, 505, 510, 515];
+      case 'AAPL': return [220, 225, 230, 235, 240, 245, 250, 255];
+      case 'MSFT': return [430, 435, 440, 445, 450, 455, 460, 465];
+      case 'GOOGL': return [160, 165, 170, 175, 180, 185, 190, 195];
+      case 'AMZN': return [180, 185, 190, 195, 200, 205, 210, 215];
+      case 'TSLA': return [250, 260, 270, 280, 290, 300, 310, 320];
+      case 'NVDA': return [120, 125, 130, 135, 140, 145, 150, 155];
+      case 'META': return [520, 530, 540, 550, 560, 570, 580, 590];
+      default: return [400, 410, 420, 430, 440, 450, 460, 470];
+    }
+  }
+
+  private getSentiment(type: 'call' | 'put', _symbol: string, seed: number): 'bullish' | 'bearish' | 'neutral' {
+    if (type === 'call') {
+      return (seed % 3 === 0) ? 'neutral' : 'bullish';
+    } else {
+      return (seed % 3 === 0) ? 'neutral' : 'bearish';
+    }
+  }
+
+  private getTradeLocation(seed: number): 'below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask' {
+    const locations: ('below-bid' | 'at-bid' | 'midpoint' | 'at-ask' | 'above-ask')[] = 
+      ['below-bid', 'at-bid', 'midpoint', 'at-ask', 'above-ask'];
+    return locations[seed % locations.length];
   }
 
   private generateFallbackData(symbol: string, limit: number): OptionsActivity[] {
