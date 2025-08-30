@@ -40,10 +40,10 @@ export function TopMovers({ activities }: TopMoversProps) {
 
     console.log('[TopMovers] Symbol data keys:', Object.keys(symbolData));
 
-    // Sort by total premium and take top 12
+    // Sort by total premium and take top 10
     const sorted = Object.values(symbolData)
       .sort((a: any, b: any) => b.totalPremium - a.totalPremium)
-      .slice(0, 12);
+      .slice(0, 10);
 
     console.log('[TopMovers] Top movers:', sorted.length);
     return sorted;
