@@ -63,10 +63,10 @@ const ActivityRow = React.memo(({
         activity.blockTrade ? 'bg-yellow-50' : ''
       }`}
     >
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-mono">
         {formatTime(activity.timestamp)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-4 py-2 whitespace-nowrap">
         <div className="flex items-center">
           <span className="text-sm font-semibold text-gray-900">
             {activity.symbol}
@@ -76,7 +76,7 @@ const ActivityRow = React.memo(({
           )}
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-4 py-2 whitespace-nowrap">
         <div className="text-sm text-gray-900">
           <span className={`font-semibold ${
             activity.type === 'call' ? 'text-green-600' : 'text-red-600'
@@ -88,16 +88,16 @@ const ActivityRow = React.memo(({
           </div>
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-mono">
         {formatNumber(activity.volume)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-mono">
         {formatNumber(activity.openInterest)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-mono">
         {formatCurrency(activity.lastPrice)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm">
+      <td className="px-4 py-2 whitespace-nowrap text-sm">
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
           activity.tradeLocation === 'below-bid' ? 'bg-red-100 text-red-800' :
           activity.tradeLocation === 'at-bid' ? 'bg-orange-100 text-orange-800' :
@@ -112,18 +112,18 @@ const ActivityRow = React.memo(({
            'Above Ask'}
         </span>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-mono">
         {formatCurrency(activity.premium)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-mono">
         {(activity.impliedVolatility * 100).toFixed(1)}%
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-mono">
+      <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-600 font-mono">
         <div>Δ {activity.delta.toFixed(3)}</div>
         <div>Γ {activity.gamma.toFixed(3)}</div>
         <div>Θ {activity.theta.toFixed(3)}</div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-4 py-2 whitespace-nowrap">
         <div className="flex items-center">
           {getSentimentIcon(activity.sentiment)}
           <span className="ml-2 text-sm capitalize text-gray-700">
@@ -131,7 +131,7 @@ const ActivityRow = React.memo(({
           </span>
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-4 py-2 whitespace-nowrap">
         <FavoriteButton
           activityId={activity.id}
           isFavorite={isFavorite}
@@ -206,12 +206,12 @@ export function ActivityFeed({
 
   return (
     <div className="bg-white rounded-lg shadow-sm border">
-      <div className="px-6 py-4 bg-gray-50 border-b">
+      <div className="px-4 py-3 bg-gray-50 border-b">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900">Unusual Options Activity</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Unusual Options Activity</h3>
             <p className="text-sm text-gray-600 mt-1">
-              Showing {Math.min(activities.length, 50)} of {activities.length} unusual activity alerts
+              Showing {Math.min(activities.length, 25)} of {activities.length} unusual activity alerts
             </p>
           </div>
           <div className="flex items-center space-x-2">
@@ -227,7 +227,7 @@ export function ActivityFeed({
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <button
                   onClick={() => handleSort('timestamp')}
                   className="flex items-center hover:text-gray-700 transition-colors"
@@ -236,13 +236,13 @@ export function ActivityFeed({
                   {getSortIcon('timestamp')}
                 </button>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Symbol
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Contract
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <button
                   onClick={() => handleSort('volume')}
                   className="flex items-center hover:text-gray-700 transition-colors"
@@ -251,16 +251,16 @@ export function ActivityFeed({
                   {getSortIcon('volume')}
                 </button>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 OI
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Last Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Trade Location
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <button
                   onClick={() => handleSort('premium')}
                   className="flex items-center hover:text-gray-700 transition-colors"
@@ -269,7 +269,7 @@ export function ActivityFeed({
                   {getSortIcon('premium')}
                 </button>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <button
                   onClick={() => handleSort('impliedVolatility')}
                   className="flex items-center hover:text-gray-700 transition-colors"
@@ -278,19 +278,19 @@ export function ActivityFeed({
                   {getSortIcon('impliedVolatility')}
                 </button>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Greeks
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Sentiment
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {sortedActivities.slice(0, 50).map((activity) => (
+            {sortedActivities.slice(0, 25).map((activity) => (
               <ActivityRow
                 key={activity.id}
                 activity={activity}

@@ -82,7 +82,7 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         {/* Show trial banner if user is on trial */}
         {trialStatus && trialStatus.hasActiveTrial && onUpgrade && (
           <TrialBanner 
@@ -101,11 +101,11 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
         />
         
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow-sm p-1 mb-6 border">
+        <div className="bg-white rounded-lg shadow-sm p-1 mb-3 sm:mb-4 border">
           <div className="flex space-x-1">
             <button
               onClick={() => setShowBacktesting(false)}
-              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-1 text-xs sm:text-sm font-medium rounded transition-colors ${
                 !showBacktesting
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -115,7 +115,7 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
             </button>
             <button
               onClick={() => setShowBacktesting(true)}
-              className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-1 text-xs sm:text-sm font-medium rounded transition-colors ${
                 showBacktesting
                   ? 'bg-purple-600 text-white'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -130,9 +130,9 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
           <BacktestingPanel />
         ) : (
           <>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-3 sm:gap-6 mb-3 sm:mb-6">
           {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="xl:col-span-3 space-y-3 sm:space-y-6">
             <SearchBar
               searchSymbol={filters.searchSymbol}
               onSearchChange={(symbol) => setFilters(prev => ({ ...prev, searchSymbol: symbol }))}
@@ -148,8 +148,8 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
             <MarketOverview />
           </div>
           
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Sidebar - Stack on mobile */}
+          <div className="xl:col-span-1 space-y-3 sm:space-y-6">
             <AlertsPanel activities={activities} />
             
             <WatchlistPanel 
@@ -160,7 +160,7 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
         </div>
         
         {/* Full Width Top Movers */}
-        <div className="w-full mb-6">
+        <div className="w-full mb-3 sm:mb-6">
             <TopMovers activities={displayActivities} />
         </div>
         
