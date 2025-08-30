@@ -21,15 +21,12 @@ export function TopMovers({ activities }: TopMoversProps) {
           totalPremium: 0,
           callVolume: 0,
           putVolume: 0,
-          blockTrades: 0,
-          totalIV: 0,
           activities: [],
         };
       }
 
       acc[activity.symbol].totalVolume += activity.volume;
       acc[activity.symbol].totalPremium += activity.premium;
-      acc[activity.symbol].totalIV += activity.impliedVolatility;
       acc[activity.symbol].activities.push(activity);
 
       if (activity.type === 'call') {
@@ -38,19 +35,15 @@ export function TopMovers({ activities }: TopMoversProps) {
         acc[activity.symbol].putVolume += activity.volume;
       }
 
-      if (activity.blockTrade) {
-        acc[activity.symbol].blockTrades += 1;
-      }
-
       return acc;
     }, {} as Record<string, any>);
 
     console.log('[TopMovers] Symbol data keys:', Object.keys(symbolData));
 
-    // Sort by total premium and take top 10
+    // Sort by total premium and take top 12
     const sorted = Object.values(symbolData)
       .sort((a: any, b: any) => b.totalPremium - a.totalPremium)
-      .slice(0, 10);
+      .slice(0, 12);
 
     console.log('[TopMovers] Top movers:', sorted.length);
     return sorted;
@@ -99,7 +92,7 @@ export function TopMovers({ activities }: TopMoversProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-3 text-sm">
+                <div className="flex items-center space-x-4 text-sm">
                   <div className="text-center">
                     <div className="text-gray-500 text-xs">Volume</div>
                     <div className="font-semibold text-gray-900">
@@ -115,22 +108,8 @@ export function TopMovers({ activities }: TopMoversProps) {
                   </div>
 
                   <div className="text-center">
-                    <div className="text-gray-500 text-xs">Avg IV</div>
-                    <div className="font-semibold text-gray-900">
-                      {((mover.totalIV / mover.activities.length) * 100).toFixed(0)}%
-                    </div>
-                  </div>
-
-                  <div className="text-center">
-                    <div className="text-gray-500 text-xs">Blocks</div>
-                    <div className="font-semibold text-gray-900">
-                      {mover.blockTrades}
-                    </div>
-                  </div>
-
-                  <div className="text-center">
                     <div className="text-gray-500 text-xs">Sentiment</div>
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center">
                       {mover.callVolume > mover.putVolume ? (
                         <TrendingUp className="w-4 h-4 text-green-600" />
                       ) : (
