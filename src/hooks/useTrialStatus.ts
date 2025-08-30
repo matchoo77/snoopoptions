@@ -16,20 +16,18 @@ export function useTrialStatus() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchTrialStatus();
+    fetchTrialStatus(true); // Pass true for initial load
     
-    // Set up periodic trial status checking (every 30 seconds)
-    const interval = setInterval(() => {
-      console.log('[useTrialStatus] Periodic trial status check');
-      fetchTrialStatus();
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
+    // Only check trial status on mount, not periodically
+    // This prevents constant loading states and race conditions
   }, []);
 
-  const fetchTrialStatus = async () => {
+  const fetchTrialStatus = async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      // Only show loading state on initial load
+      if (isInitialLoad) {
+        setLoading(true);
+      }
       setError(null);
 
       // Check if user is authenticated
@@ -218,7 +216,7 @@ export function useTrialStatus() {
     trialStatus,
     loading,
     error,
-    refetch: fetchTrialStatus,
+    refetch: () => fetchTrialStatus(false), // Don't show loading on manual refetch
     markTrialAsUsed,
   };
 }

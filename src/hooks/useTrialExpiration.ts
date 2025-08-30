@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface TrialStatus {
   hasActiveTrial: boolean;
@@ -15,46 +15,44 @@ interface UseTrialExpirationProps {
 }
 
 export function useTrialExpiration({ trialStatus, onTrialExpired }: UseTrialExpirationProps) {
+  const hasNotifiedExpiration = useRef(false);
+
   useEffect(() => {
     // Only check for logged-in users
     if (!trialStatus) return;
 
-    console.log('[useTrialExpiration] Checking trial status:', trialStatus);
-
-    // If user has no active trial and no active subscription, notify parent
-    if (!trialStatus.hasActiveTrial && !trialStatus.hasActiveSubscription && trialStatus.accessType === 'expired') {
-      console.log('[useTrialExpiration] Trial expired, notifying parent component');
-      onTrialExpired();
+    // Reset notification flag if user gets access back (subscription or trial becomes active)
+    if (trialStatus.hasActiveTrial || trialStatus.hasActiveSubscription) {
+      hasNotifiedExpiration.current = false;
+      return;
     }
 
-    // Also check if trial end date has passed (real-time check)
-    if (trialStatus.trialEndDate && !trialStatus.hasActiveSubscription) {
-      const trialEndTime = new Date(trialStatus.trialEndDate).getTime();
-      const now = new Date().getTime();
-      
-      if (now >= trialEndTime) {
-        console.log('[useTrialExpiration] Trial end date reached, notifying parent component');
-        onTrialExpired();
-      }
+    // Only notify once when trial expires
+    if (!trialStatus.hasActiveTrial && !trialStatus.hasActiveSubscription && 
+        trialStatus.accessType === 'expired' && !hasNotifiedExpiration.current) {
+      console.log('[useTrialExpiration] Trial expired, notifying parent component (first time)');
+      hasNotifiedExpiration.current = true;
+      onTrialExpired();
     }
   }, [trialStatus, onTrialExpired]);
 
-  // Set up real-time countdown check
+  // Set up real-time countdown check - only if we haven't notified yet
   useEffect(() => {
-    if (!trialStatus?.trialEndDate || trialStatus.hasActiveSubscription) return;
+    if (!trialStatus?.trialEndDate || trialStatus.hasActiveSubscription || hasNotifiedExpiration.current) return;
 
     const checkTrialExpiration = () => {
       const trialEndTime = new Date(trialStatus.trialEndDate!).getTime();
       const now = new Date().getTime();
       
-      if (now >= trialEndTime) {
+      if (now >= trialEndTime && !hasNotifiedExpiration.current) {
         console.log('[useTrialExpiration] Real-time trial expiration detected');
+        hasNotifiedExpiration.current = true;
         onTrialExpired();
       }
     };
 
-    // Check every minute for real-time expiration
-    const interval = setInterval(checkTrialExpiration, 60000);
+    // Check every 5 minutes instead of every minute to be less aggressive
+    const interval = setInterval(checkTrialExpiration, 300000); // 5 minutes
 
     return () => clearInterval(interval);
   }, [trialStatus?.trialEndDate, trialStatus?.hasActiveSubscription, onTrialExpired]);

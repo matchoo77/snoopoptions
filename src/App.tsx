@@ -12,7 +12,7 @@ import { SubscriptionGate } from './components/SubscriptionGate';
 import { TrialExpiredNotification } from './components/TrialExpiredNotification';
 
 function App() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { trialStatus, loading: trialLoading, refetch: refetchTrialStatus } = useTrialStatus();
   
   // Initialize currentView based on URL or default to 'marketing'
@@ -38,12 +38,41 @@ function App() {
       setForceShowSubscriptionGate(true);
       setShowTrialExpiredMessage(true);
       
-      // Hide the message after 5 seconds but keep subscription gate
+      // Hide the message after 8 seconds but keep subscription gate
       setTimeout(() => {
         setShowTrialExpiredMessage(false);
-      }, 5000);
+      }, 8000);
     }
   });
+
+  // Reset forced subscription gate when user has valid access
+  useEffect(() => {
+    if (trialStatus && (trialStatus.hasActiveTrial || trialStatus.hasActiveSubscription)) {
+      console.log('User has valid access, clearing forced subscription gate:', {
+        hasActiveTrial: trialStatus.hasActiveTrial,
+        hasActiveSubscription: trialStatus.hasActiveSubscription,
+        accessType: trialStatus.accessType,
+        daysRemaining: trialStatus.trialDaysRemaining
+      });
+      setForceShowSubscriptionGate(false);
+      setShowTrialExpiredMessage(false);
+    }
+  }, [trialStatus?.hasActiveTrial, trialStatus?.hasActiveSubscription]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setCurrentView('marketing');
+      setForceShowSubscriptionGate(false);
+      setShowTrialExpiredMessage(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const handleCloseTrialNotification = () => {
+    setShowTrialExpiredMessage(false);
+  };
 
   // Check URL parameters for payment success/cancel
   useEffect(() => {
@@ -122,7 +151,7 @@ function App() {
       {/* Trial expired notification */}
       {showTrialExpiredMessage && (
         <TrialExpiredNotification 
-          onClose={() => setShowTrialExpiredMessage(false)} 
+          onClose={handleCloseTrialNotification} 
         />
       )}
 
@@ -188,8 +217,8 @@ function App() {
         );
       }
 
-      // Show loading while trial status is being fetched
-      if (trialLoading) {
+      // Show loading while trial status is being fetched (only on first load)
+      if (trialLoading && !trialStatus) {
         return (
           <div className="min-h-screen bg-gray-50 flex items-center justify-center">
             <div className="text-center">
@@ -206,6 +235,7 @@ function App() {
           <SubscriptionGate 
             onUpgrade={handleUpgrade}
             trialExpired={forceShowSubscriptionGate || trialStatus?.accessType === 'expired'}
+            onLogout={handleLogout}
           />
         );
       }
