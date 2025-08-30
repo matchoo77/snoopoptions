@@ -23,16 +23,25 @@ function App() {
 
   // Handle authentication state changes
   useEffect(() => {
+    console.log('Auth state changed:', { user: !!user, authLoading, currentView });
+    
     if (!authLoading) {
       if (user) {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('success') === 'true') {
           setCurrentView('success');
-        } else if (currentView === 'login') {
+        } else if (currentView === 'login' || currentView === 'signup') {
           setCurrentView('dashboard');
         }
-      } else if (currentView === 'dashboard') {
-        setCurrentView('marketing');
+      } else {
+        // User signed out or session expired - redirect to marketing page
+        console.log('User is null, current view:', currentView);
+        if (currentView === 'dashboard' || currentView === 'subscription' || currentView === 'success') {
+          console.log('Redirecting to marketing from:', currentView);
+          setCurrentView('marketing');
+          // Clear any URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       }
     }
   }, [user, authLoading, currentView]);

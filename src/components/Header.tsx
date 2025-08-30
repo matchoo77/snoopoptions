@@ -52,7 +52,10 @@ export function Header() {
                 </div>
                 
                 <button
-                  onClick={signOut}
+                  onClick={() => {
+                    console.log('Sign out button clicked (desktop)');
+                    signOut();
+                  }}
                   className="flex items-center space-x-2 text-sm text-gray-600 hover:text-red-600 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
@@ -105,6 +108,7 @@ export function Header() {
                   
                   <button
                     onClick={() => {
+                      console.log('Sign out button clicked (mobile)');
                       signOut();
                       setMobileMenuOpen(false);
                     }}

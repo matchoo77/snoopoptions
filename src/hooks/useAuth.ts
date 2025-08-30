@@ -49,13 +49,23 @@ export function useAuth() {
       const {
         data: { subscription: authSubscription },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state change event:', event, 'Session:', !!session);
+        
         if (event === 'TOKEN_REFRESHED' && !session) {
           // Token refresh failed, clear everything
           console.warn('Token refresh failed, clearing session');
           await supabase.auth.signOut();
         }
-        setSession(session);
-        setUser(session?.user ?? null);
+        
+        if (event === 'SIGNED_OUT') {
+          console.log('SIGNED_OUT event received, clearing state');
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+        
         setLoading(false);
       });
       subscription = authSubscription;
@@ -72,16 +82,42 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      console.log('Starting sign out process...');
+      
+      // Sign out from Supabase first - this will trigger the auth state change listener
+      const { error } = await supabase.auth.signOut({
+        scope: 'global' // This ensures all sessions are terminated
+      });
+      
       if (error) {
         console.warn('Logout error:', error.message);
+      } else {
+        console.log('Supabase signOut successful');
       }
-    } catch (error) {
-      console.warn('Logout failed:', error);
-    } finally {
-      // Always clear local state
+      
+      // Force clear local state regardless of API result
       setSession(null);
       setUser(null);
+      
+    } catch (error) {
+      console.warn('Logout failed:', error);
+      // Ensure local state is cleared even if API call fails
+      setSession(null);
+      setUser(null);
+    }
+    
+    // Clear any cached data in localStorage
+    try {
+      // Clear all supabase auth related items
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith('supabase.auth.')) {
+          localStorage.removeItem(key);
+        }
+      });
+      console.log('LocalStorage cleared');
+    } catch (e) {
+      console.warn('Error clearing localStorage:', e);
     }
   };
 

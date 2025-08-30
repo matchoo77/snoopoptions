@@ -55,59 +55,59 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center py-4 sm:py-8 lg:py-12 px-2 sm:px-4 lg:px-8">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-sm sm:max-w-md w-full">
         {/* Header */}
-        <div className="text-center mb-4 sm:mb-6 lg:mb-8">
-          <div className="flex items-center justify-center mb-2 sm:mb-3 lg:mb-4">
-            <div className="bg-gradient-to-r from-purple-500 to-blue-600 p-2 sm:p-2.5 lg:p-3 rounded-xl sm:rounded-2xl">
-              <UserPlus className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white" />
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="flex items-center justify-center mb-3 sm:mb-4">
+            <div className="bg-gradient-to-r from-purple-500 to-blue-600 p-2.5 sm:p-3 lg:p-4 rounded-2xl shadow-lg">
+              <UserPlus className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
             </div>
           </div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2">Join SnoopFlow</h1>
-          <p className="text-sm sm:text-base text-purple-200">Start tracking unusual options activity</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">Join SnoopFlow</h1>
+          <p className="text-base sm:text-lg text-purple-200">Start tracking unusual options activity</p>
         </div>
 
         {/* Benefits Preview */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 border border-white/20">
-          <h3 className="text-white font-semibold mb-2 sm:mb-3 lg:mb-4 text-center text-sm sm:text-base">What you'll get:</h3>
-          <div className="space-y-2 sm:space-y-3">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-white/20 shadow-xl">
+          <h3 className="text-white font-semibold mb-4 text-center text-base">What you'll get:</h3>
+          <div className="space-y-3">
             <div className="flex items-center text-white">
-              <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-yellow-400" />
-              <span className="text-xs sm:text-sm">Real-time unusual options alerts</span>
+              <Zap className="w-5 h-5 mr-3 text-yellow-400 flex-shrink-0" />
+              <span className="text-sm">Real-time unusual options alerts</span>
             </div>
             <div className="flex items-center text-white">
-              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-green-400" />
-              <span className="text-xs sm:text-sm">Advanced backtesting engine</span>
+              <BarChart3 className="w-5 h-5 mr-3 text-green-400 flex-shrink-0" />
+              <span className="text-sm">Advanced backtesting engine</span>
             </div>
             <div className="flex items-center text-white">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-purple-400" />
-              <span className="text-xs sm:text-sm">Pattern recognition algorithms</span>
+              <TrendingUp className="w-5 h-5 mr-3 text-purple-400 flex-shrink-0" />
+              <span className="text-sm">Pattern recognition algorithms</span>
             </div>
             <div className="flex items-center text-white">
-              <Shield className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-blue-400" />
-              <span className="text-xs sm:text-sm">Institutional-grade data feeds</span>
+              <Shield className="w-5 h-5 mr-3 text-blue-400 flex-shrink-0" />
+              <span className="text-sm">Institutional-grade data feeds</span>
             </div>
           </div>
         </div>
 
         {/* Signup Form */}
-        <div className="bg-white rounded-lg sm:rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8">
-          <div className="text-center mb-4 sm:mb-6">
-            <Star className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-purple-600 mx-auto mb-2 sm:mb-3" />
-            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Create Account</h2>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">Start your options trading journey</p>
+        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 lg:p-10">
+          <div className="text-center mb-6 sm:mb-8">
+            <Star className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600 mx-auto mb-3 sm:mb-4" />
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Create Account</h2>
+            <p className="text-base text-gray-600 mt-2">Start your options trading journey</p>
           </div>
 
           {error && (
-            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg sm:rounded-xl">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
               <p className="text-red-600 text-sm font-medium">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
                 Email Address
               </label>
               <input
@@ -116,13 +116,13 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
+                className="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-base placeholder-gray-400"
                 placeholder="your@email.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -132,22 +132,22 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
+                  className="w-full px-4 py-3 sm:py-4 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-base placeholder-gray-400"
                   placeholder="Create a strong password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
                 Confirm Password
               </label>
               <div className="relative">
@@ -157,15 +157,15 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
+                  className="w-full px-4 py-3 sm:py-4 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-base placeholder-gray-400"
                   placeholder="Confirm your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
@@ -173,11 +173,11 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg text-sm sm:text-base"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 px-6 rounded-xl hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg text-base"
             >
               {loading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                   Creating Account...
                 </div>
               ) : (
@@ -186,8 +186,8 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
             </button>
           </form>
 
-          <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
-            <p className="text-center text-gray-600 text-sm sm:text-base">
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <p className="text-center text-gray-600 text-base">
               Already have an account?{' '}
               <button
                 onClick={onSwitchToLogin}
@@ -200,8 +200,8 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-4 sm:mt-6">
-          <p className="text-purple-200 text-xs sm:text-sm">
+        <div className="text-center mt-6">
+          <p className="text-purple-200 text-sm">
             Trusted by professional traders and institutions worldwide
           </p>
         </div>
