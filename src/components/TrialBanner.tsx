@@ -1,12 +1,12 @@
-import React from 'react';
 import { Clock, Crown, CreditCard } from 'lucide-react';
 
 interface TrialBannerProps {
   daysRemaining: number;
+  trialEndDate?: string | null;
   onUpgrade: () => void;
 }
 
-export function TrialBanner({ daysRemaining, onUpgrade }: TrialBannerProps) {
+export function TrialBanner({ daysRemaining, trialEndDate, onUpgrade }: TrialBannerProps) {
   const getUrgencyColor = () => {
     if (daysRemaining <= 1) return 'bg-red-50 border-red-200 text-red-800';
     if (daysRemaining <= 3) return 'bg-yellow-50 border-yellow-200 text-yellow-800';
@@ -19,6 +19,25 @@ export function TrialBanner({ daysRemaining, onUpgrade }: TrialBannerProps) {
     return <Crown className="w-5 h-5 text-blue-600" />;
   };
 
+  const formatTrialEndTime = () => {
+    if (!trialEndDate) return `${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} remaining`;
+    
+    const endDate = new Date(trialEndDate);
+    const now = new Date();
+    const timeDiff = endDate.getTime() - now.getTime();
+    
+    if (timeDiff <= 0) return 'Trial expired';
+    
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours < 24) {
+      return `${hours}h ${minutes}m remaining`;
+    }
+    
+    return `${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} remaining`;
+  };
+
   return (
     <div className={`border rounded-lg p-3 mb-4 ${getUrgencyColor()}`}>
       <div className="flex items-center justify-between">
@@ -27,14 +46,16 @@ export function TrialBanner({ daysRemaining, onUpgrade }: TrialBannerProps) {
           <div>
             <h3 className="font-semibold">
               {daysRemaining > 0 ? (
-                <>🐕 Free Trial - {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} of sniffing left!</>
+                <>🐕 Free Trial - {formatTrialEndTime()}</>
               ) : (
                 '🐕 Your pup needs a subscription to keep hunting!'
               )}
             </h3>
             <p className="text-sm opacity-90">
               {daysRemaining > 0 ? (
-                'Keep your trading dog well-fed with a subscription to continue the hunt for big trades!'
+                daysRemaining <= 1 ? 
+                  'Your trial expires today! Subscribe now to keep your trading dog well-fed!' :
+                  'Keep your trading dog well-fed with a subscription to continue the hunt for big trades!'
               ) : (
                 'Subscribe now to get your trading companion back on the scent trail!'
               )}

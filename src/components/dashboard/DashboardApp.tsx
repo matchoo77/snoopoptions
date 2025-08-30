@@ -20,6 +20,8 @@ interface DashboardAppProps {
     hasActiveSubscription: boolean;
     accessType: 'trial' | 'subscription' | 'expired';
     trialDaysRemaining: number;
+    trialEndDate?: string | null;
+    trialStartDate?: string | null;
   };
   onUpgrade?: () => void;
 }
@@ -87,6 +89,7 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
         {trialStatus && trialStatus.hasActiveTrial && onUpgrade && (
           <TrialBanner
             daysRemaining={trialStatus.trialDaysRemaining}
+            trialEndDate={trialStatus.trialEndDate}
             onUpgrade={onUpgrade}
           />
         )}
