@@ -45,8 +45,8 @@ export function TrialBanner({ daysRemaining, onUpgrade }: TrialBannerProps) {
         <button
           onClick={onUpgrade}
           className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-colors ${daysRemaining <= 1
-              ? 'bg-red-600 text-white hover:bg-red-700'
-              : 'bg-white text-gray-900 hover:bg-gray-50 border border-gray-300'
+            ? 'bg-red-600 text-white hover:bg-red-700'
+            : 'bg-white text-gray-900 hover:bg-gray-50 border border-gray-300'
             }`}
         >
           <CreditCard className="w-4 h-4" />

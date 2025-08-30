@@ -97,10 +97,10 @@ const ActivityRow = React.memo(({
       </td>
       <td className="px-3 py-2 whitespace-nowrap text-sm">
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${activity.tradeLocation === 'below-bid' ? 'bg-red-100 text-red-800' :
-            activity.tradeLocation === 'at-bid' ? 'bg-orange-100 text-orange-800' :
-              activity.tradeLocation === 'midpoint' ? 'bg-blue-100 text-blue-800' :
-                activity.tradeLocation === 'at-ask' ? 'bg-green-100 text-green-800' :
-                  'bg-purple-100 text-purple-800'
+          activity.tradeLocation === 'at-bid' ? 'bg-orange-100 text-orange-800' :
+            activity.tradeLocation === 'midpoint' ? 'bg-blue-100 text-blue-800' :
+              activity.tradeLocation === 'at-ask' ? 'bg-green-100 text-green-800' :
+                'bg-purple-100 text-purple-800'
           }`}>
           {activity.tradeLocation === 'below-bid' ? 'Below Bid' :
             activity.tradeLocation === 'at-bid' ? 'At Bid' :
