@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, LogIn, TrendingUp, Zap, BarChart3 } from 'lucide-react';
+import { Eye, EyeOff, TrendingUp } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface LoginFormProps {
@@ -38,128 +38,109 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-sm sm:max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="flex items-center justify-center mb-3 sm:mb-4">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2.5 sm:p-3 lg:p-4 rounded-2xl shadow-lg">
-              <TrendingUp className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
+    <div className="bg-gradient-to-br from-orange-900 via-red-900 to-amber-900 py-12 px-4">
+      <div className="w-full max-w-md md:max-w-2xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          {/* Left panel - compact marketing/info for desktop */}
+          <div className="hidden md:flex flex-col items-start justify-center p-6 rounded-xl bg-white/5 text-white">
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 rounded-xl shadow-lg mb-4">
+              <TrendingUp className="w-6 h-6 text-white" />
             </div>
-          </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-base sm:text-lg text-blue-200">Continue tracking unusual options activity</p>
-        </div>
-
-        {/* Features Preview */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-white/20 shadow-xl">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="text-white">
-              <Zap className="w-6 h-6 sm:w-7 sm:h-7 mx-auto mb-2 text-yellow-400" />
-              <div className="text-sm font-semibold">Real-time</div>
-              <div className="text-xs text-blue-200">Alerts</div>
-            </div>
-            <div className="text-white">
-              <BarChart3 className="w-6 h-6 sm:w-7 sm:h-7 mx-auto mb-2 text-green-400" />
-              <div className="text-sm font-semibold">Advanced</div>
-              <div className="text-xs text-blue-200">Analytics</div>
-            </div>
-            <div className="text-white">
-              <TrendingUp className="w-6 h-6 sm:w-7 sm:h-7 mx-auto mb-2 text-purple-400" />
-              <div className="text-sm font-semibold">Pattern</div>
-              <div className="text-xs text-blue-200">Recognition</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 lg:p-10">
-          <div className="text-center mb-6 sm:mb-8">
-            <LogIn className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 mx-auto mb-3 sm:mb-4" />
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Sign In</h2>
-            <p className="text-base text-gray-600 mt-2">Access your SnoopFlow dashboard</p>
+            <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
+            <p className="text-sm text-orange-200 mb-4">Sign in to access the dashboard and real-time alerts.</p>
+            <ul className="space-y-2 text-sm text-orange-100">
+              <li>- Real-time options alerts</li>
+              <li>- Compact mobile-first UI</li>
+              <li>- Secure sign-in with Supabase</li>
+            </ul>
           </div>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-red-600 text-sm font-medium">{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-base placeholder-gray-400"
-                placeholder="your@email.com"
-              />
+          {/* Form card - always visible */}
+          <div className="bg-white rounded-xl shadow-xl p-6 max-h-[80vh] overflow-auto">
+            <div className="text-center mb-4 md:mb-6">
+              <h2 className="text-lg md:text-xl font-bold text-gray-900">Sign In</h2>
+              <p className="text-sm text-gray-600">Access your dashboard</p>
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 sm:py-4 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-base placeholder-gray-400"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm font-medium">{error}</p>
               </div>
-            </div>
+            )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg text-base"
-            >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                  Signing In...
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 focus:bg-white text-sm"
+                  placeholder="your@email.com"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 focus:bg-white text-sm"
+                    placeholder="Enter password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
-              ) : (
-                'Sign In'
-              )}
-            </button>
-          </form>
+              </div>
 
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-center text-gray-600 text-base">
-              Don't have an account?{' '}
               <button
-                onClick={onSwitchToSignup}
-                className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-2.5 px-4 rounded-lg hover:from-orange-700 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-all font-medium text-sm"
               >
-                Create one now
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Signing In...
+                  </div>
+                ) : (
+                  'Sign In'
+                )}
               </button>
-            </p>
+            </form>
+
+            <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <button
+                  onClick={onSwitchToSignup}
+                  className="text-orange-600 hover:text-orange-700 font-medium"
+                >
+                  Sign up
+                </button>
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-blue-200 text-sm">
-            Join thousands of traders using SnoopFlow for options intelligence
-          </p>
+        {/* Compact Footer */}
+        <div className="text-center mt-4">
+          <p className="text-xs text-orange-200">SnoopFlow - Professional Options Intelligence</p>
         </div>
       </div>
     </div>
