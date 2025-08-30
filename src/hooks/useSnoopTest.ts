@@ -7,14 +7,22 @@ export function useSnoopTest() {
   const [summary, setSummary] = useState<SnoopTestSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ percentage: number; status: string }>({ percentage: 0, status: '' });
 
   const runSnoopTest = async (params: SnoopTestParams) => {
     setLoading(true);
     setError(null);
+    setProgress({ percentage: 0, status: 'Initializing...' });
 
     try {
       console.log('Running SnoopTest with parameters:', params);
-      const engine = new SnoopTestEngine();
+      
+      // Progress callback function
+      const onProgress = (percentage: number, status: string) => {
+        setProgress({ percentage, status });
+      };
+      
+      const engine = new SnoopTestEngine(onProgress);
       const { results: testResults, summary: testSummary } = await engine.runTest(params);
       
       console.log('SnoopTest completed:', {
@@ -28,6 +36,7 @@ export function useSnoopTest() {
     } catch (err) {
       console.error('SnoopTest error:', err);
       setError(err instanceof Error ? err.message : 'Failed to run SnoopTest');
+      setProgress({ percentage: 0, status: 'Error occurred' });
     } finally {
       setLoading(false);
     }
@@ -37,6 +46,7 @@ export function useSnoopTest() {
     setResults([]);
     setSummary(null);
     setError(null);
+    setProgress({ percentage: 0, status: '' });
   };
 
   return {
@@ -44,6 +54,7 @@ export function useSnoopTest() {
     summary,
     loading,
     error,
+    progress,
     runSnoopTest,
     clearResults,
   };

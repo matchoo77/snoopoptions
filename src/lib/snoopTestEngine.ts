@@ -33,8 +33,10 @@ export class SnoopTestEngine {
   private baseUrl = API_CONFIG.POLYGON_BASE_URL;
   private requestCount = 0;
   private lastRequestTime = 0;
+  private onProgress?: (progress: number, status: string) => void;
 
-  constructor() {
+  constructor(onProgress?: (progress: number, status: string) => void) {
+    this.onProgress = onProgress;
     console.log('SnoopTestEngine initialized with centralized API key configuration');
     console.log('📦 Supabase sweep storage available via useSweepsStorage hook for improved performance');
   }
@@ -67,61 +69,86 @@ export class SnoopTestEngine {
     summary: SnoopTestSummary;
   }> {
     try {
+      this.reportProgress(0, 'Initializing SnoopTest analysis...');
       console.log('Starting SnoopTest analysis...');
       console.log('✅ Using real Polygon.io API for stock prices');
       console.log('✅ Using real Polygon.io Options Trades API for sweep detection');
       console.log('✅ Implementing volume > 5x average sweep criteria');
-
+      
+      this.reportProgress(10, 'Fetching options sweeps data...');
       // Step 1: Get real options sweeps for the date range
       const sweeps = await this.getRealOptionsSweeps(params);
       console.log(`Found ${sweeps.length} real options sweeps with volume > 5x average`);
 
+      this.reportProgress(40, 'Analyzing stock price movements...');
       // Step 2: Get stock price data for entry and exit points
       const results: SnoopTestResult[] = [];
-
-      for (const sweep of sweeps) {
+      
+      for (let i = 0; i < sweeps.length; i++) {
+        const sweep = sweeps[i];
         if (sweep.inferredSide === 'neutral') continue; // Skip neutral trades
-
+        
+        // Update progress for stock price analysis
+        const progressPercent = 40 + Math.floor((i / sweeps.length) * 40);
+        this.reportProgress(progressPercent, `Analyzing sweep ${i + 1} of ${sweeps.length}...`);
+        
         const result = await this.analyzeSweepOutcome(sweep, params.holdPeriod);
         if (result) {
           results.push(result);
         }
       }
 
+      this.reportProgress(85, 'Generating summary statistics...');
       console.log(`Analyzed ${results.length} non-neutral sweeps with real stock price data`);
 
       // Step 3: Generate summary
       const summary = this.generateSummary(results, sweeps.length);
 
+      this.reportProgress(100, 'Analysis complete!');
       return { results, summary };
     } catch (error) {
+      this.reportProgress(0, 'Error occurred, using fallback data...');
       console.error('SnoopTest error:', error);
-
+      
       // Fallback to synthetic data for demo purposes
       console.log('Falling back to synthetic data due to API error');
       const syntheticResults = this.generateSyntheticResults(params);
       const summary = this.generateSummary(syntheticResults, syntheticResults.length + 5);
-
+      
+      this.reportProgress(100, 'Fallback analysis complete');
       return { results: syntheticResults, summary };
+    }
+  }
+
+  private reportProgress(progress: number, status: string) {
+    if (this.onProgress) {
+      this.onProgress(progress, status);
     }
   }
 
   private async getRealOptionsSweeps(params: SnoopTestParams): Promise<OptionsSweep[]> {
     try {
+      this.reportProgress(15, 'Loading options contracts...');
       console.log(`Fetching real options trades for ${params.ticker} using /v3/trades/options`);
 
       // Step 1: Get options contracts to know what to look for
       const contracts = await this.getActiveOptionsContracts(params.ticker);
       if (contracts.length === 0) {
+        this.reportProgress(25, 'No contracts found, generating synthetic data...');
         console.warn(`No active contracts found for ${params.ticker}, falling back to synthetic data`);
         return this.generateSyntheticSweeps(params);
       }
 
+      this.reportProgress(20, `Processing ${contracts.length} contracts...`);
       // Step 2: Get real options trades data for each contract
       const allSweeps: OptionsSweep[] = [];
       const contractsToProcess = contracts.slice(0, 10); // Limit to 10 contracts to respect rate limits
 
-      for (const contract of contractsToProcess) {
+      for (let i = 0; i < contractsToProcess.length; i++) {
+        const contract = contractsToProcess[i];
+        const progressPercent = 20 + Math.floor((i / contractsToProcess.length) * 15);
+        this.reportProgress(progressPercent, `Analyzing contract ${i + 1} of ${contractsToProcess.length}...`);
+        
         try {
           const contractSweeps = await this.getContractSweeps(contract, params);
           allSweeps.push(...contractSweeps);
@@ -134,6 +161,7 @@ export class SnoopTestEngine {
         }
       }
 
+      this.reportProgress(35, 'Filtering sweep results...');
       console.log(`✅ Found ${allSweeps.length} real sweep trades from ${contractsToProcess.length} contracts`);
 
       // Filter by selected trade locations
@@ -142,6 +170,7 @@ export class SnoopTestEngine {
       );
 
       if (filteredSweeps.length === 0) {
+        this.reportProgress(35, 'No matching sweeps found, using synthetic data...');
         console.warn('No sweeps found matching criteria, falling back to synthetic data');
         return this.generateSyntheticSweeps(params);
       }
@@ -149,6 +178,7 @@ export class SnoopTestEngine {
       return filteredSweeps;
 
     } catch (error) {
+      this.reportProgress(25, 'Error fetching sweeps, using synthetic data...');
       console.error('Error fetching real options sweeps:', error);
       console.log('Falling back to synthetic sweep generation');
       return this.generateSyntheticSweeps(params);

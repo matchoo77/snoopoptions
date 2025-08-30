@@ -14,7 +14,7 @@ const TRADE_LOCATIONS: { value: TradeLocation; label: string; color: string }[] 
 ];
 
 export function SnoopTestPanel() {
-  const { results, summary, loading, error, runSnoopTest, clearResults } = useSnoopTest();
+  const { results, summary, loading, error, progress, runSnoopTest, clearResults } = useSnoopTest();
   const [params, setParams] = useState<SnoopTestParams>({
     ticker: 'SPY',
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -82,13 +82,6 @@ export function SnoopTestPanel() {
               (e.g., Buy Calls at/above ask or Sell Puts at/below bid expect stock up; Sell Calls at/below bid
               or Buy Puts at/above ask expect stock down) over your selected hold period.
             </p>
-            <div className="bg-green-900/30 border border-green-700/50 rounded p-2 mt-2">
-              <p className="text-xs text-green-200">
-                <strong>Data Sources:</strong> ✅ Real stock prices from Polygon.io API •
-                ✅ Real options trades from /v3/trades/options API •
-                ✅ Volume &gt; 5x average sweep detection algorithm
-              </p>
-            </div>
           </div>
         </div>
       </div>
@@ -194,6 +187,23 @@ export function SnoopTestPanel() {
           )}
         </button>
       </div>
+
+      {/* Progress Bar */}
+      {loading && progress.percentage > 0 && (
+        <div className="mb-6 p-4 bg-gray-800 border border-gray-600 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-300">Analysis Progress</span>
+            <span className="text-sm text-green-400 font-medium">{progress.percentage}%</span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
+            <div 
+              className="bg-green-500 h-2 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${progress.percentage}%` }}
+            ></div>
+          </div>
+          <p className="text-sm text-gray-400">{progress.status}</p>
+        </div>
+      )}
 
       {/* Error Display */}
       {error && (
