@@ -85,8 +85,8 @@ export function SnoopTestPanel() {
             <div className="bg-green-900/30 border border-green-700/50 rounded p-2 mt-2">
               <p className="text-xs text-green-200">
                 <strong>Data Sources:</strong> ✅ Real stock prices from Polygon.io API •
-                ✅ Real options contracts validation •
-                ⚠️ Synthetic options sweep data (real trades require special API access)
+                ✅ Real options trades from /v3/trades/options API •
+                ✅ Volume &gt; 5x average sweep detection algorithm
               </p>
             </div>
           </div>

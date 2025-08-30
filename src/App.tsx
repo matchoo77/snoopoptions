@@ -24,7 +24,7 @@ function App() {
   // Handle authentication state changes
   useEffect(() => {
     console.log('Auth state changed:', { user: !!user, authLoading, currentView });
-    
+
     if (!authLoading) {
       if (user) {
         const urlParams = new URLSearchParams(window.location.search);
