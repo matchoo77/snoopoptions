@@ -12,7 +12,7 @@ import { AlertsPanel } from '../AlertsPanel';
 import { MarketOverview } from '../MarketOverview';
 import { TopMovers } from '../TopMovers';
 import { WatchlistPanel } from '../WatchlistPanel';
-import { BacktestingPanel } from '../backtesting/BacktestingPanel';
+import { SnoopTestPanel } from '../snooptest/SnoopTestPanel';
 
 interface DashboardAppProps {
   trialStatus?: {
@@ -117,15 +117,15 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
               className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${showBacktesting
                 ? 'bg-purple-600 text-white'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                  ? 'bg-green-600 text-white'
             >
-              Backtesting Lab
+              SnoopTest
             </button>
           </div>
         </div>
 
         {showBacktesting ? (
-          <BacktestingPanel />
+          <SnoopTestPanel />
         ) : (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
