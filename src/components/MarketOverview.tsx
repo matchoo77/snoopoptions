@@ -209,7 +209,7 @@ export function MarketOverview() {
       </div>
 
       {/* Top Gainers */}
-      <div className="mb-4" style={{ minHeight: '120px' }}>
+      <div className="mb-4" style={{ minHeight: '80px' }}>
         {marketStats.gainers.length > 0 && (
           <>
             <h4 className="text-md font-medium text-gray-900 mb-3">Top Gainers</h4>
@@ -230,7 +230,7 @@ export function MarketOverview() {
       </div>
 
       {/* Top Losers */}
-      <div className="mb-4" style={{ minHeight: '120px' }}>
+      <div className="mb-4" style={{ minHeight: '80px' }}>
         {marketStats.losers.length > 0 && (
           <>
             <h4 className="text-md font-medium text-gray-900 mb-3">Top Losers</h4>

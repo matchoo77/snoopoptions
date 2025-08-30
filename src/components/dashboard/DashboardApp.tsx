@@ -146,8 +146,6 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
             <StatsOverview activities={displayActivities} dataSource={dataSource} />
             
             <MarketOverview />
-            
-            <TopMovers activities={displayActivities} />
           </div>
           
           {/* Sidebar */}
@@ -159,6 +157,11 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
               onSymbolSelect={handleSymbolSelect}
             />
           </div>
+        </div>
+        
+        {/* Full Width Top Movers */}
+        <div className="w-full mb-6">
+            <TopMovers activities={displayActivities} />
         </div>
         
         {/* Full Width Activity Feed */}

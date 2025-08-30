@@ -211,7 +211,7 @@ export function ActivityFeed({
           <div>
             <h3 className="text-xl font-semibold text-gray-900">Unusual Options Activity</h3>
             <p className="text-sm text-gray-600 mt-1">
-              Showing {activities.length} unusual activity alerts • LIVE data updating every 100ms
+              Showing {Math.min(activities.length, 50)} of {activities.length} unusual activity alerts
             </p>
           </div>
           <div className="flex items-center space-x-2">
@@ -290,7 +290,7 @@ export function ActivityFeed({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {sortedActivities.map((activity) => (
+            {sortedActivities.slice(0, 50).map((activity) => (
               <ActivityRow
                 key={activity.id}
                 activity={activity}
