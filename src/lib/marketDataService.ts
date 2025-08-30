@@ -155,7 +155,7 @@ export class MarketDataService {
     console.log(`[MarketDataService] Generating synthetic data for ${symbol}`);
     
     // Use time-based seed for variation but consistency within same refresh
-    const timeSeed = Math.floor(Date.now() / 10000); // Changes every 10 seconds
+    const timeSeed = Math.floor(Date.now() / 2000); // Changes every 2 seconds
     
     for (let i = 0; i < Math.min(limit, 12); i++) {
       const strikeIndex = (i + timeSeed) % baseStrikes.length;

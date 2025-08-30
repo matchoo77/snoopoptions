@@ -14,6 +14,136 @@ interface ActivityFeedProps {
 type SortField = 'timestamp' | 'volume' | 'premium' | 'impliedVolatility';
 type SortDirection = 'asc' | 'desc';
 
+// Memoized activity row component for performance
+const ActivityRow = React.memo(({ 
+  activity, 
+  isFavorite, 
+  favoriteNote, 
+  onToggleFavorite, 
+  onUpdateNote 
+}: {
+  activity: any;
+  isFavorite: boolean;
+  favoriteNote: string;
+  onToggleFavorite: (activityId: string) => void;
+  onUpdateNote: (activityId: string, note: string) => void;
+}) => {
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit' 
+    });
+  };
+
+  const formatNumber = (value: number) => {
+    return value.toLocaleString();
+  };
+
+  const formatCurrency = (value: number) => {
+    return `$${value.toFixed(2)}`;
+  };
+
+  const getSentimentIcon = (sentiment: string) => {
+    switch (sentiment) {
+      case 'bullish':
+        return <TrendingUp className="w-4 h-4 text-green-500" />;
+      case 'bearish':
+        return <TrendingDown className="w-4 h-4 text-red-500" />;
+      default:
+        return <Minus className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  return (
+    <tr 
+      className={`hover:bg-gray-50 transition-colors ${
+        activity.blockTrade ? 'bg-yellow-50' : ''
+      }`}
+    >
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+        {formatTime(activity.timestamp)}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex items-center">
+          <span className="text-sm font-semibold text-gray-900">
+            {activity.symbol}
+          </span>
+          {activity.blockTrade && (
+            <Zap className="w-4 h-4 text-yellow-500 ml-2" />
+          )}
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="text-sm text-gray-900">
+          <span className={`font-semibold ${
+            activity.type === 'call' ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {activity.type.toUpperCase()}
+          </span>
+          <div className="text-xs text-gray-500 font-mono">
+            ${activity.strike} • {activity.expiration}
+          </div>
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+        {formatNumber(activity.volume)}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+        {formatNumber(activity.openInterest)}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+        {formatCurrency(activity.lastPrice)}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm">
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          activity.tradeLocation === 'below-bid' ? 'bg-red-100 text-red-800' :
+          activity.tradeLocation === 'at-bid' ? 'bg-orange-100 text-orange-800' :
+          activity.tradeLocation === 'midpoint' ? 'bg-blue-100 text-blue-800' :
+          activity.tradeLocation === 'at-ask' ? 'bg-green-100 text-green-800' :
+          'bg-purple-100 text-purple-800'
+        }`}>
+          {activity.tradeLocation === 'below-bid' ? 'Below Bid' :
+           activity.tradeLocation === 'at-bid' ? 'At Bid' :
+           activity.tradeLocation === 'midpoint' ? 'Midpoint' :
+           activity.tradeLocation === 'at-ask' ? 'At Ask' :
+           'Above Ask'}
+        </span>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+        {formatCurrency(activity.premium)}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+        {(activity.impliedVolatility * 100).toFixed(1)}%
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-mono">
+        <div>Δ {activity.delta.toFixed(3)}</div>
+        <div>Γ {activity.gamma.toFixed(3)}</div>
+        <div>Θ {activity.theta.toFixed(3)}</div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex items-center">
+          {getSentimentIcon(activity.sentiment)}
+          <span className="ml-2 text-sm capitalize text-gray-700">
+            {activity.sentiment}
+          </span>
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <FavoriteButton
+          activityId={activity.id}
+          isFavorite={isFavorite}
+          note={favoriteNote}
+          onToggleFavorite={onToggleFavorite}
+          onUpdateNote={onUpdateNote}
+        />
+      </td>
+    </tr>
+  );
+});
+
 export function ActivityFeed({ 
   activities, 
   favoriteActivityIds, 
@@ -65,37 +195,6 @@ export function ActivityFeed({
     }
   });
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const formatNumber = (value: number) => {
-    return new Intl.NumberFormat('en-US').format(value);
-  };
-
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
-  const getSentimentIcon = (sentiment: string) => {
-    switch (sentiment) {
-      case 'bullish':
-        return <TrendingUp className="w-4 h-4 text-green-600" />;
-      case 'bearish':
-        return <TrendingDown className="w-4 h-4 text-red-600" />;
-      default:
-        return <Minus className="w-4 h-4 text-gray-600" />;
-    }
-  };
-
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
     return sortDirection === 'asc' ? (
@@ -106,12 +205,22 @@ export function ActivityFeed({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="bg-white rounded-lg shadow-sm border">
       <div className="px-6 py-4 bg-gray-50 border-b">
-        <h3 className="text-lg font-semibold text-gray-900">Unusual Options Activity</h3>
-        <p className="text-sm text-gray-600 mt-1">
-          Showing {activities.length} unusual activity alerts
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900">Unusual Options Activity</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Showing {activities.length} unusual activity alerts • LIVE data updating every 100ms
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+              <span className="text-sm font-medium text-green-600">LIVE</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -182,90 +291,14 @@ export function ActivityFeed({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedActivities.map((activity) => (
-              <tr 
-                key={activity.id} 
-                className={`hover:bg-gray-50 transition-colors ${
-                  activity.blockTrade ? 'bg-yellow-50' : ''
-                }`}
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                  {formatTime(activity.timestamp)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <span className="text-sm font-semibold text-gray-900">
-                      {activity.symbol}
-                    </span>
-                    {activity.blockTrade && (
-                      <Zap className="w-4 h-4 text-yellow-500 ml-2" title="Block Trade" />
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    <span className={`font-semibold ${
-                      activity.type === 'call' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {activity.type.toUpperCase()}
-                    </span>
-                    <div className="text-xs text-gray-500 font-mono">
-                      ${activity.strike} • {activity.expiration}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                  {formatNumber(activity.volume)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                  {formatNumber(activity.openInterest)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                  {formatCurrency(activity.lastPrice)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    activity.tradeLocation === 'below-bid' ? 'bg-red-100 text-red-800' :
-                    activity.tradeLocation === 'at-bid' ? 'bg-orange-100 text-orange-800' :
-                    activity.tradeLocation === 'midpoint' ? 'bg-blue-100 text-blue-800' :
-                    activity.tradeLocation === 'at-ask' ? 'bg-green-100 text-green-800' :
-                    'bg-purple-100 text-purple-800'
-                  }`}>
-                    {activity.tradeLocation === 'below-bid' ? 'Below Bid' :
-                     activity.tradeLocation === 'at-bid' ? 'At Bid' :
-                     activity.tradeLocation === 'midpoint' ? 'Midpoint' :
-                     activity.tradeLocation === 'at-ask' ? 'At Ask' :
-                     'Above Ask'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                  {formatCurrency(activity.premium)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                  {(activity.impliedVolatility * 100).toFixed(1)}%
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-mono">
-                  <div>Δ {activity.delta.toFixed(3)}</div>
-                  <div>Γ {activity.gamma.toFixed(3)}</div>
-                  <div>Θ {activity.theta.toFixed(3)}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    {getSentimentIcon(activity.sentiment)}
-                    <span className="ml-2 text-sm capitalize text-gray-700">
-                      {activity.sentiment}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <FavoriteButton
-                    activityId={activity.id}
-                    isFavorite={favoriteActivityIds.includes(activity.id)}
-                    note={getFavoriteNote(activity.id)}
-                    onToggleFavorite={onToggleFavorite}
-                    onUpdateNote={onUpdateNote}
-                  />
-                </td>
-              </tr>
+              <ActivityRow
+                key={activity.id}
+                activity={activity}
+                isFavorite={favoriteActivityIds.includes(activity.id)}
+                favoriteNote={getFavoriteNote(activity.id)}
+                onToggleFavorite={onToggleFavorite}
+                onUpdateNote={onUpdateNote}
+              />
             ))}
           </tbody>
         </table>

@@ -240,7 +240,7 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
   }, []); // Empty dependency array to run only once on mount
 
   // Real-time updates - removed automatic interval since dashboard handles refresh
-  // The dashboard will call fetchRealTimeData every 5 seconds
+  // The dashboard will call fetchRealTimeData every 200ms
 
   // Manual refresh on symbols change
   useEffect(() => {

@@ -80,9 +80,9 @@ export function TopMovers({ activities }: TopMoversProps) {
         <h3 className="text-lg font-semibold text-gray-900">Top Movers by Premium</h3>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3" style={{ minHeight: '320px' }}>
         {topMovers.length === 0 ? (
-          <div className="flex items-center justify-center p-8 text-gray-500">
+          <div className="flex items-center justify-center p-8 text-gray-500" style={{ height: '320px' }}>
             <div className="text-center">
               <div className="text-sm">Loading unusual options activity...</div>
               <div className="text-xs mt-1">Real-time data is being processed</div>

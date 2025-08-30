@@ -58,7 +58,7 @@ export function MarketOverview() {
       { symbol: 'V', basePrice: 285 }
     ];
 
-    const timeSeed = Math.floor(Date.now() / 5000); // Changes every 5 seconds for variation
+    const timeSeed = Math.floor(Date.now() / 1000); // Changes every second for more variation
     
     return symbols.map((stock, index) => {
       // Generate realistic intraday movement
@@ -121,8 +121,8 @@ export function MarketOverview() {
     // Initial load
     fetchData();
 
-    // Update every 2 seconds to match the options data refresh rate
-    const interval = setInterval(fetchData, 2000);
+    // Update every 100ms to match the options data refresh rate
+    const interval = setInterval(fetchData, 100);
     
     return () => clearInterval(interval);
   }, []);
@@ -209,42 +209,46 @@ export function MarketOverview() {
       </div>
 
       {/* Top Gainers */}
-      {marketStats.gainers.length > 0 && (
-        <div className="mb-4">
-          <h4 className="text-md font-medium text-gray-900 mb-3">Top Gainers</h4>
-          <div className="grid grid-cols-5 gap-3">
-            {marketStats.gainers.map((stock) => (
-              <div key={stock.symbol} className="bg-green-50 rounded-lg p-2">
-                <div className="text-sm font-semibold text-gray-900 mb-1">
-                  {stock.symbol}
+      <div className="mb-4" style={{ minHeight: '120px' }}>
+        {marketStats.gainers.length > 0 && (
+          <>
+            <h4 className="text-md font-medium text-gray-900 mb-3">Top Gainers</h4>
+            <div className="grid grid-cols-5 gap-3">
+              {marketStats.gainers.map((stock) => (
+                <div key={stock.symbol} className="bg-green-50 rounded-lg p-2">
+                  <div className="text-sm font-semibold text-gray-900 mb-1">
+                    {stock.symbol}
+                  </div>
+                  <div className="text-green-600 text-xs font-medium">
+                    +{stock.changePercent.toFixed(2)}%
+                  </div>
                 </div>
-                <div className="text-green-600 text-xs font-medium">
-                  +{stock.changePercent.toFixed(2)}%
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Top Losers */}
-      {marketStats.losers.length > 0 && (
-        <div className="mb-4">
-          <h4 className="text-md font-medium text-gray-900 mb-3">Top Losers</h4>
-          <div className="grid grid-cols-5 gap-3">
-            {marketStats.losers.map((stock) => (
-              <div key={stock.symbol} className="bg-red-50 rounded-lg p-2">
-                <div className="text-sm font-semibold text-gray-900 mb-1">
-                  {stock.symbol}
+      <div className="mb-4" style={{ minHeight: '120px' }}>
+        {marketStats.losers.length > 0 && (
+          <>
+            <h4 className="text-md font-medium text-gray-900 mb-3">Top Losers</h4>
+            <div className="grid grid-cols-5 gap-3">
+              {marketStats.losers.map((stock) => (
+                <div key={stock.symbol} className="bg-red-50 rounded-lg p-2">
+                  <div className="text-sm font-semibold text-gray-900 mb-1">
+                    {stock.symbol}
+                  </div>
+                  <div className="text-red-600 text-xs font-medium">
+                    {stock.changePercent.toFixed(2)}%
+                  </div>
                 </div>
-                <div className="text-red-600 text-xs font-medium">
-                  {stock.changePercent.toFixed(2)}%
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -67,13 +67,13 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
 
   const [showBacktesting, setShowBacktesting] = useState(false);
 
-  // Auto-refresh every 2 seconds for live data feel
+  // Auto-refresh every 100ms for ultra-live data feel
   useEffect(() => {
     if (!showBacktesting) {
       const interval = setInterval(() => {
-        console.log('[DashboardApp] Auto-refreshing data every 2 seconds');
+        console.log('[DashboardApp] Auto-refreshing data every 100ms');
         refreshData();
-      }, 2000); // 2 seconds
+      }, 100); // 100ms
 
       return () => clearInterval(interval);
     }
@@ -129,7 +129,8 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
         {showBacktesting ? (
           <BacktestingPanel />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
             <SearchBar
@@ -147,14 +148,6 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
             <MarketOverview />
             
             <TopMovers activities={displayActivities} />
-            
-            <ActivityFeed
-              activities={displayActivities}
-              favoriteActivityIds={favoriteActivityIds}
-              onToggleFavorite={handleToggleFavorite}
-              onUpdateNote={updateFavoriteNote}
-              getFavoriteNote={getFavoriteNote}
-            />
           </div>
           
           {/* Sidebar */}
@@ -167,6 +160,18 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
             />
           </div>
         </div>
+        
+        {/* Full Width Activity Feed */}
+        <div className="w-full">
+            <ActivityFeed
+              activities={displayActivities}
+              favoriteActivityIds={favoriteActivityIds}
+              onToggleFavorite={handleToggleFavorite}
+              onUpdateNote={updateFavoriteNote}
+              getFavoriteNote={getFavoriteNote}
+            />
+        </div>
+        </>
         )}
       </main>
     </div>
