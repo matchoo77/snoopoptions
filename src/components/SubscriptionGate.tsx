@@ -1,12 +1,13 @@
 import React from 'react';
-import { Lock, Crown, CreditCard, ArrowRight } from 'lucide-react';
+import { Lock, Crown, CreditCard, ArrowRight, ArrowLeft } from 'lucide-react';
 
 interface SubscriptionGateProps {
   onUpgrade: () => void;
   trialExpired?: boolean;
+  onBack?: () => void;
 }
 
-export function SubscriptionGate({ onUpgrade, trialExpired = false }: SubscriptionGateProps) {
+export function SubscriptionGate({ onUpgrade, trialExpired = false, onBack }: SubscriptionGateProps) {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
@@ -47,14 +48,26 @@ export function SubscriptionGate({ onUpgrade, trialExpired = false }: Subscripti
           </div>
         </div>
         
-        <button
-          onClick={onUpgrade}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center justify-center"
-        >
-          <CreditCard className="w-4 h-4 mr-2" />
-          Subscribe Now
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </button>
+        <div className="flex flex-col space-y-3">
+          <button
+            onClick={onUpgrade}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center justify-center"
+          >
+            <CreditCard className="w-4 h-4 mr-2" />
+            Subscribe Now
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </button>
+          
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors flex items-center justify-center text-sm"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Go Back
+            </button>
+          )}
+        </div>
         
         <p className="text-xs text-gray-500 mt-4">
           Cancel anytime • 30-day money-back guarantee
