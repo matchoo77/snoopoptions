@@ -63,75 +63,78 @@ const ActivityRow = React.memo(({
         activity.blockTrade ? 'bg-yellow-50' : ''
       }`}
     >
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 font-mono">
         {formatTime(activity.timestamp)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap">
         <div className="flex items-center">
-          <span className="text-sm font-semibold text-gray-900">
+          <span className="text-xs sm:text-sm font-semibold text-gray-900">
             {activity.symbol}
           </span>
           {activity.blockTrade && (
-            <Zap className="w-4 h-4 text-yellow-500 ml-2" />
+            <span title="Block Trade">
+              <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500 ml-1 sm:ml-2" />
+            </span>
           )}
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-gray-900">
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap">
+        <div className="text-xs sm:text-sm text-gray-900">
           <span className={`font-semibold ${
             activity.type === 'call' ? 'text-green-600' : 'text-red-600'
           }`}>
             {activity.type.toUpperCase()}
           </span>
           <div className="text-xs text-gray-500 font-mono">
-            ${activity.strike} • {activity.expiration}
+            ${activity.strike} • <span className="hidden sm:inline">{activity.expiration}</span>
+            <span className="sm:hidden">{activity.expiration.slice(5)}</span>
           </div>
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 font-mono">
         {formatNumber(activity.volume)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 font-mono hidden sm:table-cell">
         {formatNumber(activity.openInterest)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 font-mono">
         {formatCurrency(activity.lastPrice)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm">
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm hidden md:table-cell">
+        <span className={`px-1 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${
           activity.tradeLocation === 'below-bid' ? 'bg-red-100 text-red-800' :
           activity.tradeLocation === 'at-bid' ? 'bg-orange-100 text-orange-800' :
           activity.tradeLocation === 'midpoint' ? 'bg-blue-100 text-blue-800' :
           activity.tradeLocation === 'at-ask' ? 'bg-green-100 text-green-800' :
           'bg-purple-100 text-purple-800'
         }`}>
-          {activity.tradeLocation === 'below-bid' ? 'Below Bid' :
-           activity.tradeLocation === 'at-bid' ? 'At Bid' :
-           activity.tradeLocation === 'midpoint' ? 'Midpoint' :
-           activity.tradeLocation === 'at-ask' ? 'At Ask' :
-           'Above Ask'}
+          {activity.tradeLocation === 'below-bid' ? 'Below' :
+           activity.tradeLocation === 'at-bid' ? 'Bid' :
+           activity.tradeLocation === 'midpoint' ? 'Mid' :
+           activity.tradeLocation === 'at-ask' ? 'Ask' :
+           'Above'}
         </span>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 font-mono">
         {formatCurrency(activity.premium)}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 font-mono hidden lg:table-cell">
         {(activity.impliedVolatility * 100).toFixed(1)}%
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-mono">
-        <div>Δ {activity.delta.toFixed(3)}</div>
-        <div>Γ {activity.gamma.toFixed(3)}</div>
-        <div>Θ {activity.theta.toFixed(3)}</div>
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap text-xs text-gray-600 font-mono hidden lg:table-cell">
+        <div>Δ {activity.delta.toFixed(2)}</div>
+        <div>Γ {activity.gamma.toFixed(2)}</div>
+        <div>Θ {activity.theta.toFixed(2)}</div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap hidden md:table-cell">
         <div className="flex items-center">
           {getSentimentIcon(activity.sentiment)}
-          <span className="ml-2 text-sm capitalize text-gray-700">
+          <span className="ml-1 sm:ml-2 text-xs sm:text-sm capitalize text-gray-700 hidden lg:inline">
             {activity.sentiment}
           </span>
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 whitespace-nowrap">
         <FavoriteButton
           activityId={activity.id}
           isFavorite={isFavorite}
@@ -206,18 +209,21 @@ export function ActivityFeed({
 
   return (
     <div className="bg-white rounded-lg shadow-sm border">
-      <div className="px-6 py-4 bg-gray-50 border-b">
+      <div className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 bg-gray-50 border-b">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900">Unusual Options Activity</h3>
-            <p className="text-sm text-gray-600 mt-1">
+            <h3 className="text-sm sm:text-lg lg:text-xl font-semibold text-gray-900">Unusual Options Activity</h3>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1 hidden sm:block">
               Showing {Math.min(activities.length, 50)} of {activities.length} unusual activity alerts
             </p>
+            <p className="text-xs text-gray-600 mt-1 sm:hidden">
+              {Math.min(activities.length, 50)} alerts
+            </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <div className="flex items-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
-              <span className="text-sm font-medium text-green-600">LIVE</span>
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse mr-1 sm:mr-2"></div>
+              <span className="text-xs sm:text-sm font-medium text-green-600">LIVE</span>
             </div>
           </div>
         </div>
@@ -227,7 +233,7 @@ export function ActivityFeed({
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <button
                   onClick={() => handleSort('timestamp')}
                   className="flex items-center hover:text-gray-700 transition-colors"
@@ -236,13 +242,13 @@ export function ActivityFeed({
                   {getSortIcon('timestamp')}
                 </button>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Symbol
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Contract
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <button
                   onClick={() => handleSort('volume')}
                   className="flex items-center hover:text-gray-700 transition-colors"
@@ -251,16 +257,16 @@ export function ActivityFeed({
                   {getSortIcon('volume')}
                 </button>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                 OI
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Last Price
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Trade Location
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                Location
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <button
                   onClick={() => handleSort('premium')}
                   className="flex items-center hover:text-gray-700 transition-colors"
@@ -269,7 +275,7 @@ export function ActivityFeed({
                   {getSortIcon('premium')}
                 </button>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                 <button
                   onClick={() => handleSort('impliedVolatility')}
                   className="flex items-center hover:text-gray-700 transition-colors"
@@ -278,13 +284,13 @@ export function ActivityFeed({
                   {getSortIcon('impliedVolatility')}
                 </button>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                 Greeks
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                 Sentiment
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>

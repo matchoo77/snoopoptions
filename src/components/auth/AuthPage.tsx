@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { LoginForm } from './LoginForm';
 import { SignupForm } from './SignupForm';
 
@@ -16,9 +16,10 @@ export function AuthPage({ onSuccess, initialMode = 'login', onBack }: AuthPageP
       {onBack && (
         <button
           onClick={onBack}
-          className="absolute top-6 left-6 z-10 text-white/80 hover:text-white font-medium px-4 py-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 transition-all duration-200"
+          className="absolute top-2 sm:top-4 lg:top-6 left-2 sm:left-4 lg:left-6 z-10 text-white/80 hover:text-white font-medium px-2 sm:px-3 lg:px-4 py-1 sm:py-1.5 lg:py-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 transition-all duration-200 text-xs sm:text-sm lg:text-base"
         >
-          ← Back to Home
+          <span className="hidden sm:inline">← Back to Home</span>
+          <span className="sm:hidden">← Back</span>
         </button>
       )}
       {isLogin ? (
