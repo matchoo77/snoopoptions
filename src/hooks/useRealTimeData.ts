@@ -101,86 +101,18 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
       console.log('[useRealTimeData] === REAL-TIME DATA FETCH COMPLETE ===');
 
       if (enhancedActivities.length === 0) {
-        console.log('[useRealTimeData] No activities found - this could be due to:');
+        console.log('[useRealTimeData] No real activities found from Polygon API');
+        console.log('[useRealTimeData] This could be due to:');
         console.log('[useRealTimeData] 1. API request failures');
-        console.log('[useRealTimeData] 2. Data generation issues');
-        console.log('[useRealTimeData] 3. Filtering problems');
-        
-        // Generate some fallback data to ensure something shows
-        console.log('[useRealTimeData] Generating fallback data...');
-        const fallbackActivities: OptionsActivity[] = [];
-        
-        for (let i = 0; i < 5; i++) {
-          const symbol = finalSymbols[i % finalSymbols.length];
-          const volume = 100 + Math.floor(Math.random() * 200);
-          const price = 2 + Math.random() * 8;
-          
-          fallbackActivities.push({
-            id: `fallback_${symbol}_${i}_${Date.now()}`,
-            symbol,
-            type: Math.random() > 0.5 ? 'call' : 'put',
-            strike: 400 + (i * 10),
-            expiration: '2025-09-20',
-            lastPrice: price,
-            volume,
-            premium: Math.round(price * volume * 100),
-            openInterest: Math.floor(volume * 1.5),
-            bid: price * 0.95,
-            ask: price * 1.05,
-            timestamp: new Date(Date.now() - Math.random() * 1800000).toISOString(),
-            sentiment: Math.random() > 0.5 ? 'bullish' : 'bearish',
-            tradeLocation: 'at-ask',
-            blockTrade: volume > 150,
-            unusual: true,
-            impliedVolatility: 0.3 + Math.random() * 0.3,
-            delta: 0.5,
-            gamma: 0.05,
-            theta: -0.02,
-            vega: 0.2,
-          });
-        }
-        
-        console.log('[useRealTimeData] Setting fallback activities:', fallbackActivities.length);
-        setActivities(prevActivities => {
-          const combined = [...fallbackActivities, ...prevActivities].slice(0, 200);
-          return combined;
-        });
+        console.log('[useRealTimeData] 2. No trading volume on the date requested');
+        console.log('[useRealTimeData] 3. Market closed or weekend');
+        console.log('[useRealTimeData] 4. API rate limiting');
+        console.log('[useRealTimeData] Returning empty data for debugging');
       }
 
     } catch (err) {
       console.error('[useRealTimeData] Error fetching real-time data:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch real-time data');
-      
-      // Even on error, provide some data so user sees something
-      const errorFallbackActivities: OptionsActivity[] = [{
-        id: `error_fallback_${Date.now()}`,
-        symbol: 'SPY',
-        type: 'call',
-        strike: 420,
-        expiration: '2025-09-20',
-        lastPrice: 5.0,
-        volume: 150,
-        premium: 75000,
-        openInterest: 225,
-        bid: 4.75,
-        ask: 5.25,
-        timestamp: new Date().toISOString(),
-        sentiment: 'bullish',
-        tradeLocation: 'at-ask',
-        blockTrade: true,
-        unusual: true,
-        impliedVolatility: 0.35,
-        delta: 0.6,
-        gamma: 0.08,
-        theta: -0.03,
-        vega: 0.25,
-      }];
-      
-      console.log('[useRealTimeData] Setting error fallback activities');
-      setActivities(prevActivities => {
-        const combined = [...errorFallbackActivities, ...prevActivities].slice(0, 200);
-        return combined;
-      });
     } finally {
       setLoading(false);
     }

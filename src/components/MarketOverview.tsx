@@ -32,79 +32,41 @@ export function MarketOverview() {
   });
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
-  // Generate realistic synthetic market data
-  const generateMarketData = () => {
-    const symbols = [
-      { symbol: 'SPY', basePrice: 575 },
-      { symbol: 'QQQ', basePrice: 495 },
-      { symbol: 'IWM', basePrice: 215 },
-      { symbol: 'VIX', basePrice: 18 },
-      { symbol: 'GLD', basePrice: 185 },
-      { symbol: 'AAPL', basePrice: 230 },
-      { symbol: 'MSFT', basePrice: 445 },
-      { symbol: 'GOOGL', basePrice: 175 },
-      { symbol: 'AMZN', basePrice: 195 },
-      { symbol: 'TSLA', basePrice: 275 },
-      { symbol: 'NVDA', basePrice: 135 },
-      { symbol: 'META', basePrice: 555 },
-      { symbol: 'NFLX', basePrice: 485 },
-      { symbol: 'JPM', basePrice: 215 },
-      { symbol: 'BAC', basePrice: 42 },
-      { symbol: 'XOM', basePrice: 115 },
-      { symbol: 'JNJ', basePrice: 165 },
-      { symbol: 'PG', basePrice: 165 },
-      { symbol: 'KO', basePrice: 68 },
-      { symbol: 'WMT', basePrice: 175 },
-      { symbol: 'V', basePrice: 285 }
-    ];
-
-    const timeSeed = Math.floor(Date.now() / 1000); // Changes every second for more variation
-
-    return symbols.map((stock, index) => {
-      // Generate realistic intraday movement
-      const dailyChangePercent = ((timeSeed * 7 + index * 13) % 600 - 300) / 100; // -3% to +3%
-      const intradayVariation = (Math.sin((timeSeed + index) * 0.1) * 0.5); // Small intraday moves
-      const totalChangePercent = (dailyChangePercent + intradayVariation) / 100;
-
-      const currentPrice = stock.basePrice * (1 + totalChangePercent);
-      const change = currentPrice - stock.basePrice;
-      const volume = Math.floor((50000 + (timeSeed * 17 + index * 23) % 2000000)); // 50K to 2M volume
-
-      return {
-        symbol: stock.symbol,
-        price: Math.round(currentPrice * 100) / 100,
-        change: Math.round(change * 100) / 100,
-        changePercent: Math.round(totalChangePercent * 10000) / 100,
-        volume: volume,
-        high: Math.round(currentPrice * 1.005 * 100) / 100,
-        low: Math.round(currentPrice * 0.995 * 100) / 100
-      };
-    });
+  // Fetch real market data from Polygon API
+  const fetchMarketData = async (): Promise<MarketData[]> => {
+    try {
+      // For now, return empty array until real API integration is implemented
+      console.log('MarketOverview: Real market data API not yet implemented');
+      return [];
+    } catch (error) {
+      console.error('Error fetching market data:', error);
+      return [];
+    }
   };
 
   useEffect(() => {
-    const fetchData = () => {
-      const data = generateMarketData();
+    const fetchData = async () => {
+      const data = await fetchMarketData();
       setMarketData(data);
 
-      // Calculate market statistics
-      const advancers = data.filter(stock => stock.change > 0).length;
-      const decliners = data.filter(stock => stock.change < 0).length;
-      const unchanged = data.filter(stock => stock.change === 0).length;
+      // Calculate market statistics from real data (empty array safe)
+      const advancers = data.length > 0 ? data.filter(stock => stock.change > 0).length : 0;
+      const decliners = data.length > 0 ? data.filter(stock => stock.change < 0).length : 0;
+      const unchanged = data.length > 0 ? data.filter(stock => stock.change === 0).length : 0;
 
-      const volumeLeaders = [...data]
+      const volumeLeaders = data.length > 0 ? [...data]
         .sort((a, b) => b.volume - a.volume)
-        .slice(0, 5);
+        .slice(0, 5) : [];
 
-      const gainers = [...data]
+      const gainers = data.length > 0 ? [...data]
         .filter(stock => stock.changePercent > 0)
         .sort((a, b) => b.changePercent - a.changePercent)
-        .slice(0, 5);
+        .slice(0, 5) : [];
 
-      const losers = [...data]
+      const losers = data.length > 0 ? [...data]
         .filter(stock => stock.changePercent < 0)
         .sort((a, b) => a.changePercent - b.changePercent)
-        .slice(0, 5);
+        .slice(0, 5) : [];
 
       setMarketStats({
         advancers,
@@ -121,8 +83,8 @@ export function MarketOverview() {
     // Initial load
     fetchData();
 
-    // Update every 100ms to match the options data refresh rate
-    const interval = setInterval(fetchData, 100);
+    // Update every 30 seconds for responsive market data
+    const interval = setInterval(fetchData, 30000);
 
     return () => clearInterval(interval);
   }, []);

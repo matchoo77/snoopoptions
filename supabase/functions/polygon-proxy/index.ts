@@ -57,16 +57,19 @@ Deno.serve(async (req) => {
       return corsResponse({ error: 'POLYGON_API_KEY not configured on server' }, 500);
     }
 
-    // Ensure our key is used (remove any client-provided apikey)
+    // Ensure our key is used (remove any client-provided apikey and add ours)
     const u = new URL(url);
     u.searchParams.delete('apikey');
+    u.searchParams.set('apikey', serverKey);
 
-    const upstream = await fetch(u.toString(), {
-      headers: {
-        'Authorization': `Bearer ${serverKey}`
-      }
-    });
+    console.log('[Polygon Proxy] Making request to:', u.toString().replace(serverKey, 'API_KEY_HIDDEN'));
+
+    const upstream = await fetch(u.toString());
     const text = await upstream.text();
+    
+    console.log('[Polygon Proxy] Response status:', upstream.status);
+    console.log('[Polygon Proxy] Response preview:', text.substring(0, 200));
+    
     return corsResponse(text, upstream.status);
   } catch (e: any) {
     console.error('polygon-proxy error:', e);

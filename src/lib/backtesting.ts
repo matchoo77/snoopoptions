@@ -22,7 +22,6 @@ export class BacktestingEngine {
       console.log('[Backtest] Parameters:', params);
       console.log(`[Backtest] Using API key: ${this.apiKey.substring(0, 8)}...`);
 
-      const timestamp = Date.now();
       const symbols = params.symbols.length > 0 ? params.symbols : ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META'];
 
       // Step 1: Find significant stock movements in the time period
@@ -71,13 +70,6 @@ export class BacktestingEngine {
 
       console.log(`[Backtest] Generated ${results.length} results from real market analysis`);
 
-      // Step 3: If we don't have enough real data, supplement with synthetic data
-      if (results.length < 10) {
-        console.log('[Backtest] Supplementing with synthetic data for comprehensive analysis...');
-        const syntheticResults = this.generateRealisticSyntheticData(params, timestamp);
-        results.push(...syntheticResults.slice(0, 50 - results.length)); // Cap total results
-      }
-
       // Step 4: Generate summary statistics
       const summary = this.generateSummary(results);
 
@@ -87,78 +79,12 @@ export class BacktestingEngine {
     } catch (error) {
       console.error('[Backtest] Advanced pattern recognition error:', error);
 
-      // Fallback to synthetic data on error
-      const timestamp = Date.now();
-      const syntheticResults = this.generateRealisticSyntheticData(params, timestamp);
-      const summary = this.generateSummary(syntheticResults);
+      // Return empty results instead of synthetic data
+      const emptyResults: BacktestResult[] = [];
+      const summary = this.generateSummary(emptyResults);
 
-      return { results: syntheticResults, summary };
+      return { results: emptyResults, summary };
     }
-  }
-
-  // Generate realistic synthetic data that varies with each run
-  private generateRealisticSyntheticData(params: BacktestParams, timestamp: number): BacktestResult[] {
-    const results: BacktestResult[] = [];
-    const symbols = params.symbols.length > 0 ? params.symbols : ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META'];
-
-    // Use timestamp to create variation between runs
-    const seed = timestamp % 10000;
-    const numTrades = 25 + (seed % 75); // 25-100 trades, varies by timestamp
-
-    for (let i = 0; i < numTrades; i++) {
-      const symbol = symbols[Math.floor((seed + i * 7) % symbols.length)];
-      const type = params.optionTypes[Math.floor((seed + i * 3) % params.optionTypes.length)];
-      const tradeLocation = params.tradeLocations[Math.floor((seed + i * 5) % params.tradeLocations.length)];
-
-      // Create realistic premium distribution
-      const premiumMultiplier = 1 + (seed % 1000) / 1000; // 1.0 - 2.0x multiplier
-      const premium = Math.max(params.minPremium, Math.random() * 500000 * premiumMultiplier);
-
-      // Generate realistic stock movements with market-like volatility
-      const baseMovement = ((seed + i * 11) % 40 - 20); // -20% to +20%
-      const volatilityBoost = ((seed + i * 13) % 20); // 0-20% additional
-      const stockMovement = baseMovement + (((seed + i) % 10) > 7 ? volatilityBoost : 0);
-
-      const underlyingPriceAtTrade = 50 + ((seed + i * 17) % 500);
-      const underlyingPriceAtTarget = underlyingPriceAtTrade * (1 + stockMovement / 100);
-
-      // Realistic success rate based on actual market patterns
-      let targetReached = false;
-      if (type === 'call') {
-        targetReached = stockMovement >= params.targetMovement;
-      } else {
-        targetReached = stockMovement <= -params.targetMovement;
-      }
-
-      // Add some randomness to simulate real market conditions
-      if (((seed + i * 19) % 100) < 15) { // 15% chance to flip outcome
-        targetReached = !targetReached;
-      }
-
-      // Generate trade date within the backtest period
-      const startTime = new Date(params.startDate).getTime();
-      const endTime = new Date(params.endDate).getTime();
-      const dayOffset = ((seed + i * 23) % Math.floor((endTime - startTime) / (1000 * 60 * 60 * 24)));
-      const tradeTime = startTime + (dayOffset * 1000 * 60 * 60 * 24);
-      const tradeDate = new Date(tradeTime).toISOString();
-
-      results.push({
-        tradeId: `real-${timestamp}-${i}`,
-        symbol,
-        tradeDate,
-        type,
-        tradeLocation,
-        premium,
-        underlyingPriceAtTrade,
-        underlyingPriceAtTarget,
-        stockMovement,
-        targetReached,
-        daysToTarget: params.timeHorizon,
-        actualDays: 1 + ((seed + i * 29) % params.timeHorizon),
-      });
-    }
-
-    return results;
   }
 
   private async findSignificantStockMovements(
@@ -443,66 +369,4 @@ export class BacktestingEngine {
       },
     };
   }
-}
-
-// Mock data generator for development/demo purposes
-export function generateMockBacktestData(params: BacktestParams): {
-  results: BacktestResult[];
-  summary: BacktestSummary;
-} {
-  const results: BacktestResult[] = [];
-  const symbols = params.symbols.length > 0 ? params.symbols : ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'];
-
-  // Generate 50-100 mock trades
-  const numTrades = Math.floor(Math.random() * 50) + 50;
-
-  for (let i = 0; i < numTrades; i++) {
-    const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-    const type = params.optionTypes[Math.floor(Math.random() * params.optionTypes.length)];
-    const tradeLocation = params.tradeLocations[Math.floor(Math.random() * params.tradeLocations.length)];
-    const premium = Math.random() * 1000000 + params.minPremium;
-
-    // Generate realistic stock movements
-    const baseMovement = (Math.random() - 0.5) * 20; // -10% to +10%
-    const volatilityBoost = Math.random() * 10; // Additional volatility for some trades
-    const stockMovement = baseMovement + (Math.random() > 0.7 ? volatilityBoost : 0);
-
-    const underlyingPriceAtTrade = Math.random() * 300 + 50;
-    const underlyingPriceAtTarget = underlyingPriceAtTrade * (1 + stockMovement / 100);
-
-    // Determine if target was reached
-    let targetReached = false;
-    if (type === 'call') {
-      targetReached = stockMovement >= params.targetMovement;
-    } else {
-      targetReached = stockMovement <= -params.targetMovement;
-    }
-
-    // Generate random trade date within the backtest period
-    const startTime = new Date(params.startDate).getTime();
-    const endTime = new Date(params.endDate).getTime();
-    const randomTime = startTime + Math.random() * (endTime - startTime);
-    const tradeDate = new Date(randomTime).toISOString();
-
-    results.push({
-      tradeId: `mock-${i}`,
-      symbol,
-      tradeDate,
-      type,
-      tradeLocation,
-      premium,
-      underlyingPriceAtTrade,
-      underlyingPriceAtTarget,
-      stockMovement,
-      targetReached,
-      daysToTarget: params.timeHorizon,
-      actualDays: Math.floor(Math.random() * params.timeHorizon) + 1,
-    });
-  }
-
-  // Generate summary
-  const engine = new BacktestingEngine();
-  const summary = engine['generateSummary'](results);
-
-  return { results, summary };
 }

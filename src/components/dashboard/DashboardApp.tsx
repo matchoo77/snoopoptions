@@ -9,7 +9,6 @@ import { StatsOverview } from '../StatsOverview';
 import { DataSourceIndicator } from '../DataSourceIndicator';
 import { ActivityFeed } from '../ActivityFeed';
 import { AlertsPanel } from '../AlertsPanel';
-import { MarketOverview } from '../MarketOverview';
 import { TopMovers } from '../TopMovers';
 import { WatchlistPanel } from '../WatchlistPanel';
 import { SnoopTestPanel } from '../snooptest/SnoopTestPanel';
@@ -69,13 +68,13 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
 
   const [showBacktesting, setShowBacktesting] = useState(false);
 
-  // Auto-refresh every 100ms for ultra-live data feel
+  // Auto-refresh every 10 seconds for more responsive feel
   useEffect(() => {
     if (!showBacktesting) {
       const interval = setInterval(() => {
-        console.log('[DashboardApp] Auto-refreshing data every 100ms');
+        console.log('[DashboardApp] Auto-refreshing data every 10 seconds');
         refreshData();
-      }, 100); // 100ms
+      }, 10000); // 10 seconds (10000ms)
 
       return () => clearInterval(interval);
     }
@@ -145,8 +144,6 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
                 <FilterPanel filters={filters} onFiltersChange={setFilters} />
 
                 <StatsOverview activities={displayActivities} dataSource={dataSource} />
-
-                <MarketOverview />
               </div>
 
               {/* Sidebar */}

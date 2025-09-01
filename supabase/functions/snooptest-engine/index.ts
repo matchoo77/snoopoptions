@@ -221,51 +221,10 @@ async function fetchOptionsSweeps(params: SnoopTestParams): Promise<OptionsSweep
     
   } catch (error) {
     console.error('Error fetching options sweeps:', error);
-    // Return synthetic data for demo if API fails
-    return generateSyntheticSweeps(params);
+    // Return empty array instead of synthetic data
+    console.log('No data available, returning empty array');
+    return [];
   }
-}
-
-function generateSyntheticSweeps(params: SnoopTestParams): OptionsSweep[] {
-  const sweeps: OptionsSweep[] = [];
-  const startTime = new Date(params.startDate).getTime();
-  const endTime = new Date(params.endDate).getTime();
-  
-  // Generate 15-25 sweeps over the date range
-  const numSweeps = 15 + Math.floor(Math.random() * 10);
-  
-  for (let i = 0; i < numSweeps; i++) {
-    const randomTime = startTime + Math.random() * (endTime - startTime);
-    const date = new Date(randomTime);
-    
-    // Skip weekends
-    if (date.getDay() === 0 || date.getDay() === 6) continue;
-    
-    const optionType = Math.random() > 0.5 ? 'call' : 'put';
-    const tradeLocation = params.tradeLocations[Math.floor(Math.random() * params.tradeLocations.length)];
-    const volume = Math.floor(Math.random() * 5000) + 1000;
-    const price = Math.random() * 10 + 1;
-    const bid = price - 0.05;
-    const ask = price + 0.05;
-    
-    sweeps.push({
-      id: `sweep_${i}_${Date.now()}`,
-      ticker: params.ticker,
-      tradeDate: date.toISOString().split('T')[0],
-      optionType,
-      strikePrice: 400 + (i * 5),
-      expirationDate: '2025-03-21',
-      volume,
-      price,
-      bid,
-      ask,
-      tradeLocation,
-      inferredSide: inferTradeSide(price, bid, ask),
-      premium: volume * price * 100,
-    });
-  }
-  
-  return sweeps.filter(sweep => sweep.inferredSide !== 'neutral');
 }
 
 async function fetchStockPrices(ticker: string, dates: string[]): Promise<Record<string, number>> {
@@ -284,35 +243,14 @@ async function fetchStockPrices(ticker: string, dates: string[]): Promise<Record
         prices[date] = data.results[0].c; // closing price
         console.log(`${ticker} ${date}: $${prices[date]}`);
       } else {
-        // Use synthetic price if no data
-        prices[date] = getBasePriceForTicker(ticker) * (0.95 + Math.random() * 0.1);
-        console.log(`${ticker} ${date}: $${prices[date]} (synthetic)`);
+        console.log(`No stock data found for ${ticker} on ${date}`);
       }
     }
   } catch (error) {
     console.error('Error fetching stock prices:', error);
-    // Generate synthetic prices
-    dates.forEach(date => {
-      prices[date] = getBasePriceForTicker(ticker) * (0.95 + Math.random() * 0.1);
-    });
   }
   
   return prices;
-}
-
-function getBasePriceForTicker(ticker: string): number {
-  const basePrices: Record<string, number> = {
-    'SPY': 575,
-    'QQQ': 495,
-    'AAPL': 230,
-    'MSFT': 445,
-    'GOOGL': 175,
-    'AMZN': 195,
-    'TSLA': 275,
-    'NVDA': 135,
-    'META': 555,
-  };
-  return basePrices[ticker] || 100;
 }
 
 async function analyzeSweepOutcomes(sweeps: OptionsSweep[], holdPeriod: number): Promise<SnoopTestResult[]> {

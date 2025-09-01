@@ -107,16 +107,16 @@ export class SnoopTestEngine {
       this.reportProgress(100, 'Analysis complete!');
       return { results, summary };
     } catch (error) {
-      this.reportProgress(0, 'Error occurred, using fallback data...');
+      this.reportProgress(0, 'Error occurred during analysis');
       console.error('SnoopTest error:', error);
       
-      // Fallback to synthetic data for demo purposes
-      console.log('Falling back to synthetic data due to API error');
-      const syntheticResults = this.generateSyntheticResults(params);
-      const summary = this.generateSummary(syntheticResults, syntheticResults.length + 5);
+      // Return empty results instead of synthetic data
+      console.log('Returning empty results due to API error');
+      const emptyResults: SnoopTestResult[] = [];
+      const summary = this.generateSummary(emptyResults, 0);
       
-      this.reportProgress(100, 'Fallback analysis complete');
-      return { results: syntheticResults, summary };
+      this.reportProgress(100, 'Analysis failed - no results available');
+      return { results: emptyResults, summary };
     }
   }
 
@@ -134,9 +134,9 @@ export class SnoopTestEngine {
       // Step 1: Get options contracts to know what to look for
       const contracts = await this.getActiveOptionsContracts(params.ticker);
       if (contracts.length === 0) {
-        this.reportProgress(25, 'No contracts found, generating synthetic data...');
-        console.warn(`No active contracts found for ${params.ticker}, falling back to synthetic data`);
-        return this.generateSyntheticSweeps(params);
+        this.reportProgress(25, 'No contracts found');
+        console.warn(`No active contracts found for ${params.ticker}`);
+        return [];
       }
 
       this.reportProgress(20, `Processing ${contracts.length} contracts...`);
@@ -170,18 +170,18 @@ export class SnoopTestEngine {
       );
 
       if (filteredSweeps.length === 0) {
-        this.reportProgress(35, 'No matching sweeps found, using synthetic data...');
-        console.warn('No sweeps found matching criteria, falling back to synthetic data');
-        return this.generateSyntheticSweeps(params);
+        this.reportProgress(35, 'No matching sweeps found');
+        console.warn('No sweeps found matching criteria');
+        return [];
       }
 
       return filteredSweeps;
 
     } catch (error) {
-      this.reportProgress(25, 'Error fetching sweeps, using synthetic data...');
+      this.reportProgress(25, 'Error fetching sweeps');
       console.error('Error fetching real options sweeps:', error);
-      console.log('Falling back to synthetic sweep generation');
-      return this.generateSyntheticSweeps(params);
+      console.log('Returning empty results due to error');
+      return [];
     }
   }
 
@@ -316,46 +316,6 @@ export class SnoopTestEngine {
     return 'midpoint';
   }
 
-  private generateSyntheticSweeps(params: SnoopTestParams): OptionsSweep[] {
-    const sweeps: OptionsSweep[] = [];
-    const startTime = new Date(params.startDate).getTime();
-    const endTime = new Date(params.endDate).getTime();
-
-    // Generate 15-25 sweeps over the date range
-    const numSweeps = 15 + Math.floor(Math.random() * 10);
-
-    for (let i = 0; i < numSweeps; i++) {
-      const randomTime = startTime + Math.random() * (endTime - startTime);
-      const date = new Date(randomTime);
-
-      // Skip weekends
-      if (date.getDay() === 0 || date.getDay() === 6) continue;
-
-      const optionType = Math.random() > 0.5 ? 'call' : 'put';
-      const tradeLocation = params.tradeLocations[Math.floor(Math.random() * params.tradeLocations.length)];
-      const volume = Math.floor(Math.random() * 5000) + 1000; // 1000-6000 volume
-      const price = Math.random() * 10 + 1; // $1-$11
-      const bid = price - 0.05;
-      const ask = price + 0.05;
-
-      sweeps.push({
-        id: `sweep_${i}_${Date.now()}`,
-        ticker: params.ticker,
-        date: date.toISOString().split('T')[0],
-        optionType,
-        volume,
-        price,
-        bid,
-        ask,
-        tradeLocation,
-        inferredSide: this.inferTradeSide(price, bid, ask, tradeLocation),
-        timestamp: date.toISOString(),
-      });
-    }
-
-    return sweeps.filter(sweep => sweep.inferredSide !== 'neutral');
-  }
-
   private inferTradeSide(_price: number, _bid: number, _ask: number, tradeLocation: TradeLocation): 'buy' | 'sell' | 'neutral' {
     switch (tradeLocation) {
       case 'at-ask':
@@ -428,10 +388,7 @@ export class SnoopTestEngine {
 
       if (!response.ok) {
         console.warn(`Failed to fetch stock price for ${ticker} on ${date}: ${response.statusText}`);
-        // Fall back to synthetic price
-        const basePrice = this.getBaseStockPrice(ticker);
-        const dateVariation = new Date(date).getTime() % 1000 / 1000;
-        return Math.round(basePrice * (0.95 + dateVariation * 0.1) * 100) / 100;
+        return null;
       }
 
       const data = await response.json();
@@ -441,85 +398,14 @@ export class SnoopTestEngine {
         console.log(`Real stock price for ${ticker} on ${date}: $${result.c}`);
         return result.c; // closing price
       } else {
-        console.warn(`No stock data found for ${ticker} on ${date}, using synthetic price`);
-        // Fall back to synthetic price
-        const basePrice = this.getBaseStockPrice(ticker);
-        const dateVariation = new Date(date).getTime() % 1000 / 1000;
-        return Math.round(basePrice * (0.95 + dateVariation * 0.1) * 100) / 100;
+        console.warn(`No stock data found for ${ticker} on ${date}`);
+        return null;
       }
 
     } catch (error) {
       console.error(`Error fetching stock price for ${ticker} on ${date}:`, error);
-      // Fall back to synthetic price
-      const basePrice = this.getBaseStockPrice(ticker);
-      const dateVariation = new Date(date).getTime() % 1000 / 1000;
-      return Math.round(basePrice * (0.95 + dateVariation * 0.1) * 100) / 100;
+      return null;
     }
-  }
-
-  private getBaseStockPrice(ticker: string): number {
-    const basePrices: Record<string, number> = {
-      'SPY': 575,
-      'QQQ': 495,
-      'AAPL': 230,
-      'MSFT': 445,
-      'GOOGL': 175,
-      'AMZN': 195,
-      'TSLA': 275,
-      'NVDA': 135,
-      'META': 555,
-    };
-    return basePrices[ticker] || 100;
-  }
-
-  private generateSyntheticResults(params: SnoopTestParams): SnoopTestResult[] {
-    const results: SnoopTestResult[] = [];
-    const numResults = 15 + Math.floor(Math.random() * 10); // 15-25 results
-
-    for (let i = 0; i < numResults; i++) {
-      const randomDate = new Date(
-        new Date(params.startDate).getTime() +
-        Math.random() * (new Date(params.endDate).getTime() - new Date(params.startDate).getTime())
-      );
-
-      const optionType = Math.random() > 0.5 ? 'call' : 'put';
-      const tradeLocation = params.tradeLocations[Math.floor(Math.random() * params.tradeLocations.length)];
-      const inferredSide = this.inferTradeSide(0, 0, 0, tradeLocation);
-
-      if (inferredSide === 'neutral') continue;
-
-      const entryPrice = this.getBaseStockPrice(params.ticker);
-      const percentChange = (Math.random() - 0.5) * 10; // -5% to +5%
-      const exitPrice = entryPrice * (1 + percentChange / 100);
-
-      // Determine win based on direction
-      let isWin = false;
-      if (optionType === 'call' && inferredSide === 'buy') {
-        isWin = percentChange > 0;
-      } else if (optionType === 'put' && inferredSide === 'buy') {
-        isWin = percentChange < 0;
-      } else if (optionType === 'call' && inferredSide === 'sell') {
-        isWin = percentChange < 0;
-      } else if (optionType === 'put' && inferredSide === 'sell') {
-        isWin = percentChange > 0;
-      }
-
-      results.push({
-        id: `synthetic_${i}`,
-        date: randomDate.toISOString().split('T')[0],
-        ticker: params.ticker,
-        optionType,
-        tradeLocation,
-        inferredSide,
-        entryPrice,
-        exitPrice,
-        percentChange,
-        isWin,
-        holdDays: params.holdPeriod,
-      });
-    }
-
-    return results;
   }
 
   private generateSummary(results: SnoopTestResult[], totalSweeps: number): SnoopTestSummary {
