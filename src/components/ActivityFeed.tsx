@@ -148,6 +148,11 @@ export function ActivityFeed({
   onUpdateNote,
   getFavoriteNote
 }: ActivityFeedProps) {
+  console.log('[ActivityFeed] Received activities:', activities.length);
+  console.log('[ActivityFeed] Sample activity:', activities[0] || 'No activities');
+  if (activities.length > 0) {
+    console.log('[ActivityFeed] Is mock data?', activities[0].id.startsWith('MOCK_'));
+  }
   const [sortField, setSortField] = useState<SortField>('timestamp');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 

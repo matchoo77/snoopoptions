@@ -1,10 +1,10 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Zap, Activity } from 'lucide-react';
-import { OptionsActivity } from '../types/options';
+import { OptionsActivity, DataSource } from '../types/options';
 
 interface StatsOverviewProps {
   activities: OptionsActivity[];
-  dataSource?: 'none' | 'realtime' | 'eod';
+  dataSource?: DataSource;
 }
 
 export function StatsOverview({ activities, dataSource = 'realtime' }: StatsOverviewProps) {

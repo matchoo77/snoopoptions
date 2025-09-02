@@ -113,12 +113,25 @@ export class MarketDataService {
     console.log(`[MarketDataService] Fetching most active options for ${symbol} on ${date}`);
     
     try {
-      // Since today is Monday, go back to last Friday for real trading data
-      const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() - 3); // Go back 3 days (Monday -> Friday)
+      // Use the most recent trading day
+      const today = new Date();
+      let targetDate = new Date(today);
+      
+      // If today is weekend or early in week, go back to last Friday
+      const dayOfWeek = today.getDay(); // 0=Sunday, 1=Monday, etc.
+      if (dayOfWeek === 0) { // Sunday
+        targetDate.setDate(today.getDate() - 2); // Go to Friday
+      } else if (dayOfWeek === 1) { // Monday
+        targetDate.setDate(today.getDate() - 3); // Go to Friday
+      } else if (dayOfWeek === 6) { // Saturday
+        targetDate.setDate(today.getDate() - 1); // Go to Friday
+      } else {
+        // Tuesday-Friday, use previous day for most recent data
+        targetDate.setDate(today.getDate() - 1);
+      }
       
       const historicalDate = targetDate.toISOString().split('T')[0];
-      console.log(`[MarketDataService] Using Friday date for real trading data: ${historicalDate}`);
+      console.log(`[MarketDataService] Using trading date: ${historicalDate} (today is ${today.toLocaleDateString('en-US', {weekday: 'long'})})`);
 
       // Get options contracts for this symbol
       const contracts = await this.getOptionsContracts(symbol);

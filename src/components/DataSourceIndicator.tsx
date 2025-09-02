@@ -1,7 +1,9 @@
+import { DataSource } from '../types/options';
+
 interface DataSourceIndicatorProps {
   isConnected: boolean;
   isUsingRealData: boolean;
-  dataSource?: 'none' | 'realtime' | 'eod';
+  dataSource?: DataSource;
   loading?: boolean;
   error?: string | null;
   onRefresh?: () => void;

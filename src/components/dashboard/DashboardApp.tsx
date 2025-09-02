@@ -28,6 +28,7 @@ interface DashboardAppProps {
 export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
   const {
     activities,
+    topMovers,
     filters,
     setFilters,
     isConnected,
@@ -37,6 +38,15 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
     error,
     refreshData
   } = useOptionsData();
+
+  console.log('[DashboardApp] Data from useOptionsData:', {
+    activitiesCount: activities.length,
+    topMoversCount: topMovers?.length || 0,
+    loading: dataLoading,
+    error: error?.message || null,
+    dataSource,
+    sampleActivity: activities[0] || 'No activities'
+  });
 
   const {
     favorites,
@@ -159,7 +169,7 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
 
             {/* Full Width Top Movers */}
             <div className="w-full mb-6">
-              <TopMovers activities={displayActivities} />
+              <TopMovers topMovers={topMovers} />
             </div>
 
             {/* Full Width Activity Feed */}

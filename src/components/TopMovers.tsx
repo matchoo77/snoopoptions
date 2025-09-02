@@ -1,58 +1,17 @@
-import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Flame } from 'lucide-react';
-import { OptionsActivity } from '../types/options';
+import { TopMover } from '../types/options';
 
 interface TopMoversProps {
-  activities: OptionsActivity[];
+  topMovers?: TopMover[];
 }
 
-export function TopMovers({ activities }: TopMoversProps) {
-  console.log('[TopMovers] Received activities:', activities.length);
-
-  const topMovers = useMemo(() => {
-    console.log('[TopMovers] Processing activities:', activities.length);
-
-    // Group activities by symbol and calculate totals
-    const symbolData = activities.reduce((acc, activity) => {
-      if (!acc[activity.symbol]) {
-        acc[activity.symbol] = {
-          symbol: activity.symbol,
-          totalVolume: 0,
-          totalPremium: 0,
-          callVolume: 0,
-          putVolume: 0,
-          activities: [],
-        };
-      }
-
-      acc[activity.symbol].totalVolume += activity.volume;
-      acc[activity.symbol].totalPremium += activity.premium;
-      acc[activity.symbol].activities.push(activity);
-
-      if (activity.type === 'call') {
-        acc[activity.symbol].callVolume += activity.volume;
-      } else {
-        acc[activity.symbol].putVolume += activity.volume;
-      }
-
-      return acc;
-    }, {} as Record<string, any>);
-
-    console.log('[TopMovers] Symbol data keys:', Object.keys(symbolData));
-
-    // Sort by total premium and take top 10
-    const sorted = Object.values(symbolData)
-      .sort((a: any, b: any) => b.totalPremium - a.totalPremium)
-      .slice(0, 10);
-
-    console.log('[TopMovers] Top movers:', sorted.length);
-    return sorted;
-  }, [activities]);
+export function TopMovers({ topMovers = [] }: TopMoversProps) {
+  console.log('[TopMovers] Received top movers:', topMovers.length);
 
   const formatCurrency = (value: number) => {
     if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
     if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
-    return `$${value.toFixed(0)}`;
+    return `$${value.toFixed(2)}`;
   };
 
   const formatNumber = (num: number) => {
@@ -65,20 +24,20 @@ export function TopMovers({ activities }: TopMoversProps) {
     <div className="bg-white rounded-lg shadow-sm p-4 mb-6 border">
       <div className="flex items-center mb-4">
         <Flame className="w-5 h-5 text-orange-500 mr-2" />
-        <h3 className="text-lg font-semibold text-gray-900">Top Movers by Premium</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Top Movers</h3>
       </div>
 
       <div className="space-y-3" style={{ minHeight: '280px' }}>
         {topMovers.length === 0 ? (
           <div className="flex items-center justify-center p-6 text-gray-500" style={{ height: '280px' }}>
             <div className="text-center">
-              <div className="text-sm">Loading unusual options activity...</div>
+              <div className="text-sm">Loading top movers...</div>
               <div className="text-xs mt-1">Real-time data is being processed</div>
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {topMovers.map((mover: any, index) => (
+            {topMovers.slice(0, 10).map((mover, index) => (
               <div key={mover.symbol} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">
@@ -87,30 +46,30 @@ export function TopMovers({ activities }: TopMoversProps) {
                   <div>
                     <div className="font-semibold text-gray-900">{mover.symbol}</div>
                     <div className="text-xs text-gray-500">
-                      {mover.activities.length} alert{mover.activities.length > 1 ? 's' : ''}
+                      {formatCurrency(mover.price)}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-4 text-sm">
                   <div className="text-center">
+                    <div className="text-gray-500 text-xs">Change</div>
+                    <div className={`font-semibold ${mover.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {mover.change >= 0 ? '+' : ''}{mover.changePercent.toFixed(2)}%
+                    </div>
+                  </div>
+
+                  <div className="text-center">
                     <div className="text-gray-500 text-xs">Volume</div>
                     <div className="font-semibold text-gray-900">
-                      {formatNumber(mover.totalVolume)}
+                      {formatNumber(mover.volume)}
                     </div>
                   </div>
 
                   <div className="text-center">
-                    <div className="text-gray-500 text-xs">Premium</div>
-                    <div className="font-semibold text-gray-900">
-                      {formatCurrency(mover.totalPremium)}
-                    </div>
-                  </div>
-
-                  <div className="text-center">
-                    <div className="text-gray-500 text-xs">Sentiment</div>
+                    <div className="text-gray-500 text-xs">Trend</div>
                     <div className="flex items-center">
-                      {mover.callVolume > mover.putVolume ? (
+                      {mover.change >= 0 ? (
                         <TrendingUp className="w-4 h-4 text-green-600" />
                       ) : (
                         <TrendingDown className="w-4 h-4 text-red-600" />

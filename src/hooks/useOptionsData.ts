@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { OptionsActivity, FilterOptions } from '../types/options';
-import { useRealTimeData } from './useRealTimeData';
+import { usePolygonOptions } from './usePolygonOptions';
 
 export function useOptionsData() {
   const [filters, setFilters] = useState<FilterOptions>({
-    minVolume: 1, // Reduced from 3 for more data
-    minPremium: 1, // Reduced from 25 for more data
-    maxDaysToExpiration: 365, // Increased from 90 for more data
+    minVolume: 1,
+    minPremium: 1,
+    maxDaysToExpiration: 365,
     optionTypes: ['call', 'put'],
     sentiment: ['bullish', 'bearish', 'neutral'],
     tradeLocations: ['below-bid', 'at-bid', 'midpoint', 'at-ask', 'above-ask'],
@@ -17,47 +17,38 @@ export function useOptionsData() {
     showFavoritesOnly: false,
   });
 
-  console.log('[useOptionsData] Using premium market data plan');
+  console.log('[useOptionsData] Using fresh Polygon integration');
+  console.log('[useOptionsData] Initial filters:', filters);
 
-  // Use real-time data hook for live data
+  // Use the new Polygon hook
   const {
-    activities: realTimeActivities,
-    loading: realTimeLoading,
-    error: realTimeError,
-    fetchRealTimeData
-  } = useRealTimeData({
-    symbols: [],
-    enabled: true // Always enabled with configured key
+    activities: polygonActivities,
+    topMovers,
+    loading,
+    error,
+    lastUpdate,
+    refreshAll,
+    fetchSingleSymbol
+  } = usePolygonOptions({
+    symbols: ['SPY', 'QQQ', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX'],
+    autoRefresh: true,
+    refreshInterval: 30000
   });
 
-  // Determine data source and activities to use
-  const { allActivities, dataSource, isConnected, loading, error } = useMemo(() => {
-    console.log('[useOptionsData] Data source determination:', {
-      hasValidKey: true,
-      activitiesCount: realTimeActivities.length
-    });
+  console.log('[useOptionsData] Initial activities from Polygon:', polygonActivities.length);
+  console.log('[useOptionsData] Sample activity from Polygon:', polygonActivities[0] || 'No activities');
 
-    // Always use real-time data with configured key
-    return {
-      allActivities: realTimeActivities,
-      dataSource: 'realtime' as const,
-      isConnected: true,
-      loading: realTimeLoading,
-      error: realTimeError
-    };
-  }, [realTimeActivities, realTimeLoading, realTimeError]);
-
-  // Only trigger search when searchSymbol changes, not on mount
+  // Trigger single symbol search when searchSymbol changes
   useEffect(() => {
-    if (filters.searchSymbol && fetchRealTimeData) {
-      console.log('[useOptionsData] Search symbol changed, fetching data for:', filters.searchSymbol);
-      fetchRealTimeData([filters.searchSymbol]);
+    if (filters.searchSymbol && filters.searchSymbol.length >= 2) {
+      console.log('[useOptionsData] Searching for symbol:', filters.searchSymbol);
+      fetchSingleSymbol(filters.searchSymbol.toUpperCase());
     }
-  }, [filters.searchSymbol]);
+  }, [filters.searchSymbol, fetchSingleSymbol]);
 
   const filteredActivities = useMemo(() => {
     console.log('[useOptionsData] Filtering activities:', {
-      totalActivities: allActivities.length,
+      totalActivities: polygonActivities.length,
       filters: {
         minVolume: filters.minVolume,
         minPremium: filters.minPremium,
@@ -66,7 +57,7 @@ export function useOptionsData() {
       }
     });
 
-    let filtered: OptionsActivity[] = allActivities;
+    let filtered: OptionsActivity[] = polygonActivities;
 
     // Apply search symbol filter first
     if (filters.searchSymbol) {
@@ -116,17 +107,19 @@ export function useOptionsData() {
     }
 
     return finalFiltered;
-  }, [allActivities, filters]);
+  }, [polygonActivities, filters]);
 
   return {
     activities: filteredActivities,
+    topMovers,
     filters,
     setFilters,
-    isConnected,
-    isUsingRealData: dataSource === 'realtime',
-    dataSource,
+    isConnected: true,
+    isUsingRealData: true,
+    dataSource: 'polygon' as const,
     error,
     loading,
-    refreshData: fetchRealTimeData, // Expose refresh function
+    lastUpdate,
+    refreshData: refreshAll,
   };
 }

@@ -12,12 +12,14 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
   const [activities, setActivities] = useState<OptionsActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  // Track fetch times only via logs now; removed unused state to avoid lint errors
 
   const marketService = useMemo(() => new MarketDataService(), []);
 
   const fetchRealTimeData = async (targetSymbols?: string[]) => {
     console.log('[useRealTimeData] === REAL-TIME FETCH START ===');
+    console.log('[useRealTimeData] Current time:', new Date().toISOString());
+    console.log('[useRealTimeData] User timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
     const apiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
     
     if (!enabled) {
@@ -68,15 +70,9 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
 
       console.log('[useRealTimeData] Raw activities before enhancement:', unusualActivities.length);
 
-      // Add some real-time variability to make data appear live
-      const enhancedActivities = unusualActivities.map(activity => ({
-        ...activity,
-        timestamp: new Date(Date.now() - Math.random() * 3600000).toISOString(), // Random time within last hour
-        volume: Math.floor(activity.volume * (0.8 + Math.random() * 0.4)), // Add 20% variability
-        premium: Math.floor(activity.premium * (0.9 + Math.random() * 0.2)), // Add 10% variability
-      }));
-
-      console.log('[useRealTimeData] Enhanced activities:', enhancedActivities.length);
+      // Use raw activities as returned from the API (no synthetic augmentation)
+      const enhancedActivities = unusualActivities;
+      console.log('[useRealTimeData] Activities received (raw):', enhancedActivities.length);
       
       // Add new data on top of existing data instead of replacing it
       setActivities(prevActivities => {
@@ -96,8 +92,6 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
         return combined;
       });
       
-      setLastFetchTime(Date.now());
-      
       console.log('[useRealTimeData] === REAL-TIME DATA FETCH COMPLETE ===');
 
       if (enhancedActivities.length === 0) {
@@ -107,7 +101,35 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
         console.log('[useRealTimeData] 2. No trading volume on the date requested');
         console.log('[useRealTimeData] 3. Market closed or weekend');
         console.log('[useRealTimeData] 4. API rate limiting');
-        console.log('[useRealTimeData] Returning empty data for debugging');
+        console.log('[useRealTimeData] 5. Debugging - will show empty feed');
+        
+        // In dev mode, at least show when the fetch happened
+        if (finalSymbols.includes('SPY')) {
+          console.log('[useRealTimeData] Adding debug entry to show fetch is working...');
+          setActivities([{
+            id: `debug_${Date.now()}`,
+            symbol: 'DEBUG',
+            type: 'call' as const,
+            strike: 500,
+            expiration: '2025-12-31',
+            lastPrice: 1.0,
+            volume: 100,
+            premium: 10000,
+            openInterest: 1000,
+            bid: 0.95,
+            ask: 1.05,
+            timestamp: new Date().toISOString(),
+            sentiment: 'neutral' as const,
+            tradeLocation: 'midpoint' as const,
+            blockTrade: false,
+            unusual: true,
+            impliedVolatility: 0.3,
+            delta: 0.5,
+            gamma: 0.1,
+            theta: -0.05,
+            vega: 0.2,
+          }]);
+        }
       }
 
     } catch (err) {
@@ -126,15 +148,10 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
       const dateStr = now.toISOString().split('T')[0];
       const symbolActivities = await marketService.getMostActiveOptions(symbol, dateStr, 50);
       
-      // Add real-time characteristics
-      const realtimeActivities = symbolActivities.map(activity => ({
-        ...activity,
-        timestamp: new Date(Date.now() - Math.random() * 1800000).toISOString(), // Random time within last 30 minutes
-      }));
-      
+      // Use raw activities as-is
       setActivities(prev => {
         const filtered = prev.filter(a => a.symbol !== symbol);
-        return [...filtered, ...realtimeActivities];
+        return [...filtered, ...symbolActivities];
       });
     } catch (err) {
       console.error(`Error fetching real-time data for ${symbol}:`, err);
@@ -167,16 +184,14 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
       setTimeout(() => {
         console.log('useRealTimeData - Executing delayed initial fetch');
         fetchRealTimeData();
-      }, 100);
+      }, 1000); // Increased delay to 1 second
     }
   }, []); // Empty dependency array to run only once on mount
-
-  // Real-time updates - removed automatic interval since dashboard handles refresh
-  // The dashboard will call fetchRealTimeData every 200ms
 
   // Manual refresh on symbols change
   useEffect(() => {
     if (enabled && symbols.length > 0) {
+      console.log('useRealTimeData - Symbols changed, fetching for:', symbols);
       fetchRealTimeData();
     }
   }, [symbols, enabled]);

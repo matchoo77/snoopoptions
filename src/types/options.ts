@@ -22,6 +22,18 @@ export interface OptionsActivity {
   sentiment: 'bullish' | 'bearish' | 'neutral';
 }
 
+export interface TopMover {
+  symbol: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  volume: number;
+  marketCap?: number;
+  avgVolume?: number;
+}
+
+export type DataSource = 'none' | 'realtime' | 'eod' | 'polygon';
+
 export interface FilterOptions {
   minVolume: number;
   minPremium: number;
