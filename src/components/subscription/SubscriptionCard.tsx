@@ -16,16 +16,16 @@ export function SubscriptionCard({ product, isCurrentPlan = false, userToken }: 
     console.log('🔥 Subscribe button clicked for product:', product.name);
     console.log('🔥 User token available:', !!userToken);
     console.log('🔥 Price ID:', product.priceId);
+    console.log('🔥 Product mode:', product.mode);
+    
+    if (!userToken) {
+      console.error('❌ No user token available');
+      alert('Authentication error. Please refresh the page and try again.');
+      return;
+    }
     
     setLoading(true);
     try {
-      if (!userToken) {
-        console.error('❌ No user token available');
-        alert('Authentication error. Please refresh the page and try again.');
-        setLoading(false);
-        return;
-      }
-      
       console.log('🚀 Creating checkout session with Stripe...');
       const { url } = await createCheckoutSession({
         priceId: product.priceId,
@@ -101,7 +101,7 @@ export function SubscriptionCard({ product, isCurrentPlan = false, userToken }: 
         {product.interval === 'year' && (
           <div className="flex items-center">
             <Check className="w-5 h-5 text-green-500 mr-3" />
-            <span className="text-gray-700">Save $245 annually</span>
+            <span className="text-gray-700">Save significantly vs monthly</span>
           </div>
         )}
       </div>
@@ -129,6 +129,12 @@ export function SubscriptionCard({ product, isCurrentPlan = false, userToken }: 
           </>
         )}
       </button>
+
+      {!isCurrentPlan && (
+        <p className="text-xs text-gray-500 text-center mt-3">
+          Secure payment processing by Stripe
+        </p>
+      )}
     </div>
   );
 }
