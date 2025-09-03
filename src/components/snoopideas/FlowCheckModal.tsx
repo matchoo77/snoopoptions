@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, TrendingUp } from 'lucide-react';
+import { polygonBenzingaService } from '../../lib/polygonBenzinga';
 
 interface BlockTrade {
   id: string;
@@ -31,92 +32,68 @@ export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
   }, [ticker]);
 
   const fetchCompanyInfo = async () => {
-    const analystData: Record<string, any> = {
-      'AAPL': { 
-        name: 'Apple Inc.', 
-        price: 182.50,
-        firm: 'Morgan Stanley',
-        action: 'Upgrade',
-        prevTarget: 175.00,
-        newTarget: 190.00
-      },
-      'NVDA': { 
-        name: 'NVIDIA Corporation', 
-        price: 515.80,
-        firm: 'Goldman Sachs',
-        action: 'Price Target Raise',
-        prevTarget: 500.00,
-        newTarget: 575.00
-      },
-      'TSLA': { 
-        name: 'Tesla, Inc.', 
-        price: 245.30,
-        firm: 'Barclays',
-        action: 'Downgrade',
-        prevTarget: 275.00,
-        newTarget: 250.00
-      },
+    // Use basic company name mapping only
+    const companyNames: Record<string, string> = {
+      'AAPL': 'Apple Inc.',
+      'NVDA': 'NVIDIA Corporation', 
+      'TSLA': 'Tesla, Inc.',
+      'MSFT': 'Microsoft Corporation',
+      'GOOGL': 'Alphabet Inc.',
+      'AMZN': 'Amazon.com Inc.',
+      'META': 'Meta Platforms Inc.',
     };
 
-    setCompanyInfo(analystData[ticker] || { 
-      name: `${ticker} Corporation`, 
-      price: 150.00,
-      firm: 'Goldman Sachs',
-      action: 'Price Target Raise',
-      prevTarget: 500.00,
-      newTarget: 575.00
+    setCompanyInfo({ 
+      name: companyNames[ticker] || `${ticker} Corporation`, 
+      price: 0, // No hardcoded prices
+      firm: 'Unknown',
+      action: 'Unknown',
     });
   };
 
   const fetchBlockTrades = async () => {
     setLoading(true);
     try {
-      // Sample block trades that match the modal format from your screenshot
-      const sampleTrades: BlockTrade[] = [
-        {
-          id: '1',
-          date: '2025-08-30',
-          time: '10:00',
-          optionType: 'call',
-          strike: 520,
-          expiry: 'Feb 16, 24',
-          volume: 3200,
-          dollarVol: 1440000,
-          execution: 'Midpoint',
-          premium: 4.50,
-          amount: 1440000,
-        },
-        {
-          id: '2',
-          date: '2025-08-30',
-          time: '11:15',
-          optionType: 'call',
-          strike: 525,
-          expiry: 'Feb 16, 24',
-          volume: 2100,
-          dollarVol: 945000,
-          execution: 'At Ask',
-          premium: 4.50,
-          amount: 945000,
-        },
-        {
-          id: '3',
-          date: '2025-08-30',
-          time: '12:30',
-          optionType: 'put',
-          strike: 510,
-          expiry: 'Feb 16, 24',
-          volume: 1800,
-          dollarVol: 720000,
-          execution: 'Above Ask',
-          premium: 4.00,
-          amount: 720000,
-        },
-      ];
+      console.log(`Fetching options trades for ${ticker}...`);
+      
+      // Fetch real options trades from Polygon API
+      const optionsData = await polygonBenzingaService.fetchOptionsTradesForTicker(ticker);
+      
+      if (optionsData.length === 0) {
+        console.log(`No options trades found for ${ticker}`);
+        setBlockTrades([]);
+        return;
+      }
 
-      setBlockTrades(sampleTrades.sort((a, b) => b.amount - a.amount));
+      // Transform API data to component format
+      const transformedTrades: BlockTrade[] = optionsData.map((trade, index) => {
+        const calculatedAmount = trade.size * trade.price * 100; // Calculate amount as specified
+        
+        return {
+          id: `${ticker}_${index}`,
+          date: polygonBenzingaService.formatDate(trade.participant_timestamp),
+          time: polygonBenzingaService.formatTime(trade.participant_timestamp),
+          optionType: trade.details?.contract_type === 'call' ? 'call' : 'put',
+          strike: trade.details?.strike_price || 0,
+          expiry: trade.details?.expiration_date ? 
+            new Date(trade.details.expiration_date).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric', 
+              year: '2-digit' 
+            }) : 'Unknown',
+          volume: trade.size,
+          dollarVol: calculatedAmount,
+          execution: polygonBenzingaService.getTradeLocation(trade.conditions),
+          premium: trade.price,
+          amount: calculatedAmount,
+        };
+      });
+
+      setBlockTrades(transformedTrades);
+
     } catch (error) {
-      console.error('Error fetching block trades:', error);
+      console.error('Error fetching options trades:', error);
+      setBlockTrades([]);
     } finally {
       setLoading(false);
     }
@@ -161,37 +138,43 @@ export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">{companyInfo.name}</h3>
-                <div className="text-lg font-bold text-gray-900">${companyInfo.price}</div>
-                <div className="text-sm text-gray-600">Current Price</div>
+                {companyInfo.price > 0 && (
+                  <>
+                    <div className="text-lg font-bold text-gray-900">${companyInfo.price}</div>
+                    <div className="text-sm text-gray-600">Current Price</div>
+                  </>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">Analyst Firm</span>
-                <div className="font-medium text-gray-900">{companyInfo.firm}</div>
-              </div>
-              <div>
-                <span className="text-gray-600">Action Date</span>
-                <div className="font-medium text-gray-900">Jan 15, 2024</div>
-              </div>
-              {companyInfo.prevTarget && companyInfo.newTarget && (
-                <>
+            {(companyInfo.firm !== 'Unknown' || companyInfo.action !== 'Unknown') && (
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                {companyInfo.firm !== 'Unknown' && (
                   <div>
-                    <span className="text-gray-600">Previous Target</span>
-                    <div className="font-medium text-gray-900">${companyInfo.prevTarget.toFixed(2)}</div>
+                    <span className="text-gray-600">Analyst Firm</span>
+                    <div className="font-medium text-gray-900">{companyInfo.firm}</div>
                   </div>
-                  <div>
-                    <span className="text-gray-600">New Target</span>
-                    <div className="font-medium text-gray-900">${companyInfo.newTarget.toFixed(2)}</div>
-                  </div>
-                </>
-              )}
-            </div>
+                )}
+                <div>
+                  <span className="text-gray-600">Action Date</span>
+                  <div className="font-medium text-gray-900">--</div>
+                </div>
+                {companyInfo.prevTarget && companyInfo.newTarget && (
+                  <>
+                    <div>
+                      <span className="text-gray-600">Previous Target</span>
+                      <div className="font-medium text-gray-900">${companyInfo.prevTarget.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">New Target</span>
+                      <div className="font-medium text-gray-900">${companyInfo.newTarget.toFixed(2)}</div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
-            <div className="mt-4 text-sm text-gray-600">
-              Raised price target on continued AI datacenter demand strength
-            </div>
+            {/* Remove hardcoded description */}
           </div>
         </div>
 
@@ -202,10 +185,14 @@ export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
               <TrendingUp className="w-5 h-5 text-teal-600" />
               <h3 className="text-lg font-semibold text-gray-900">Top Options Flows</h3>
             </div>
-            <div className="text-right">
-              <div className="text-lg font-bold text-gray-900">$1.4M</div>
-              <div className="text-sm text-gray-600">Total Dollar Volume</div>
-            </div>
+            {blockTrades.length > 0 && (
+              <div className="text-right">
+                <div className="text-lg font-bold text-gray-900">
+                  {formatCurrency(blockTrades.reduce((sum, trade) => sum + trade.amount, 0))}
+                </div>
+                <div className="text-sm text-gray-600">Total Dollar Volume</div>
+              </div>
+            )}
           </div>
 
           {loading ? (

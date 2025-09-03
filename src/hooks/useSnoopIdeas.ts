@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { polygonBenzingaService } from '../lib/polygonBenzinga';
 
 interface AnalystAction {
   id: string;
@@ -20,114 +21,91 @@ export function useSnoopIdeas() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const generateSampleActions = (): AnalystAction[] => {
-    return [
-      {
-        id: '1',
-        ticker: 'AAPL',
-        company: 'Apple Inc.',
-        actionType: 'Upgrade',
-        analystFirm: 'Morgan Stanley',
-        actionDate: '2025-01-15',
-        previousTarget: 175.00,
-        newTarget: 190.00,
-        previousRating: 'Equal-Weight',
-        newRating: 'Overweight',
-      },
-      {
-        id: '2',
-        ticker: 'NVDA',
-        company: 'NVIDIA Corporation',
-        actionType: 'Price Target Raise',
-        analystFirm: 'Goldman Sachs',
-        actionDate: '2025-01-15',
-        previousTarget: 500.00,
-        newTarget: 575.00,
-        previousRating: 'Buy',
-        newRating: 'Buy',
-      },
-      {
-        id: '3',
-        ticker: 'TSLA',
-        company: 'Tesla, Inc.',
-        actionType: 'Downgrade',
-        analystFirm: 'Barclays',
-        actionDate: '2025-01-15',
-        previousTarget: 275.00,
-        newTarget: 250.00,
-        previousRating: 'Overweight',
-        newRating: 'Equal-Weight',
-      },
-    ];
-  };
-
   const fetchAnalystActions = async () => {
     setLoading(true);
     setError(null);
 
     try {
+      const today = new Date().toISOString().split('T')[0];
+
       // First try to get cached data from Supabase
-      const { data: cachedActions, error: dbError } = await supabase
+      const { data: cachedIdeas, error: dbError } = await supabase
         .from('snoopideas')
         .select('*')
-        .eq('action_date', new Date().toISOString().split('T')[0])
-        .order('created_at', { ascending: false });
+        .gte('fetched_at', `${today}T00:00:00.000Z`)
+        .order('fetched_at', { ascending: false });
 
-      if (dbError) {
-        console.warn('Error fetching cached actions:', dbError);
-      }
-
-      if (cachedActions && cachedActions.length > 0) {
-        // Transform database format to component format
-        const transformedActions: AnalystAction[] = cachedActions.map(action => ({
-          id: action.id,
-          ticker: action.ticker,
-          company: getCompanyName(action.ticker),
-          actionType: action.action_type,
-          analystFirm: action.analyst_firm || 'Unknown',
-          actionDate: action.action_date,
-          previousTarget: action.previous_target,
-          newTarget: action.new_target,
-          rating: action.rating,
+      if (!dbError && cachedIdeas && cachedIdeas.length > 0) {
+        console.log(`Found ${cachedIdeas.length} cached Benzinga ratings for today`);
+        
+        // Transform cached data to component format
+        const transformedActions: AnalystAction[] = cachedIdeas.map(cached => ({
+          id: cached.id,
+          ticker: cached.ticker,
+          company: getCompanyName(cached.ticker),
+          actionType: cached.action_type,
+          analystFirm: extractFirm(cached.action_type),
+          actionDate: today,
         }));
 
         setAnalystActions(transformedActions);
-      } else {
-        // Use sample data if no cached data available
-        const sampleActions = generateSampleActions();
-        setAnalystActions(sampleActions);
-
-        // Cache sample data in Supabase for future use
-        const dbInserts = sampleActions.map(action => ({
-          ticker: action.ticker,
-          action_type: action.actionType,
-          analyst_firm: action.analystFirm,
-          action_date: action.actionDate,
-          previous_target: action.previousTarget,
-          new_target: action.newTarget,
-          rating: action.newRating,
-        }));
-
-        const { error: insertError } = await supabase
-          .from('snoopideas')
-          .upsert(dbInserts, {
-            onConflict: 'ticker,action_type,analyst_firm,action_date',
-            ignoreDuplicates: true
-          });
-
-        if (insertError) {
-          console.warn('Error caching analyst actions:', insertError);
-        }
+        return;
       }
+
+      // If no cached data, fetch from Polygon Benzinga API
+      console.log('No cached data found, fetching from Polygon Benzinga API...');
+      
+      const benzingaRatings = await polygonBenzingaService.fetchTodaysBenzingaRatings();
+      
+      if (benzingaRatings.length === 0) {
+        console.log('No Benzinga ratings found for today');
+        setAnalystActions([]);
+        return;
+      }
+
+      // Transform and cache the data
+      const ideasToCache = benzingaRatings.map(rating => ({
+        ticker: rating.ticker,
+        action_type: polygonBenzingaService.formatActionType(rating),
+      }));
+
+      // Insert into Supabase for caching
+      const { data: insertedData, error: insertError } = await supabase
+        .from('snoopideas')
+        .insert(ideasToCache)
+        .select();
+
+      if (insertError) {
+        console.error('Error caching data to Supabase:', insertError);
+      } else {
+        console.log(`Cached ${insertedData?.length || 0} new Benzinga ratings`);
+      }
+
+      // Transform API data to component format
+      const transformedActions: AnalystAction[] = benzingaRatings.map((rating, index) => ({
+        id: `api_${index}`,
+        ticker: rating.ticker,
+        company: getCompanyName(rating.ticker),
+        actionType: polygonBenzingaService.formatActionType(rating),
+        analystFirm: rating.firm || 'Unknown Firm',
+        actionDate: today,
+      }));
+
+      setAnalystActions(transformedActions);
 
     } catch (err) {
       console.error('Error fetching analyst actions:', err);
       setError('Failed to fetch analyst actions');
-      // Fallback to sample data
-      setAnalystActions(generateSampleActions());
+      setAnalystActions([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const extractFirm = (actionType: string): string => {
+    // Extract firm name from action type string like "Upgrade by Morgan Stanley"
+    const byMatch = actionType.match(/by (.+)$/);
+    return byMatch ? byMatch[1] : 'Unknown Firm';
   };
 
   const getCompanyName = (ticker: string): string => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { RefreshCw, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { FlowCheckModal } from './FlowCheckModal';
 import { useSnoopIdeas } from '../../hooks/useSnoopIdeas';
@@ -35,25 +35,6 @@ export function SnoopIdeasPanel() {
       return <TrendingDown className="w-4 h-4 text-red-500" />;
     }
     return <TrendingUp className="w-4 h-4 text-blue-500" />;
-  };
-
-  const getActionColor = (actionType: string) => {
-    if (actionType.toLowerCase().includes('upgrade') || actionType.toLowerCase().includes('raised')) {
-      return 'text-green-600';
-    }
-    if (actionType.toLowerCase().includes('downgrade') || actionType.toLowerCase().includes('lowered')) {
-      return 'text-red-600';
-    }
-    return 'text-blue-600';
-  };
-
-  const formatActionType = (action: AnalystAction) => {
-    if (action.actionType.toLowerCase().includes('price target')) {
-      if (action.previousTarget && action.newTarget) {
-        return `Price Target ${action.actionType.toLowerCase().includes('raised') ? 'Raise' : 'Cut'} to $${action.newTarget}`;
-      }
-    }
-    return `${action.actionType} by ${action.analystFirm}`;
   };
 
   return (
@@ -101,16 +82,16 @@ export function SnoopIdeasPanel() {
           </div>
         ) : (
           <div className="space-y-3">
-            {analystActions.map((action) => (
+            {analystActions.map((action: AnalystAction) => (
               <div key={action.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="text-lg font-bold text-blue-600">{action.ticker}</span>
                       {getActionIcon(action.actionType)}
-                      <span className="text-sm text-gray-500">Jan 15</span>
+                      <span className="text-sm text-gray-500">{new Date(action.actionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                     </div>
-                    
+
                     <div className="mb-2">
                       <h3 className="font-medium text-gray-900">{action.company}</h3>
                       <p className="text-sm text-gray-600">{action.analystFirm}</p>
@@ -123,7 +104,7 @@ export function SnoopIdeasPanel() {
                           <span className="font-medium">${action.previousTarget.toFixed(2)} → ${action.newTarget.toFixed(2)}</span>
                         </div>
                       )}
-                      
+
                       {action.previousRating && action.newRating && (
                         <div className="text-sm">
                           <span className="text-gray-600">Rating: </span>
@@ -135,9 +116,7 @@ export function SnoopIdeasPanel() {
                     <div className="mt-2">
                       <span className="text-sm text-gray-600">Current Price</span>
                       <div className="text-lg font-bold text-gray-900">
-                        ${action.ticker === 'AAPL' ? '182.50' : 
-                          action.ticker === 'NVDA' ? '515.80' : 
-                          action.ticker === 'TSLA' ? '245.30' : '150.00'}
+                        --
                       </div>
                     </div>
                   </div>
