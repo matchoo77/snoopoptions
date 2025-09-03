@@ -101,10 +101,6 @@ export function useSnoopIdeas() {
         actionType: polygonBenzingaService.formatActionType(rating),
         analystFirm: rating.firm || 'Unknown Firm',
         actionDate: today,
-      }));
-
-      setAnalystActions(transformedActions);
-
       .gte('created_at', today)
       .order('created_at', { ascending: false });
       setError('Failed to fetch analyst actions');
