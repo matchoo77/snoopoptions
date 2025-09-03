@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
-import { useTrialStatus } from './hooks/useTrialStatus';
-import { useTrialExpiration } from './hooks/useTrialExpiration';
+import { useSubscriptionOnly } from './hooks/useSubscriptionOnly';
 import { MarketingApp } from './components/marketing/MarketingApp';
 import { LoginForm } from './components/auth/LoginForm';
 import { SignupForm } from './components/auth/SignupForm';
 import { DashboardApp } from './components/dashboard/DashboardApp';
 import { SubscriptionPage } from './components/subscription/SubscriptionPage';
 import { SuccessPage } from './components/subscription/SuccessPage';
-import { SubscriptionGate } from './components/SubscriptionGate';
-import { TrialExpiredNotification } from './components/TrialExpiredNotification';
+import { SubscriptionOnlyGate } from './components/SubscriptionOnlyGate';
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { trialStatus, loading: trialLoading, refetch: refetchTrialStatus } = useTrialStatus();
+  const { subscriptionStatus, loading: subscriptionLoading, refetch: refetchSubscriptionStatus } = useSubscriptionOnly();
   
   // Initialize currentView based on URL or default to 'marketing'
   const getInitialView = () => {
@@ -21,57 +19,18 @@ function App() {
     if (urlParams.get('success') === 'true') {
       return 'success';
     }
-    // If user is already logged in on page load, default to dashboard
-    // This will be updated by the useEffect once auth loads
     return 'marketing';
   };
   
-  const [currentView, setCurrentView] = useState<'marketing' | 'login' | 'signup' | 'dashboard' | 'subscription' | 'success' | 'auth'>(getInitialView);
-  const [showTrialExpiredMessage, setShowTrialExpiredMessage] = useState(false);
-  const [forceShowSubscriptionGate, setForceShowSubscriptionGate] = useState(false);
-
-  // Handle trial expiration for logged-in users
-  useTrialExpiration({
-    trialStatus,
-    onTrialExpired: () => {
-      console.log('Trial expired, showing subscription gate');
-      setForceShowSubscriptionGate(true);
-      setShowTrialExpiredMessage(true);
-      
-      // Hide the message after 8 seconds but keep subscription gate
-      setTimeout(() => {
-        setShowTrialExpiredMessage(false);
-      }, 8000);
-    }
-  });
-
-  // Reset forced subscription gate when user has valid access
-  useEffect(() => {
-    if (trialStatus && (trialStatus.hasActiveTrial || trialStatus.hasActiveSubscription)) {
-      console.log('User has valid access, clearing forced subscription gate:', {
-        hasActiveTrial: trialStatus.hasActiveTrial,
-        hasActiveSubscription: trialStatus.hasActiveSubscription,
-        accessType: trialStatus.accessType,
-        daysRemaining: trialStatus.trialDaysRemaining
-      });
-      setForceShowSubscriptionGate(false);
-      setShowTrialExpiredMessage(false);
-    }
-  }, [trialStatus?.hasActiveTrial, trialStatus?.hasActiveSubscription]);
+  const [currentView, setCurrentView] = useState<'marketing' | 'login' | 'signup' | 'dashboard' | 'subscription' | 'success'>(getInitialView);
 
   const handleLogout = async () => {
     try {
       await signOut();
       setCurrentView('marketing');
-      setForceShowSubscriptionGate(false);
-      setShowTrialExpiredMessage(false);
     } catch (error) {
       console.error('Logout error:', error);
     }
-  };
-
-  const handleCloseTrialNotification = () => {
-    setShowTrialExpiredMessage(false);
   };
 
   // Check URL parameters for payment success/cancel
@@ -113,9 +72,9 @@ function App() {
 
   const handleAuthSuccess = () => {
     setCurrentView('dashboard');
-    // Refresh trial status when user logs in
+    // Refresh subscription status when user logs in
     setTimeout(() => {
-      refetchTrialStatus();
+      refetchSubscriptionStatus();
     }, 100);
   };
 
@@ -143,13 +102,6 @@ function App() {
   // Handle different views
   return (
     <>
-      {/* Trial expired notification */}
-      {showTrialExpiredMessage && (
-        <TrialExpiredNotification 
-          onClose={handleCloseTrialNotification} 
-        />
-      )}
-
       {(() => {
         switch (currentView) {
     case 'login':
@@ -212,24 +164,23 @@ function App() {
         );
       }
 
-      // Show loading while trial status is being fetched (only on first load)
-      if (trialLoading && !trialStatus) {
+      // Show loading while subscription status is being fetched
+      if (subscriptionLoading) {
         return (
           <div className="min-h-screen bg-gray-50 flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading your access status...</p>
+              <p className="text-gray-600">Loading your subscription status...</p>
             </div>
           </div>
         );
       }
 
-      // Check if user has access (trial or subscription) or if we're forcing the subscription gate
-      if (forceShowSubscriptionGate || (!trialStatus?.hasActiveTrial && !trialStatus?.hasActiveSubscription)) {
+      // Check if user has active subscription
+      if (!subscriptionStatus?.hasActiveSubscription) {
         return (
-          <SubscriptionGate 
+          <SubscriptionOnlyGate 
             onUpgrade={handleUpgrade}
-            trialExpired={forceShowSubscriptionGate || trialStatus?.accessType === 'expired'}
             onLogout={handleLogout}
           />
         );
@@ -237,7 +188,6 @@ function App() {
 
       return (
         <DashboardApp
-          trialStatus={trialStatus}
           onUpgrade={handleUpgrade}
         />
       );

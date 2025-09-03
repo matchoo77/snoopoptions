@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../Header';
-import { TrialBanner } from '../TrialBanner';
 import { MarketStatusIndicator } from '../MarketStatusIndicator';
 import { useOptionsData } from '../../hooks/useOptionsData';
 import { useFavorites } from '../../hooks/useFavorites';
@@ -15,18 +14,10 @@ import { WatchlistPanel } from '../WatchlistPanel';
 import { SnoopTestPanel } from '../snooptest/SnoopTestPanel';
 
 interface DashboardAppProps {
-  trialStatus?: {
-    hasActiveTrial: boolean;
-    hasActiveSubscription: boolean;
-    accessType: 'trial' | 'subscription' | 'expired';
-    trialDaysRemaining: number;
-    trialEndDate?: string | null;
-    trialStartDate?: string | null;
-  };
   onUpgrade?: () => void;
 }
 
-export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
+export function DashboardApp({}: DashboardAppProps) {
   const {
     activities,
     topMovers,
@@ -86,15 +77,6 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Show trial banner if user is on trial */}
-        {trialStatus && trialStatus.hasActiveTrial && onUpgrade && (
-          <TrialBanner
-            daysRemaining={trialStatus.trialDaysRemaining}
-            trialEndDate={trialStatus.trialEndDate}
-            onUpgrade={onUpgrade}
-          />
-        )}
-
         {/* Market Status and Data Source Indicators */}
         <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
           <MarketStatusIndicator 

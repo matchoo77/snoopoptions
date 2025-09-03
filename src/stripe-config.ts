@@ -11,26 +11,19 @@ export interface StripeProduct {
 
 export const STRIPE_PRODUCTS: StripeProduct[] = [
   {
-    id: 'prod_SsbPo4VmaAziVi',
-    priceId: 'mmpub-snoopoptions',
-    name: 'SnoopFlow Scanner - Monthly',
+    id: 'prod_SysDPjI2j3M41J',
+    priceId: 'REPLACE_WITH_ACTUAL_PRICE_ID', // You need to provide the price ID from Stripe dashboard
+    name: 'SnoopFlow Scanner - Annual',
     description: 'Get access to real-time unusual options activity alerts and advanced filtering capabilities.',
     mode: 'subscription',
-    price: 37.00,
-    currency: 'usd',
-    interval: 'month',
-  },
-  {
-    id: 'prod_Ssba0qfTE4uTF8',
-    priceId: 'price_1RwqMw4gvT1xDWNkhMDFhQvU',
-    name: 'SnoopFlow Scanner - Annual',
-    description: 'Get access to real-time unusual options activity alerts and advanced filtering capabilities with annual savings.',
-    mode: 'subscription',
-    price: 199.00,
+    price: 399.00,
     currency: 'usd',
     interval: 'year',
   },
 ];
+
+// Stripe live public key
+export const STRIPE_PUBLISHABLE_KEY = 'pk_live_4NBJWxSyaJOvcK9vpK9xbMEa';
 
 export function getProductByPriceId(priceId: string): StripeProduct | undefined {
   return STRIPE_PRODUCTS.find(product => product.priceId === priceId);
