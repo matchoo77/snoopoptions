@@ -43,7 +43,32 @@ Deno.serve(async (req) => {
       return corsResponse({ error: 'Method not allowed' }, 405);
     }
 
-    const { url } = await req.json();
+    const { action, symbol, limit = 50 } = await req.json();
+
+    if (action === 'options-snapshot' && symbol) {
+      const url = `https://api.polygon.io/v3/snapshot/options/${symbol}?apikey=${POLYGON_API_KEY}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return corsResponse(data);
+    }
+
+    if (action === 'stock-snapshots') {
+      const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers?apikey=${POLYGON_API_KEY}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return corsResponse(data);
+    }
+
     if (!url || typeof url !== 'string') {
       return corsResponse({ error: 'Missing url' }, 400);
     }

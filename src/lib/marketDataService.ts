@@ -109,6 +109,35 @@ export class MarketDataService {
     }
   }
 
+  async getOptionsSnapshot(symbol: string): Promise<any> {
+    const response = await this.supabase.functions.invoke('polygon-proxy', {
+      body: { 
+        action: 'options-snapshot',
+        symbol: symbol.toUpperCase()
+      }
+    });
+
+    if (response.error) {
+      throw new Error(`Polygon proxy error: ${response.error.message}`);
+    }
+
+    return response.data;
+  }
+
+  async getStockSnapshots(): Promise<any> {
+    const response = await this.supabase.functions.invoke('polygon-proxy', {
+      body: { 
+        action: 'stock-snapshots'
+      }
+    });
+
+    if (response.error) {
+      throw new Error(`Polygon proxy error: ${response.error.message}`);
+    }
+
+    return response.data;
+  }
+
   async getMostActiveOptions(symbol: string, date: string, limit: number = 50): Promise<OptionsActivity[]> {
     console.log(`[MarketDataService] Fetching most active options for ${symbol} on ${date}`);
     
