@@ -118,5 +118,6 @@ export function useAuth() {
     session,
     loading,
     signOut,
+    userToken: session?.access_token || null,
   };
 }
