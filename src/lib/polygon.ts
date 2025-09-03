@@ -47,15 +47,12 @@ export class PolygonAPI {
 
   connectWebSocket(onData: (data: any[]) => void, onError?: (error: string) => void) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      console.log('[Polygon] WebSocket already connected');
       return;
     }
 
-    console.log('[Polygon] Connecting to options WebSocket...');
     this.ws = new WebSocket('wss://socket.polygon.io/options');
 
     this.ws.onopen = () => {
-      console.log('[Polygon] ✅ WebSocket connected');
       this.setIsConnected(true);
       this.setError(null);
       this.reconnectAttempts = 0;
@@ -65,37 +62,31 @@ export class PolygonAPI {
         action: 'auth',
         params: this.apiKey
       };
-      console.log('[Polygon] 🔐 Authenticating...');
       this.ws?.send(JSON.stringify(authMessage));
     };
 
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('[Polygon] 📨 Received message:', data);
 
         if (Array.isArray(data)) {
           data.forEach(msg => {
             if (msg.ev === 'status') {
               if (msg.status === 'auth_success') {
-                console.log('[Polygon] ✅ Authentication successful');
-
                 // Subscribe to options trades
                 const subscribeMessage = {
                   action: 'subscribe',
                   params: 'T.O:*' // All options trades (15-min delayed)
                 };
-                console.log('[Polygon] 📡 Subscribing to options trades...');
                 this.ws?.send(JSON.stringify(subscribeMessage));
               } else if (msg.status === 'auth_failed') {
-                console.log('[Polygon] ❌ Authentication failed');
                 this.setError('Authentication failed. Please check your API key.');
                 this.setIsConnected(false);
               } else if (msg.status === 'success' && msg.message?.includes('subscribed')) {
-                console.log('[Polygon] ✅ Successfully subscribed to options trades');
+                // Successfully subscribed to options trades
               }
             } else if (msg.ev === 'T' && msg.sym?.startsWith('O:')) {
-              console.log('[Polygon] 📈 Options trade received:', msg.sym, 'size:', msg.s, 'price:', msg.p);
+              // Options trade received
             }
           });
 
@@ -108,11 +99,9 @@ export class PolygonAPI {
     };
 
     this.ws.onclose = (event) => {
-      console.log('[Polygon] WebSocket closed:', event.code, event.reason);
       this.setIsConnected(false);
 
       if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
-        console.log(`[Polygon] Attempting to reconnect (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})...`);
         setTimeout(() => {
           this.reconnectAttempts++;
           this.connectWebSocket(onData, onError);
@@ -130,7 +119,6 @@ export class PolygonAPI {
 
   disconnect() {
     if (this.ws) {
-      console.log('[Polygon] Disconnecting WebSocket...');
       this.ws.close(1000, 'User disconnected');
       this.ws = null;
     }
@@ -210,7 +198,7 @@ export function isBlockTrade(volume: number, premium: number): boolean {
 export function calculateSentiment(
   type: 'call' | 'put',
   delta: number,
-  volume: number
+  _volume: number
 ): 'bullish' | 'bearish' | 'neutral' {
   if (type === 'call' && delta > 0.3) return 'bullish';
   if (type === 'put' && delta < -0.3) return 'bearish';

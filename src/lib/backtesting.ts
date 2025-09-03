@@ -79,7 +79,7 @@ export class BacktestingEngine {
     } catch (error) {
       console.error('[Backtest] Advanced pattern recognition error:', error);
 
-      // Return empty results instead of synthetic data
+      // Return empty results - no real data available without proper API integration
       const emptyResults: BacktestResult[] = [];
       const summary = this.generateSummary(emptyResults);
 
@@ -131,7 +131,7 @@ export class BacktestingEngine {
                 priceBefore: previous.c,
                 priceAfter: current.c,
                 percentChange,
-                daysFromTrade: Math.floor(Math.random() * 3) + 1, // 1-3 days
+                daysFromTrade: 1, // Would need to calculate actual days from trade data
               });
             }
           }

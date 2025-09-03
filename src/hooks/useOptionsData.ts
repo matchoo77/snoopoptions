@@ -17,14 +17,12 @@ export function useOptionsData() {
     showFavoritesOnly: false,
   });
 
-  console.log('[useOptionsData] Using fresh Polygon integration');
-  console.log('[useOptionsData] Initial filters:', filters);
-
   // Use the new Polygon hook
   const {
     activities: polygonActivities,
     topMovers,
     loading,
+    topMoversLoading,
     error,
     lastUpdate,
     refreshAll,
@@ -32,31 +30,17 @@ export function useOptionsData() {
   } = usePolygonOptions({
     symbols: ['SPY', 'QQQ', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX'],
     autoRefresh: true,
-    refreshInterval: 30000
+    refreshInterval: 10000 // Reduced to 10 seconds for faster updates
   });
-
-  console.log('[useOptionsData] Initial activities from Polygon:', polygonActivities.length);
-  console.log('[useOptionsData] Sample activity from Polygon:', polygonActivities[0] || 'No activities');
 
   // Trigger single symbol search when searchSymbol changes
   useEffect(() => {
     if (filters.searchSymbol && filters.searchSymbol.length >= 2) {
-      console.log('[useOptionsData] Searching for symbol:', filters.searchSymbol);
       fetchSingleSymbol(filters.searchSymbol.toUpperCase());
     }
   }, [filters.searchSymbol, fetchSingleSymbol]);
 
   const filteredActivities = useMemo(() => {
-    console.log('[useOptionsData] Filtering activities:', {
-      totalActivities: polygonActivities.length,
-      filters: {
-        minVolume: filters.minVolume,
-        minPremium: filters.minPremium,
-        searchSymbol: filters.searchSymbol,
-        maxDaysToExpiration: filters.maxDaysToExpiration
-      }
-    });
-
     let filtered: OptionsActivity[] = polygonActivities;
 
     // Apply search symbol filter first
@@ -64,7 +48,6 @@ export function useOptionsData() {
       filtered = filtered.filter((activity: OptionsActivity) =>
         activity.symbol.toLowerCase().includes(filters.searchSymbol.toLowerCase())
       );
-      console.log('[useOptionsData] After search filter:', filtered.length);
     }
 
     const finalFiltered = filtered.filter((activity: OptionsActivity) => {
@@ -101,11 +84,6 @@ export function useOptionsData() {
       return true;
     });
 
-    console.log('[useOptionsData] Final filtered activities:', finalFiltered.length);
-    if (finalFiltered.length > 0) {
-      console.log('[useOptionsData] Sample activity:', finalFiltered[0]);
-    }
-
     return finalFiltered;
   }, [polygonActivities, filters]);
 
@@ -119,6 +97,7 @@ export function useOptionsData() {
     dataSource: 'polygon' as const,
     error,
     loading,
+    topMoversLoading,
     lastUpdate,
     refreshData: refreshAll,
   };

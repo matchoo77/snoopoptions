@@ -86,8 +86,6 @@ function App() {
 
   // Handle authentication state changes
   useEffect(() => {
-    console.log('Auth state changed:', { user: !!user, authLoading, currentView });
-
     if (!authLoading) {
       if (user) {
         const urlParams = new URLSearchParams(window.location.search);
@@ -95,15 +93,12 @@ function App() {
           setCurrentView('success');
         } else if (currentView === 'login' || currentView === 'signup' || currentView === 'marketing') {
           // Only auto-navigate to dashboard if user is coming from auth pages or marketing
-          console.log('User authenticated, navigating to dashboard');
           setCurrentView('dashboard');
         }
         // If currentView is already 'dashboard', 'subscription', or 'success', keep it
       } else {
         // User signed out or session expired - redirect to marketing page
-        console.log('User is null, current view:', currentView);
         if (currentView === 'dashboard' || currentView === 'subscription' || currentView === 'success') {
-          console.log('Redirecting to marketing from:', currentView);
           setCurrentView('marketing');
           // Clear any URL parameters
           window.history.replaceState({}, document.title, window.location.pathname);

@@ -18,17 +18,7 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
   const eodService = React.useMemo(() => new PolygonEODService(), []);
 
   const fetchEODData = async (targetSymbols?: string[]) => {
-    console.log('[useEODData] === EOD FETCH START ===');
-    console.log('[useEODData] API Key check:', {
-      hasApiKey: true,
-      keyLength: 32,
-      enabled,
-      keyPreview: 'K95sJvRR...',
-      keyValid: true
-    });
-
     if (!enabled) {
-      console.log('[useEODData] EOD fetch skipped - not enabled');
       setLoading(false);
       return;
     }
@@ -42,13 +32,6 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
       const defaultSymbols = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'SPY', 'QQQ', 'AMD', 'NFLX', 'CRM', 'ORCL', 'BABA', 'DIS'];
       const finalSymbols = symbolsToFetch.length > 0 ? symbolsToFetch : defaultSymbols;
 
-      console.log('[useEODData] === STARTING EOD DATA FETCH ===');
-      console.log('[useEODData] Symbols to fetch:', finalSymbols);
-      console.log('[useEODData] API Key configured: Yes (upgraded $300 plan)');
-
-      // Get previous trading day data
-      console.log('[useEODData] Calling getUnusualActivityMultiSymbol with symbols:', finalSymbols);
-
       // Calculate previous trading day
       const today = new Date();
       const prev = new Date(today);
@@ -56,7 +39,6 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
       if (today.getDay() === 1) prev.setDate(today.getDate() - 3); // Monday -> Friday  
       if (today.getDay() === 0) prev.setDate(today.getDate() - 2); // Sunday -> Friday
       const dateStr = prev.toISOString().split('T')[0];
-      console.log('[useEODData] Using date for data fetch:', dateStr);
 
       // Process multiple symbols in parallel with upgraded plan
       let unusualActivities;
@@ -80,16 +62,6 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
       } else {
         // Replace all data
         setActivities(unusualActivities);
-      }
-
-      console.log('[useEODData] === EOD DATA FETCH COMPLETE ===');
-      console.log('[useEODData] Total unusual activities found:', unusualActivities.length);
-
-      if (unusualActivities.length === 0) {
-        console.log('[useEODData] No unusual activities found - this could be due to:');
-        console.log('[useEODData] 1. Market closed/weekend');
-        console.log('[useEODData] 2. No unusual activity on previous trading day');
-        console.log('[useEODData] 3. Filters too restrictive');
       }
 
       setLastUpdated(new Date().toISOString());
@@ -123,7 +95,6 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
         return [...symbolActivities, ...filtered].slice(0, 500); // Increased limit
       });
 
-      console.log(`Fetched ${symbolActivities.length} activities for ${symbol}`);
     } catch (err) {
       console.error(`Error fetching data for ${symbol}:`, err);
       setError(`Failed to fetch data for ${symbol}`);
@@ -132,19 +103,9 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
 
   // Auto-fetch data on mount (no delays with upgraded plan)
   useEffect(() => {
-    console.log('useEODData - Mount effect triggered:', {
-      enabled,
-      hasApiKey: true,
-      apiKeyLength: 32,
-      apiKeyValid: true
-    });
-
     if (enabled) {
-      console.log('Starting immediate EOD data fetch...');
       // No delay needed with upgraded plan
       fetchEODData();
-    } else {
-      console.log('EOD fetch skipped:', { enabled });
     }
   }, [enabled]);
 
@@ -159,7 +120,6 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
 
       // Refresh during market hours (9 AM - 4 PM ET, Monday-Friday) with good frequency
       if (day >= 1 && day <= 5 && hour >= 9 && hour <= 16) {
-        console.log('Auto-refreshing EOD data during market hours...');
         fetchEODData();
       }
     }, 2 * 60 * 1000); // Every 2 minutes for good responsiveness
@@ -173,7 +133,6 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
 
     const activityInterval = setInterval(() => {
       // Fetch fresh data at good intervals
-      console.log('Fetching fresh activity data...');
       fetchEODData();
     }, 30 * 1000); // Every 30 seconds for responsive activity feed
 

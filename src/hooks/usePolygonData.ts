@@ -9,7 +9,7 @@ interface UsePolygonDataProps {
   enabled?: boolean;
 }
 
-export function usePolygonData({ symbols = [], enabled = true }: Omit<UsePolygonDataProps, 'apiKey'>) {
+export function usePolygonData({ enabled = true }: Omit<UsePolygonDataProps, 'apiKey' | 'symbols'>) {
   const [activities, setActivities] = useState<OptionsActivity[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,36 +17,23 @@ export function usePolygonData({ symbols = [], enabled = true }: Omit<UsePolygon
 
   // Process incoming WebSocket data
   const processWebSocketData = useCallback((data: any[]) => {
-    console.log('[usePolygonData] Processing WebSocket data:', data);
     if (!Array.isArray(data)) return;
 
     const newActivities: OptionsActivity[] = [];
 
     data.forEach((item) => {
-      console.log('[usePolygonData] Processing item:', item);
       // Handle options trades (T.*)
       if (item.ev === 'T' && item.sym) {
-        console.log('[usePolygonData] Found options trade:', item.sym, 'size:', item.s, 'price:', item.p);
         const activity = parseOptionsActivity(item);
-        if (activity) {
-          console.log('[usePolygonData] Created activity:', activity.symbol, 'volume:', activity.volume, 'premium:', activity.premium);
-          if (isUnusualActivity(activity)) {
-            console.log('[usePolygonData] Activity is unusual, adding to feed');
-            newActivities.push(activity);
-          } else {
-            console.log('[usePolygonData] Activity not unusual enough');
-          }
-        } else {
-          console.log('[usePolygonData] Failed to parse activity from:', item);
+        if (activity && isUnusualActivity(activity)) {
+          newActivities.push(activity);
         }
       }
     });
 
-    console.log('[usePolygonData] Generated', newActivities.length, 'new activities');
     if (newActivities.length > 0) {
       setActivities(prev => {
         const combined = [...newActivities, ...prev];
-        console.log('[usePolygonData] Updated activities count:', combined.length);
         // Keep only the most recent 200 activities
         return combined.slice(0, 200);
       });
@@ -56,29 +43,17 @@ export function usePolygonData({ symbols = [], enabled = true }: Omit<UsePolygon
   // Parse Polygon options trade data into our format
   const parseOptionsActivity = (trade: any): OptionsActivity | null => {
     try {
-      console.log('[usePolygonData] === PARSING TRADE DATA ===');
-      console.log('[usePolygonData] Raw trade:', JSON.stringify(trade, null, 2));
       const symbol = trade.sym; // e.g., "O:AAPL240216C00150000"
 
       // Parse options symbol
       const match = symbol.match(/O:([A-Z]+)(\d{6})([CP])(\d{8})/);
       if (!match) {
-        console.log('[usePolygonData] ❌ Failed to parse symbol:', symbol);
         return null;
       }
 
       const [, underlying, dateStr, callPut, strikeStr] = match;
       const strike = parseInt(strikeStr) / 1000; // Strike price in dollars
       const type = callPut === 'C' ? 'call' : 'put';
-
-      console.log('[usePolygonData] ✅ Parsed symbol components:', {
-        underlying,
-        dateStr,
-        callPut,
-        strikeStr,
-        strike,
-        type
-      });
 
       // Parse expiration date
       const year = 2000 + parseInt(dateStr.substring(0, 2));
@@ -90,21 +65,10 @@ export function usePolygonData({ symbols = [], enabled = true }: Omit<UsePolygon
       const lastPrice = trade.p || 0;
 
       if (lastPrice === 0) {
-        console.log('[usePolygonData] ❌ No price data for trade:', symbol);
         return null;
       }
 
       const premium = volume * lastPrice * 100; // Convert to total premium
-
-      console.log('[usePolygonData] ✅ Successfully parsed trade:', {
-        underlying,
-        type,
-        strike,
-        volume,
-        lastPrice,
-        premium,
-        timestamp: trade.t
-      });
 
       // Determine trade location based on bid/ask spread
       const bid = lastPrice - 0.05; // Simplified - would get from separate quote
@@ -159,48 +123,28 @@ export function usePolygonData({ symbols = [], enabled = true }: Omit<UsePolygon
   // Simple unusual activity detection (more permissive for upgraded plan)
   const isUnusualActivity = (activity: OptionsActivity): boolean => {
     // Much more lenient thresholds for paid subscription
-    const isUnusual = activity.volume >= 3 || activity.premium >= 250 || activity.unusual;
-    console.log('[usePolygonData] Unusual activity check:', {
-      symbol: activity.symbol,
-      volume: activity.volume,
-      premium: activity.premium,
-      unusual: activity.unusual,
-      result: isUnusual
-    });
-    return isUnusual;
+    return activity.volume >= 3 || activity.premium >= 250 || activity.unusual;
   };
 
   // Connect to Polygon WebSocket
   useEffect(() => {
-    console.log('[usePolygonData] WebSocket connection check:', {
-      enabled,
-      hasApiKey: true,
-      apiKeyValid: true,
-      apiKeyLength: 32
-    });
-
     if (!enabled) {
-      console.log('[usePolygonData] WebSocket disabled');
       setError(null);
       return;
     }
 
-    console.log('[usePolygonData] Starting WebSocket connection...');
     setError(null);
 
     polygonApi.connectWebSocket(
       (data) => {
-        console.log('[usePolygonData] Received WebSocket data:', data);
         processWebSocketData(data);
       },
-      (error) => {
-        console.log('[usePolygonData] WebSocket error:', error);
+      () => {
         // Error handling is now done in polygon.ts
       }
     );
 
     return () => {
-      console.log('[usePolygonData] Disconnecting WebSocket...');
       polygonApi.disconnect();
       setIsConnected(false);
     };

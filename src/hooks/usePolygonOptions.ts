@@ -17,19 +17,16 @@ export function usePolygonOptions({
   const [activities, setActivities] = useState<OptionsActivity[]>([]);
   const [topMovers, setTopMovers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [topMoversLoading, setTopMoversLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   const fetchUnusualActivity = useCallback(async () => {
-    console.log('[usePolygonOptions] Starting fetch for unusual activity...');
     setLoading(true);
     setError(null);
 
     try {
       const unusualActivities = await polygonService.getMultiSymbolUnusualActivity(symbols);
-      
-      console.log(`[usePolygonOptions] Fetched ${unusualActivities.length} unusual activities`);
-      console.log(`[usePolygonOptions] Sample activity:`, unusualActivities[0] || 'No activities');
       setActivities(unusualActivities);
       setLastUpdate(new Date());
 
@@ -43,24 +40,22 @@ export function usePolygonOptions({
   }, [symbols]);
 
   const fetchTopMovers = useCallback(async () => {
-    console.log('[usePolygonOptions] Fetching top movers...');
-    
+    setTopMoversLoading(true);
     try {
       const movers = await polygonService.getTopMovers();
-      console.log(`[usePolygonOptions] Fetched ${movers.length} top movers`);
       setTopMovers(movers);
     } catch (err) {
       console.error('[usePolygonOptions] Error fetching top movers:', err);
+    } finally {
+      setTopMoversLoading(false);
     }
   }, []);
 
   const fetchSingleSymbol = useCallback(async (symbol: string) => {
-    console.log(`[usePolygonOptions] Fetching data for single symbol: ${symbol}`);
     setLoading(true);
     
     try {
-      const symbolActivities = await polygonService.getUnusualActivity(symbol);
-      console.log(`[usePolygonOptions] Fetched ${symbolActivities.length} activities for ${symbol}`);
+      const symbolActivities = await polygonService.getUnusualOptionsActivity(symbol);
       
       // Replace activities for this symbol
       setActivities(prev => {
@@ -79,40 +74,32 @@ export function usePolygonOptions({
   }, []);
 
   const refreshAll = useCallback(async () => {
-    console.log('[usePolygonOptions] Manual refresh triggered');
     await Promise.all([
       fetchUnusualActivity(),
       fetchTopMovers()
     ]);
   }, [fetchUnusualActivity, fetchTopMovers]);
 
-  // Initial fetch on mount
+  // Initial fetch on mount - immediate, no delays
   useEffect(() => {
-    console.log('[usePolygonOptions] Component mounted, starting initial fetch...');
-    console.log('[usePolygonOptions] Current symbols:', symbols);
-    console.log('[usePolygonOptions] PolygonService initialized');
     refreshAll();
   }, []); // Only run on mount
 
-  // Auto-refresh interval
+  // Auto-refresh interval - refresh both activities and top movers
   useEffect(() => {
     if (!autoRefresh) return;
 
-    console.log(`[usePolygonOptions] Setting up auto-refresh every ${refreshInterval}ms`);
     const interval = setInterval(() => {
-      console.log('[usePolygonOptions] Auto-refresh triggered');
-      fetchUnusualActivity(); // Only refresh activities, not movers
+      refreshAll(); // Refresh both activities and top movers
     }, refreshInterval);
 
     return () => {
-      console.log('[usePolygonOptions] Clearing auto-refresh interval');
       clearInterval(interval);
     };
-  }, [autoRefresh, refreshInterval, fetchUnusualActivity]);
+  }, [autoRefresh, refreshInterval, refreshAll]);
 
   // Refetch when symbols change
   useEffect(() => {
-    console.log('[usePolygonOptions] Symbols changed, refetching...', symbols);
     fetchUnusualActivity();
   }, [symbols, fetchUnusualActivity]);
 
@@ -120,6 +107,7 @@ export function usePolygonOptions({
     activities,
     topMovers,
     loading,
+    topMoversLoading,
     error,
     lastUpdate,
     refreshAll,

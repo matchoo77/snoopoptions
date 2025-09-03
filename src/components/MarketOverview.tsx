@@ -36,7 +36,6 @@ export function MarketOverview() {
   const fetchMarketData = async (): Promise<MarketData[]> => {
     try {
       // For now, return empty array until real API integration is implemented
-      console.log('MarketOverview: Real market data API not yet implemented');
       return [];
     } catch (error) {
       console.error('Error fetching market data:', error);

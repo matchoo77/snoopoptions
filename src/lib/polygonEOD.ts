@@ -402,8 +402,8 @@ export class PolygonEODService {
                 tradeDate: new Date(agg.t).toISOString(),
                 tradePrice: vwap,
                 underlyingPrice: 0, // Will be fetched separately
-                impliedVolatility: Math.random() * 0.8 + 0.2, // Would need separate API call
-                delta: contract.contract_type === 'call' ? Math.random() * 0.8 + 0.1 : -(Math.random() * 0.8 + 0.1),
+                impliedVolatility: 0, // Would need separate API call for real data
+                delta: 0, // Would need separate API call for real data
               };
 
               contractTrades.push(trade);
@@ -480,14 +480,12 @@ export class PolygonEODService {
       const ask = lastPrice + 0.05;
       const premium = volume * lastPrice * 100;
 
-      // Estimate Greeks (in production, you'd get these from separate API calls)
-      const delta = contract.contract_type === 'call'
-        ? Math.random() * 0.8 + 0.1
-        : -(Math.random() * 0.8 + 0.1);
-      const gamma = Math.random() * 0.1;
-      const theta = -(Math.random() * 0.5);
-      const vega = Math.random() * 0.3;
-      const impliedVolatility = Math.random() * 0.8 + 0.2;
+      // Real Greeks would need separate API calls - setting to 0 for now
+      const delta = 0;
+      const gamma = 0;
+      const theta = 0;
+      const vega = 0;
+      const impliedVolatility = 0;
 
       const activity: OptionsActivity = {
         id: `${contract.ticker}-${agg.t}`,
@@ -496,7 +494,7 @@ export class PolygonEODService {
         expiration: contract.expiration_date,
         type: contract.contract_type,
         volume,
-        openInterest: Math.floor(Math.random() * 10000) + 100, // Would need separate API call
+        openInterest: 0, // Would need separate API call for real data
         lastPrice,
         bid,
         ask,

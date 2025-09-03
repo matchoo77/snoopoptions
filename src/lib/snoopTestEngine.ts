@@ -110,7 +110,7 @@ export class SnoopTestEngine {
       this.reportProgress(0, 'Error occurred during analysis');
       console.error('SnoopTest error:', error);
       
-      // Return empty results instead of synthetic data
+      // Return empty results - no real data available without proper API integration
       console.log('Returning empty results due to API error');
       const emptyResults: SnoopTestResult[] = [];
       const summary = this.generateSummary(emptyResults, 0);
@@ -288,16 +288,9 @@ export class SnoopTestEngine {
   private async getOptionQuote(_contractTicker: string, _timestamp: number): Promise<{ bid: number; ask: number } | null> {
     try {
       // For real implementation, you would call /v3/quotes/options API
-      // For now, we'll estimate based on typical bid-ask spreads
+      // For now, we'll return null since we don't have real bid/ask data
 
-      // Simulate realistic bid-ask spread (this would be replaced with real API call)
-      const midPrice = Math.random() * 10 + 1; // $1-$11 range
-      const spread = midPrice * 0.02; // 2% spread
-
-      return {
-        bid: Math.max(0.01, midPrice - spread / 2),
-        ask: midPrice + spread / 2
-      };
+      return null;
     } catch (error) {
       console.error('Error getting option quote:', error);
       return null;

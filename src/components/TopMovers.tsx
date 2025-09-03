@@ -1,13 +1,12 @@
-import { TrendingUp, TrendingDown, Flame } from 'lucide-react';
+import { TrendingUp, TrendingDown, Flame, Loader2 } from 'lucide-react';
 import { TopMover } from '../types/options';
 
 interface TopMoversProps {
   topMovers?: TopMover[];
+  loading?: boolean;
 }
 
-export function TopMovers({ topMovers = [] }: TopMoversProps) {
-  console.log('[TopMovers] Received top movers:', topMovers.length);
-
+export function TopMovers({ topMovers = [], loading = false }: TopMoversProps) {
   const formatCurrency = (value: number) => {
     if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
     if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
@@ -28,11 +27,18 @@ export function TopMovers({ topMovers = [] }: TopMoversProps) {
       </div>
 
       <div className="space-y-3" style={{ minHeight: '280px' }}>
-        {topMovers.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center p-6 text-gray-500" style={{ height: '280px' }}>
+            <div className="flex items-center space-x-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Loading top movers...</span>
+            </div>
+          </div>
+        ) : topMovers.length === 0 ? (
           <div className="flex items-center justify-center p-6 text-gray-500" style={{ height: '280px' }}>
             <div className="text-center">
-              <div className="text-sm">Loading top movers...</div>
-              <div className="text-xs mt-1">Real-time data is being processed</div>
+              <div className="text-sm">No top movers available</div>
+              <div className="text-xs mt-1">Check back during market hours</div>
             </div>
           </div>
         ) : (

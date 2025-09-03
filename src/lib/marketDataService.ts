@@ -254,14 +254,13 @@ export class MarketDataService {
     }
 
     // Determine trade location
-    const tradeLocations = ['below-bid', 'at-bid', 'midpoint', 'at-ask', 'above-ask'] as const;
-    const tradeLocation = tradeLocations[Math.floor(Math.random() * tradeLocations.length)];
+    const tradeLocation = 'midpoint'; // Would need bid/ask data from separate API call
 
     // Calculate premium
     const premium = Math.round(price * volume * 100);
 
     return {
-      id: `real_${contract.ticker}_${Date.now()}_${Math.random()}`,
+      id: `real_${contract.ticker}_${Date.now()}`,
       symbol: underlyingSymbol,
       type: contract.contract_type,
       strike: contract.strike_price,
@@ -269,19 +268,19 @@ export class MarketDataService {
       lastPrice: Math.round(price * 100) / 100,
       volume,
       premium,
-      openInterest: Math.floor(volume * (1.2 + Math.random() * 0.8)), // Estimated
-      bid: Math.round(price * 0.95 * 100) / 100,
-      ask: Math.round(price * 1.05 * 100) / 100,
+      openInterest: 0, // Would need separate API call for real data
+      bid: 0, // Would need separate API call for real data
+      ask: 0, // Would need separate API call for real data
       timestamp: new Date(agg.t || Date.now()).toISOString(),
       sentiment,
       tradeLocation,
       blockTrade: isBlockTrade,
       unusual: volume >= 50 || premium >= 10000,
-      impliedVolatility: 0.2 + Math.random() * 0.5, // Estimated
-      delta: contract.contract_type === 'call' ? 0.3 + Math.random() * 0.4 : -0.7 + Math.random() * 0.4,
-      gamma: Math.random() * 0.1,
-      theta: -Math.random() * 0.05,
-      vega: Math.random() * 0.3,
+      impliedVolatility: 0, // Would need separate API call for real data
+      delta: 0, // Would need separate API call for real data
+      gamma: 0, // Would need separate API call for real data
+      theta: 0, // Would need separate API call for real data
+      vega: 0, // Would need separate API call for real data
     };
   }
 

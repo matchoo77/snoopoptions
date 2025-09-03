@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../Header';
 import { TrialBanner } from '../TrialBanner';
+import { MarketStatusIndicator } from '../MarketStatusIndicator';
 import { useOptionsData } from '../../hooks/useOptionsData';
 import { useFavorites } from '../../hooks/useFavorites';
 import { SearchBar } from '../SearchBar';
@@ -35,18 +36,10 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
     isUsingRealData,
     dataSource,
     loading: dataLoading,
+    topMoversLoading,
     error,
     refreshData
   } = useOptionsData();
-
-  console.log('[DashboardApp] Data from useOptionsData:', {
-    activitiesCount: activities.length,
-    topMoversCount: topMovers?.length || 0,
-    loading: dataLoading,
-    error: error?.message || null,
-    dataSource,
-    sampleActivity: activities[0] || 'No activities'
-  });
 
   const {
     favorites,
@@ -82,7 +75,6 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
   useEffect(() => {
     if (!showBacktesting) {
       const interval = setInterval(() => {
-        console.log('[DashboardApp] Auto-refreshing data every 10 seconds');
         refreshData();
       }, 10000); // 10 seconds (10000ms)
 
@@ -103,14 +95,21 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
           />
         )}
 
-        <DataSourceIndicator
-          isConnected={isConnected}
-          isUsingRealData={isUsingRealData}
-          dataSource={dataSource}
-          loading={dataLoading}
-          error={error}
-          onRefresh={refreshData}
-        />
+        {/* Market Status and Data Source Indicators */}
+        <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <MarketStatusIndicator 
+            refreshRate={10000} 
+            showDetailed={true} 
+          />
+          <DataSourceIndicator
+            isConnected={isConnected}
+            isUsingRealData={isUsingRealData}
+            dataSource={dataSource}
+            loading={dataLoading}
+            error={error}
+            onRefresh={refreshData}
+          />
+        </div>
 
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg shadow-sm p-0.5 mb-3 border">
@@ -169,7 +168,7 @@ export function DashboardApp({ trialStatus, onUpgrade }: DashboardAppProps) {
 
             {/* Full Width Top Movers */}
             <div className="w-full mb-6">
-              <TopMovers topMovers={topMovers} />
+              <TopMovers topMovers={topMovers} loading={topMoversLoading} />
             </div>
 
             {/* Full Width Activity Feed */}

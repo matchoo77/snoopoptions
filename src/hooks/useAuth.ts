@@ -49,8 +49,6 @@ export function useAuth() {
       const {
         data: { subscription: authSubscription },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('Auth state change event:', event, 'Session:', !!session);
-
         if (event === 'TOKEN_REFRESHED' && !session) {
           // Token refresh failed, clear everything
           console.warn('Token refresh failed, clearing session');
@@ -58,7 +56,6 @@ export function useAuth() {
         }
 
         if (event === 'SIGNED_OUT') {
-          console.log('SIGNED_OUT event received, clearing state');
           setSession(null);
           setUser(null);
         } else {
@@ -82,8 +79,6 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
-      console.log('Starting sign out process...');
-
       // Sign out from Supabase first - this will trigger the auth state change listener
       const { error } = await supabase.auth.signOut({
         scope: 'global' // This ensures all sessions are terminated
@@ -91,8 +86,6 @@ export function useAuth() {
 
       if (error) {
         console.warn('Logout error:', error.message);
-      } else {
-        console.log('Supabase signOut successful');
       }
 
       // Force clear local state regardless of API result
@@ -115,7 +108,6 @@ export function useAuth() {
           localStorage.removeItem(key);
         }
       });
-      console.log('LocalStorage cleared');
     } catch (e) {
       console.warn('Error clearing localStorage:', e);
     }
