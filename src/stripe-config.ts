@@ -13,7 +13,7 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
   {
     id: 'prod_SysDPjI2j3M41J',
     priceId: 'price_1S2uSi4gvT1xDWNkG6pBkAHO', // You need to provide the price ID from Stripe dashboard
-    name: 'SnoopFlow Scanner - Annual',
+    name: 'SnoopFlow Annual',
     description: 'Get access to real-time unusual options activity alerts and advanced filtering capabilities.',
     mode: 'subscription',
     price: 399.00,
