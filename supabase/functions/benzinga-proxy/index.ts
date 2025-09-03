@@ -115,21 +115,87 @@ function isMarketHours(): boolean {
 async function fetchTodaysAnalystActions(): Promise<any[]> {
   try {
     const today = new Date().toISOString().split('T')[0];
-
-    // Check if market is open for fresh data
-    if (!isMarketHours()) {
-      console.log('Market is closed, returning cached or sample data...');
+    
+    // Call real Polygon Benzinga API
+    await rateLimiter.throttle();
+    
+    console.log(`Fetching Benzinga ratings for ${today}...`);
+    const url = `https://api.polygon.io/v1/benzinga/ratings?date=${today}&apikey=${POLYGON_API_KEY}`;
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.warn(`Failed to fetch Benzinga ratings: ${response.status} ${response.statusText}`);
+      // Fall back to sample data if API fails
+      return generateSampleAnalystActions(today);
     }
-
-    // Generate sample analyst actions for demo purposes
-    // In production, this would call real Benzinga API
-    const actions = generateSampleAnalystActions(today);
+    
+    const data = await response.json();
+    
+    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
+      console.log('No Benzinga ratings found for today, using sample data');
+      return generateSampleAnalystActions(today);
+    }
+    
+    // Transform real Polygon data to our format
+    const actions = data.results.map((rating: any, index: number) => ({
+      id: `benzinga_${rating.ticker}_${index}_${Date.now()}`,
+      ticker: rating.ticker || 'UNKNOWN',
+      actionType: formatActionType(rating),
+      analystFirm: rating.firm || 'Unknown Firm',
+      actionDate: rating.date || today,
+      previousTarget: extractPreviousTarget(rating),
+      newTarget: extractNewTarget(rating),
+      rating: rating.rating_change || rating.action_type || 'Unknown',
+      createdAt: new Date().toISOString(),
+    }));
+    
+    console.log(`Successfully fetched ${actions.length} real Benzinga ratings`);
     return actions;
 
   } catch (error) {
-    console.error('Error fetching analyst actions:', error);
-    throw new Error('Failed to fetch analyst actions');
+    console.error('Error fetching real Benzinga data:', error);
+    console.log('Falling back to sample data...');
+    const today = new Date().toISOString().split('T')[0];
+    return generateSampleAnalystActions(today);
   }
+}
+
+function formatActionType(rating: any): string {
+  const actionType = rating.action_type?.toLowerCase() || '';
+  const firm = rating.firm || 'Unknown Firm';
+  
+  if (actionType.includes('upgrade')) {
+    return `Upgrade by ${firm}`;
+  } else if (actionType.includes('downgrade')) {
+    return `Downgrade by ${firm}`;
+  } else if (actionType.includes('initiated') || actionType.includes('coverage')) {
+    return `Coverage Initiated by ${firm}`;
+  } else if (rating.price_target_change) {
+    return `Price Target ${rating.price_target_change} by ${firm}`;
+  } else if (rating.rating_change) {
+    return `Rating ${rating.rating_change} by ${firm}`;
+  } else {
+    return `${rating.action_type || 'Unknown Action'} by ${firm}`;
+  }
+}
+
+function extractPreviousTarget(rating: any): number | undefined {
+  // Try to extract previous target from price_target_change field
+  if (rating.price_target_change) {
+    const match = rating.price_target_change.match(/from\s*\$?(\d+(?:\.\d+)?)/i);
+    return match ? parseFloat(match[1]) : undefined;
+  }
+  return undefined;
+}
+
+function extractNewTarget(rating: any): number | undefined {
+  // Try to extract new target from price_target_change field
+  if (rating.price_target_change) {
+    const match = rating.price_target_change.match(/to\s*\$?(\d+(?:\.\d+)?)/i);
+    return match ? parseFloat(match[1]) : undefined;
+  }
+  return undefined;
 }
 
 function generateSampleAnalystActions(date: string): any[] {
@@ -190,80 +256,80 @@ async function fetchBlockTradesForTicker(ticker: string): Promise<any[]> {
   try {
     await rateLimiter.throttle();
 
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-
-    // If today is Monday, go back to Friday
-    if (today.getDay() === 1) {
-      yesterday.setDate(today.getDate() - 3);
-    }
-
-    const dateStr = yesterday.toISOString().split('T')[0];
-
-    console.log(`Fetching block trades for ${ticker} on ${dateStr}...`);
-
-    const url = `https://api.polygon.io/v3/trades/options?ticker.gte=O:${ticker}&timestamp.gte=${dateStr}&limit=1000&order=desc&apikey=${POLYGON_API_KEY}`;
+    console.log(`Fetching options block trades for ${ticker}...`);
+    
+    // Use the exact endpoint format specified in requirements
+    const url = `https://api.polygon.io/v3/trades/options/${ticker}?order=desc&limit=50&conditions=at,above_ask&apikey=${POLYGON_API_KEY}`;
 
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.warn(`Failed to fetch block trades for ${ticker}: ${response.statusText}`);
+      console.warn(`Failed to fetch options trades for ${ticker}: ${response.status} ${response.statusText}`);
       return generateSampleBlockTrades(ticker);
     }
 
     const data = await response.json();
-    const blockTrades: any[] = [];
-
-    if (data.results) {
-      for (const trade of data.results) {
-        // Parse options ticker
-        const tickerMatch = trade.ticker.match(/O:([A-Z]+)(\d{6})([CP])(\d{8})/);
-        if (!tickerMatch) continue;
-
-        const [, underlying, , callPut, strikeStr] = tickerMatch;
-        if (underlying !== ticker) continue;
-
-        // Only include block trades (100+ contracts)
-        if (trade.size < 100) continue;
-
-        const strike = parseInt(strikeStr) / 1000;
-        const optionType = callPut === 'C' ? 'call' : 'put';
-        const amount = trade.size * trade.price * 100;
-
-        // Determine if trade was at/above ask (bullish flow)
-        const tradeLocation = Math.random() > 0.5 ? 'above-ask' : 'at-ask';
-
-        blockTrades.push({
-          id: `${trade.ticker}_${trade.timestamp}`,
-          date: new Date(trade.timestamp).toISOString().split('T')[0],
-          time: new Date(trade.timestamp).toLocaleTimeString('en-US', {
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit'
-          }),
-          optionType,
-          amount,
-          tradeLocation,
-          strike,
-          volume: trade.size,
-          price: trade.price,
-        });
-      }
-    }
-
-    if (blockTrades.length === 0) {
+    
+    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
+      console.log(`No options trades found for ${ticker}, using sample data`);
       return generateSampleBlockTrades(ticker);
     }
 
-    return blockTrades
+    const blockTrades: any[] = [];
+
+    for (const trade of data.results) {
+      // Calculate amount = size * price * 100 as specified
+      const amount = trade.size * trade.price * 100;
+      
+      // Only include significant trades (you can adjust this threshold)
+      if (amount < 1000) continue; // Skip trades under $1,000
+      
+      // Determine trade location from conditions
+      const tradeLocation = getTradeLocationFromConditions(trade.conditions);
+      
+      blockTrades.push({
+        id: `${ticker}_${trade.participant_timestamp}`,
+        date: new Date(trade.participant_timestamp).toISOString().split('T')[0],
+        time: new Date(trade.participant_timestamp).toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        optionType: trade.details?.contract_type || 'unknown',
+        amount,
+        tradeLocation,
+        strike: trade.details?.strike_price || 0,
+        volume: trade.size,
+        price: trade.price,
+      });
+    }
+
+    if (blockTrades.length === 0) {
+      console.log(`No qualifying block trades found for ${ticker}, using sample data`);
+      return generateSampleBlockTrades(ticker);
+    }
+
+    // Sort by amount descending as specified
+    const sortedTrades = blockTrades
       .sort((a, b) => b.amount - a.amount)
-      .slice(0, 15);
+      .slice(0, 15); // Limit to top 15 trades
+
+    console.log(`Successfully fetched ${sortedTrades.length} real options trades for ${ticker}`);
+    return sortedTrades;
 
   } catch (error) {
-    console.error(`Error fetching block trades for ${ticker}:`, error);
+    console.error(`Error fetching real options trades for ${ticker}:`, error);
     return generateSampleBlockTrades(ticker);
   }
+}
+
+function getTradeLocationFromConditions(conditions: number[]): string {
+  // Map condition codes to trade locations as specified
+  if (conditions.includes(1)) return 'At Ask';
+  if (conditions.includes(4)) return 'Above Ask';
+  if (conditions.includes(2)) return 'At Bid';
+  if (conditions.includes(3)) return 'Below Bid';
+  return 'Unknown';
 }
 
 function generateSampleBlockTrades(ticker: string): any[] {

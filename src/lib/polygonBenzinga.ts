@@ -22,6 +22,7 @@ interface OptionsTradeResult {
   size: number;
   sip_timestamp: number;
   timeframe: string;
+  amount?: number; // Add this property
   details?: {
     contract_type: string;
     exercise_style: string;
@@ -39,62 +40,61 @@ interface PolygonOptionsTradesResponse {
 }
 
 export class PolygonBenzingaService {
-  private baseUrl = 'https://api.polygon.io';
-  private apiKey: string;
-  private rateLimitDelay = 12000; // 12 seconds between calls (5 calls per minute)
-  private lastCallTime = 0;
+  private supabaseUrl: string;
 
   constructor() {
-    this.apiKey = import.meta.env.VITE_POLYGON_API_KEY;
-    if (!this.apiKey) {
-      throw new Error('VITE_POLYGON_API_KEY environment variable is required');
+    this.supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!this.supabaseUrl) {
+      throw new Error('VITE_SUPABASE_URL environment variable is required');
     }
-  }
-
-  private async rateLimitedFetch(url: string): Promise<Response> {
-    const now = Date.now();
-    const timeSinceLastCall = now - this.lastCallTime;
-    
-    if (timeSinceLastCall < this.rateLimitDelay) {
-      const waitTime = this.rateLimitDelay - timeSinceLastCall;
-      console.log(`Rate limiting: waiting ${waitTime}ms before next API call`);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-    }
-    
-    this.lastCallTime = Date.now();
-    return fetch(url);
   }
 
   async fetchTodaysBenzingaRatings(): Promise<BenzingaRating[]> {
     try {
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      const url = `${this.baseUrl}/v1/benzinga/ratings?date=${today}&apikey=${this.apiKey}`;
+      console.log('Fetching Benzinga ratings via Supabase proxy...');
+      console.log('Supabase URL:', this.supabaseUrl);
       
-      console.log('Fetching Benzinga ratings for:', today);
+      const functionUrl = `${this.supabaseUrl}/functions/v1/benzinga-proxy`;
+      console.log('Function URL:', functionUrl);
       
-      const response = await this.rateLimitedFetch(url);
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'analyst-actions'
+        })
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
       
       if (!response.ok) {
-        throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Response error text:', errorText);
+        throw new Error(`Benzinga proxy error: ${response.status} ${response.statusText}: ${errorText}`);
       }
       
-      const data: PolygonBenzingaResponse = await response.json();
+      const data = await response.json();
+      console.log('Response data:', data);
       
-      if (data.status !== 'OK') {
-        throw new Error(`Polygon API returned status: ${data.status}`);
+      if (data.error) {
+        throw new Error(`Benzinga proxy returned error: ${data.error}`);
       }
       
       // Transform the response to match our interface
-      const ratings: BenzingaRating[] = (data.results || []).map(result => ({
-        ticker: result.ticker || '',
-        action_type: result.action_type || 'Unknown',
-        analyst: result.analyst || '',
-        firm: result.firm || '',
-        rating_change: result.rating_change || '',
-        price_target_change: result.price_target_change || '',
-        date: result.date || today,
+      const ratings: BenzingaRating[] = (data.actions || []).map((action: any) => ({
+        ticker: action.ticker || '',
+        action_type: action.actionType || 'Unknown',
+        analyst: '',
+        firm: action.analystFirm || '',
+        rating_change: action.rating || '',
+        price_target_change: action.newTarget ? `$${action.newTarget}` : '',
+        date: action.actionDate || new Date().toISOString().split('T')[0],
       }));
       
+      console.log(`Successfully processed ${ratings.length} Benzinga ratings`);
       return ratings;
     } catch (error) {
       console.error('Error fetching Benzinga ratings:', error);
@@ -104,37 +104,49 @@ export class PolygonBenzingaService {
 
   async fetchOptionsTradesForTicker(ticker: string): Promise<OptionsTradeResult[]> {
     try {
-      // Construct URL with exact parameters specified
-      const url = `${this.baseUrl}/v3/trades/options/${ticker}?` + 
-        `order=desc` +
-        `&limit=50` +
-        `&conditions=at,above_ask` +
-        `&apikey=${this.apiKey}`;
+      console.log(`Fetching options trades for ${ticker} via Supabase proxy...`);
       
-      console.log('Fetching options trades for ticker:', ticker);
-      
-      const response = await this.rateLimitedFetch(url);
+      const response = await fetch(`${this.supabaseUrl}/functions/v1/benzinga-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'block-trades',
+          ticker: ticker
+        })
+      });
       
       if (!response.ok) {
-        throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Benzinga proxy error: ${response.status} ${response.statusText}`);
       }
       
-      const data: PolygonOptionsTradesResponse = await response.json();
+      const data = await response.json();
       
-      if (data.status !== 'OK') {
-        throw new Error(`Polygon API returned status: ${data.status}`);
+      if (data.error) {
+        throw new Error(`Benzinga proxy returned error: ${data.error}`);
       }
       
-      // Calculate amounts and sort by amount desc
-      const trades = data.results || [];
-      const tradesWithAmounts = trades
-        .map(trade => ({
-          ...trade,
-          amount: trade.size * trade.price * 100 // Calculate dollar amount as specified
-        }))
-        .sort((a, b) => b.amount - a.amount); // Sort by amount descending
+      // Transform block trades to OptionsTradeResult format
+      const trades: OptionsTradeResult[] = (data.blockTrades || []).map((trade: any) => ({
+        conditions: trade.tradeLocation === 'above-ask' ? [4] : [1], // Map trade location to condition codes
+        exchange: 1,
+        participant_timestamp: new Date(`${trade.date} ${trade.time}`).getTime(),
+        price: trade.price,
+        size: trade.volume,
+        sip_timestamp: new Date(`${trade.date} ${trade.time}`).getTime(),
+        timeframe: 'REAL_TIME',
+        details: {
+          contract_type: trade.optionType,
+          exercise_style: 'american',
+          expiration_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+          strike_price: trade.strike,
+          ticker: ticker,
+        },
+        amount: trade.amount, // This will be available from the proxy
+      }));
       
-      return tradesWithAmounts;
+      return trades.sort((a, b) => (b.amount || 0) - (a.amount || 0));
     } catch (error) {
       console.error('Error fetching options trades:', error);
       throw error;
