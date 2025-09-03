@@ -60,12 +60,21 @@ export class PolygonBenzingaService {
       }
       
       const response = await fetch(`${supabaseUrl}/functions/v1/benzinga-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
+          action: 'analyst-actions'
+        })
+      });
       console.log('Supabase URL:', this.supabaseUrl);
       
       const functionUrl = `${this.supabaseUrl}/functions/v1/benzinga-proxy`;
       console.log('Function URL:', functionUrl);
       
-      const response = await fetch(functionUrl, {
+      const response2 = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,16 +84,16 @@ export class PolygonBenzingaService {
         })
       });
       
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
+      console.log('Response status:', response2.status);
+      console.log('Response ok:', response2.ok);
       
-      if (!response.ok) {
-        const errorText = await response.text();
+      if (!response2.ok) {
+        const errorText = await response2.text();
         console.error('Response error text:', errorText);
-        throw new Error(`Benzinga proxy error: ${response.status} ${response.statusText}: ${errorText}`);
+        throw new Error(`Benzinga proxy error: ${response2.status} ${response2.statusText}: ${errorText}`);
       }
       
-      const data = await response.json();
+      const data = await response2.json();
       console.log('Response data:', data);
       
       if (data.error) {
@@ -93,16 +102,20 @@ export class PolygonBenzingaService {
       
       // Transform the response to match our interface
       const ratings: BenzingaRating[] = (data.actions || []).map((action: any) => ({
-          'Authorization': `Bearer ${supabaseKey}`,
+        ticker: action.ticker || '',
         action_type: action.actionType || 'Unknown',
         analyst: '',
         firm: action.analystFirm || '',
         rating_change: action.rating || '',
         price_target_change: action.newTarget ? `$${action.newTarget}` : '',
+        date: action.date || ''
+      }));
+      
+      if (!response.ok) {
         const errorText = await response.text();
         console.error('Benzinga proxy error:', errorText);
         throw new Error(`Benzinga API error: ${response.status}`);
-      }));
+      }
       
       console.log(`Successfully processed ${ratings.length} Benzinga ratings`);
       
@@ -149,6 +162,20 @@ export class PolygonBenzingaService {
         conditions: trade.tradeLocation === 'above-ask' ? [4] : [1], // Map trade location to condition codes
         exchange: 1,
         participant_timestamp: new Date(`${trade.date} ${trade.time}`).getTime(),
+        price: trade.price,
+        size: trade.volume,
+        sip_timestamp: new Date(`${trade.date} ${trade.time}`).getTime(),
+        timeframe: 'REAL_TIME',
+        details: {
+          contract_type: trade.optionType,
+          exercise_style: 'american',
+          expiration_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+          strike_price: trade.strike,
+          ticker: ticker,
+        },
+        amount: trade.amount, // This will be available from the proxy
+      }));
+      
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
@@ -157,26 +184,29 @@ export class PolygonBenzingaService {
         throw new Error('Supabase configuration missing');
       }
       
-      const response = await fetch(`${supabaseUrl}/functions/v1/benzinga-proxy`, {
-        size: trade.volume,
-        sip_timestamp: new Date(`${trade.date} ${trade.time}`).getTime(),
-        timeframe: 'REAL_TIME',
+      const response2 = await fetch(`${supabaseUrl}/functions/v1/benzinga-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${supabaseKey}`,
-          contract_type: trade.optionType,
-          exercise_style: 'american',
-          expiration_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
-          strike_price: trade.strike,
-          ticker: ticker,
-        const errorText = await response.text();
+        },
+        body: JSON.stringify({
+          action: 'block-trades',
+          ticker: ticker
+        })
+      });
+      
+      if (!response2.ok) {
+        const errorText = await response2.text();
         console.error('Block trades proxy error:', errorText);
-        throw new Error(`Block trades API error: ${response.status}`);
-        amount: trade.amount, // This will be available from the proxy
-      }));
+        throw new Error(`Block trades API error: ${response2.status}`);
+      }
       
+      const data2 = await response2.json();
       
-      if (data.error) {
-        console.error('Block trades proxy returned error:', data.error);
-        throw new Error(data.error);
+      if (data2.error) {
+        console.error('Block trades proxy returned error:', data2.error);
+        throw new Error(data2.error);
       }
       
       return trades.sort((a, b) => (b.amount || 0) - (a.amount || 0));
