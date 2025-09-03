@@ -15,6 +15,7 @@ export function SubscriptionCard({ product, isCurrentPlan = false, userToken }: 
   const handleSubscribe = async () => {
     console.log('🔥 Subscribe button clicked for product:', product.name);
     console.log('🔥 User token available:', !!userToken);
+    console.log('🔥 User token length:', userToken?.length || 0);
     console.log('🔥 Price ID:', product.priceId);
     console.log('🔥 Product mode:', product.mode);
     
@@ -44,7 +45,15 @@ export function SubscriptionCard({ product, isCurrentPlan = false, userToken }: 
     } catch (error) {
       console.error('❌ Checkout error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`Payment setup failed: ${errorMessage}\n\nPlease try again or contact support.`);
+      
+      // Show more specific error messages
+      if (errorMessage.includes('authentication') || errorMessage.includes('token')) {
+        alert('Authentication error. Please sign out and sign back in, then try again.');
+      } else if (errorMessage.includes('SUPABASE_URL')) {
+        alert('Configuration error. Please contact support.');
+      } else {
+        alert(`Payment setup failed: ${errorMessage}\n\nPlease try again or contact support.`);
+      }
     } finally {
       setLoading(false);
     }

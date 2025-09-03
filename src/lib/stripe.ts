@@ -17,7 +17,7 @@ export async function createCheckoutSession({
   console.log('🔥 Creating checkout session with:', { 
     priceId, 
     mode, 
-    userToken: userToken ? `present (${userToken.substring(0, 20)}...)` : 'MISSING',
+    userToken: userToken ? 'present' : 'MISSING',
     supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'configured' : 'MISSING'
   });
   
@@ -25,9 +25,7 @@ export async function createCheckoutSession({
     throw new Error('User authentication token is required');
   }
 
-  if (!import.meta.env.VITE_SUPABASE_URL) {
-    throw new Error('Supabase URL not configured. Please check your environment variables.');
-  }
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vmaktasytlnftugkrlmp.supabase.co';
   
   const baseUrl = window.location.origin;
   const successUrl = `${baseUrl}?success=true`;
@@ -35,7 +33,7 @@ export async function createCheckoutSession({
 
   console.log('🔗 Checkout URLs:', { successUrl, cancelUrl });
   
-  const checkoutUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`;
+  const checkoutUrl = `${supabaseUrl}/functions/v1/stripe-checkout`;
   console.log('🚀 Making request to:', checkoutUrl);
 
   const requestBody = {
@@ -57,6 +55,7 @@ export async function createCheckoutSession({
     });
 
     console.log('📡 Stripe checkout response status:', response.status);
+    console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
       const errorText = await response.text();
