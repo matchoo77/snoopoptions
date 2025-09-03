@@ -369,13 +369,16 @@ function generateSampleBlockTrades(ticker: string): any[] {
 
 Deno.serve(async (req) => {
   try {
-    if (req.method === 'OPTIONS') {
-      return corsResponse({}, 204);
+    // Check for required API key first
+    if (!POLYGON_API_KEY || POLYGON_API_KEY.trim() === '') {
+      console.error('POLYGON_API_KEY environment variable is not set or empty');
+      return corsResponse({ 
+        error: 'API configuration missing: POLYGON_API_KEY not configured in Supabase secrets' 
+      }, 500);
     }
 
-    if (!POLYGON_API_KEY) {
-      console.error('POLYGON_API_KEY environment variable is not set');
-      return corsResponse({ error: 'API configuration missing' }, 500);
+    if (req.method === 'OPTIONS') {
+      return corsResponse({}, 204);
     }
 
     const { action, ticker } = await req.json();

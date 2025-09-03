@@ -69,32 +69,14 @@ export class PolygonBenzingaService {
           action: 'analyst-actions'
         })
       });
-      console.log('Supabase URL:', this.supabaseUrl);
       
-      const functionUrl = `${this.supabaseUrl}/functions/v1/benzinga-proxy`;
-      console.log('Function URL:', functionUrl);
-      
-      const response2 = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'analyst-actions'
-        })
-      });
-      
-      console.log('Response status:', response2.status);
-      console.log('Response ok:', response2.ok);
-      
-      if (!response2.ok) {
-        const errorText = await response2.text();
+      if (!response.ok) {
+        const errorText = await response.text();
         console.error('Response error text:', errorText);
-        throw new Error(`Benzinga proxy error: ${response2.status} ${response2.statusText}: ${errorText}`);
+        throw new Error(`Benzinga proxy error: ${response.status} ${response.statusText}: ${errorText}`);
       }
       
-      const data = await response2.json();
-      console.log('Response data:', data);
+      const data = await response.json();
       
       if (data.error) {
         throw new Error(`Benzinga proxy returned error: ${data.error}`);
@@ -111,18 +93,7 @@ export class PolygonBenzingaService {
         date: action.date || ''
       }));
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Benzinga proxy error:', errorText);
-        throw new Error(`Benzinga API error: ${response.status}`);
-      }
-      
       console.log(`Successfully processed ${ratings.length} Benzinga ratings`);
-      
-      if (data.error) {
-        console.error('Benzinga proxy returned error:', data.error);
-        throw new Error(data.error);
-      }
       
       return ratings;
     } catch (error) {
