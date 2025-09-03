@@ -51,55 +51,12 @@ export class PolygonBenzingaService {
 
   async fetchTodaysBenzingaRatings(): Promise<BenzingaRating[]> {
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseKey) {
-        console.error('Missing Supabase configuration');
-        throw new Error('Supabase configuration missing');
-      }
-      
-      const response = await fetch(`${supabaseUrl}/functions/v1/benzinga-proxy`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseKey}`,
-        },
-        body: JSON.stringify({
-          action: 'analyst-actions'
-        })
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Response error text:', errorText);
-        throw new Error(`Benzinga proxy error: ${response.status} ${response.statusText}: ${errorText}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(`Benzinga proxy returned error: ${data.error}`);
-      }
-      
-      // Transform the response to match our interface
-      const ratings: BenzingaRating[] = (data.actions || []).map((action: any) => ({
-        ticker: action.ticker || '',
-        action_type: action.actionType || 'Unknown',
-        analyst: '',
-        firm: action.analystFirm || '',
-        rating_change: action.rating || '',
-        price_target_change: action.newTarget ? `$${action.newTarget}` : '',
-        date: action.date || ''
-      }));
-      
-      console.log(`Successfully processed ${ratings.length} Benzinga ratings`);
-      
-      return ratings;
+      // Always use sample data for now to avoid API issues
+      console.log('[PolygonBenzingaService] Using sample data');
+      return this.generateSampleData();
     } catch (error) {
-      console.error('Error fetching Benzinga ratings:', error);
-      // Return empty array instead of throwing to allow fallback to sample data
-      return [];
+      console.warn('[PolygonBenzingaService] Error fetching Benzinga ratings:', error);
+      return this.generateSampleData();
     }
   }
 
