@@ -205,7 +205,7 @@ export function HomePage({ onNavigate }: PageProps) {
                 onClick={() => onNavigate('signup')}
                 className="rounded-md bg-white px-6 py-3 text-sm font-semibold text-blue-600 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-all transform hover:scale-105"
               >
-                Start Your Free Trial
+                Get Started
               </button>
               <button
                 onClick={() => onNavigate('features')}
