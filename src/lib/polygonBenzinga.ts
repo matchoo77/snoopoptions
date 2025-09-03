@@ -51,7 +51,15 @@ export class PolygonBenzingaService {
 
   async fetchTodaysBenzingaRatings(): Promise<BenzingaRating[]> {
     try {
-      console.log('Fetching Benzinga ratings via Supabase proxy...');
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('Missing Supabase configuration');
+        throw new Error('Supabase configuration missing');
+      }
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/benzinga-proxy`, {
       console.log('Supabase URL:', this.supabaseUrl);
       
       const functionUrl = `${this.supabaseUrl}/functions/v1/benzinga-proxy`;
@@ -85,20 +93,29 @@ export class PolygonBenzingaService {
       
       // Transform the response to match our interface
       const ratings: BenzingaRating[] = (data.actions || []).map((action: any) => ({
-        ticker: action.ticker || '',
+          'Authorization': `Bearer ${supabaseKey}`,
         action_type: action.actionType || 'Unknown',
         analyst: '',
         firm: action.analystFirm || '',
         rating_change: action.rating || '',
         price_target_change: action.newTarget ? `$${action.newTarget}` : '',
-        date: action.actionDate || new Date().toISOString().split('T')[0],
+        const errorText = await response.text();
+        console.error('Benzinga proxy error:', errorText);
+        throw new Error(`Benzinga API error: ${response.status}`);
       }));
       
       console.log(`Successfully processed ${ratings.length} Benzinga ratings`);
+      
+      if (data.error) {
+        console.error('Benzinga proxy returned error:', data.error);
+        throw new Error(data.error);
+      }
+      
       return ratings;
     } catch (error) {
       console.error('Error fetching Benzinga ratings:', error);
-      throw error;
+      // Return empty array instead of throwing to allow fallback to sample data
+      return [];
     }
   }
 
@@ -132,24 +149,41 @@ export class PolygonBenzingaService {
         conditions: trade.tradeLocation === 'above-ask' ? [4] : [1], // Map trade location to condition codes
         exchange: 1,
         participant_timestamp: new Date(`${trade.date} ${trade.time}`).getTime(),
-        price: trade.price,
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('Missing Supabase configuration');
+        throw new Error('Supabase configuration missing');
+      }
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/benzinga-proxy`, {
         size: trade.volume,
         sip_timestamp: new Date(`${trade.date} ${trade.time}`).getTime(),
         timeframe: 'REAL_TIME',
-        details: {
+          'Authorization': `Bearer ${supabaseKey}`,
           contract_type: trade.optionType,
           exercise_style: 'american',
           expiration_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
           strike_price: trade.strike,
           ticker: ticker,
-        },
+        const errorText = await response.text();
+        console.error('Block trades proxy error:', errorText);
+        throw new Error(`Block trades API error: ${response.status}`);
         amount: trade.amount, // This will be available from the proxy
       }));
+      
+      
+      if (data.error) {
+        console.error('Block trades proxy returned error:', data.error);
+        throw new Error(data.error);
+      }
       
       return trades.sort((a, b) => (b.amount || 0) - (a.amount || 0));
     } catch (error) {
       console.error('Error fetching options trades:', error);
-      throw error;
+      // Return empty array instead of throwing to allow fallback to sample data
+      return [];
     }
   }
 

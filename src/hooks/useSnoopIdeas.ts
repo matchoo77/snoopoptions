@@ -34,8 +34,8 @@ export function useSnoopIdeas() {
         const { data: cachedIdeas, error: dbError } = await supabase
           .from('snoopideas')
           .select('*')
-          .gte('fetched_at', `${today}T00:00:00.000Z`)
-          .order('fetched_at', { ascending: false });
+          .gte('created_at', `${today}T00:00:00.000Z`)
+          .order('created_at', { ascending: false });
 
         if (!dbError && cachedIdeas && cachedIdeas.length > 0) {
           console.log(`Found ${cachedIdeas.length} cached Benzinga ratings for today`);
@@ -78,7 +78,7 @@ export function useSnoopIdeas() {
         await supabase
           .from('snoopideas')
           .delete()
-          .gte('fetched_at', `${today}T00:00:00.000Z`);
+          .gte('created_at', `${today}T00:00:00.000Z`);
       }
 
       // Insert new data into Supabase

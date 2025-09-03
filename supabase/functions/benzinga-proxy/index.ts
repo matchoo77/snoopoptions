@@ -7,7 +7,6 @@ const supabase = createClient(
 );
 
 const POLYGON_API_KEY = Deno.env.get('POLYGON_API_KEY') ?? '';
-const BENZINGA_API_KEY = Deno.env.get('BENZINGA_API_KEY') ?? '';
 
 function corsResponse(body: any, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -372,6 +371,11 @@ Deno.serve(async (req) => {
   try {
     if (req.method === 'OPTIONS') {
       return corsResponse({}, 204);
+    }
+
+    if (!POLYGON_API_KEY) {
+      console.error('POLYGON_API_KEY environment variable is not set');
+      return corsResponse({ error: 'API configuration missing' }, 500);
     }
 
     const { action, ticker } = await req.json();
