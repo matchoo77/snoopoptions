@@ -11,7 +11,7 @@ import { ActivityFeed } from '../ActivityFeed';
 import { AlertsPanel } from '../AlertsPanel';
 import { TopMovers } from '../TopMovers';
 import { WatchlistPanel } from '../WatchlistPanel';
-import { SnoopTestPanel } from '../snooptest/SnoopTestPanel';
+import { SnoopIdeasPanel } from '../snoopideas/SnoopIdeasPanel';
 
 interface DashboardAppProps {
   onUpgrade?: () => void;
@@ -108,17 +108,17 @@ export function DashboardApp({}: DashboardAppProps) {
             <button
               onClick={() => setShowBacktesting(true)}
               className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${showBacktesting
-                ? 'bg-purple-600 text-white'
+                ? 'bg-teal-600 text-white'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
             >
-              SnoopTest
+              SnoopIdeas
             </button>
           </div>
         </div>
 
         {showBacktesting ? (
-          <SnoopTestPanel />
+          <SnoopIdeasPanel />
         ) : (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
