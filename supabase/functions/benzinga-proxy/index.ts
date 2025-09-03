@@ -1,13 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
-
-const POLYGON_API_KEY = Deno.env.get('POLYGON_API_KEY') ?? '';
-
 function corsResponse(body: any, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -369,13 +362,20 @@ function generateSampleBlockTrades(ticker: string): any[] {
 
 Deno.serve(async (req) => {
   try {
-    // Check for required API key first
+    // Check for required API key at the start of each request
+    const POLYGON_API_KEY = Deno.env.get('POLYGON_API_KEY') ?? '';
+    
     if (!POLYGON_API_KEY || POLYGON_API_KEY.trim() === '') {
       console.error('POLYGON_API_KEY environment variable is not set or empty');
       return corsResponse({ 
-        error: 'API configuration missing: POLYGON_API_KEY not configured in Supabase secrets' 
+        error: 'Server configuration error: POLYGON_API_KEY not configured in Supabase secrets. Please contact support.' 
       }, 500);
     }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     if (req.method === 'OPTIONS') {
       return corsResponse({}, 204);
