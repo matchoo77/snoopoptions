@@ -1,5 +1,6 @@
 import { OptionsActivity } from '../types/options';
 import { getResolvedSupabaseAnonKey } from './supabase';
+import { supabase } from './supabase';
 
 interface PolygonOptionsContract {
   ticker: string;
@@ -110,7 +111,7 @@ export class MarketDataService {
   }
 
   async getOptionsSnapshot(symbol: string): Promise<any> {
-    const response = await this.supabase.functions.invoke('polygon-proxy', {
+    const response = await supabase.functions.invoke('polygon-proxy', {
       body: { 
         action: 'options-snapshot',
         symbol: symbol.toUpperCase()
@@ -125,7 +126,7 @@ export class MarketDataService {
   }
 
   async getStockSnapshots(): Promise<any> {
-    const response = await this.supabase.functions.invoke('polygon-proxy', {
+    const response = await supabase.functions.invoke('polygon-proxy', {
       body: { 
         action: 'stock-snapshots'
       }
@@ -314,3 +315,6 @@ export class MarketDataService {
   }
 
 }
+
+// Export a singleton instance
+export const marketDataService = new MarketDataService();
