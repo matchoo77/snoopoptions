@@ -13,34 +13,38 @@ export function SubscriptionCard({ product, isCurrentPlan = false, userToken }: 
   const [loading, setLoading] = useState(false);
 
   const handleSubscribe = async () => {
-    console.log('Subscribe button clicked for product:', product);
+    console.log('🔥 Subscribe button clicked for product:', product.name);
+    console.log('🔥 User token available:', !!userToken);
+    console.log('🔥 Price ID:', product.priceId);
     
     setLoading(true);
     try {
       if (!userToken) {
-        console.error('No user token available');
-        alert('Please log in to subscribe');
+        console.error('❌ No user token available');
+        alert('Authentication error. Please refresh the page and try again.');
+        setLoading(false);
         return;
       }
       
-      console.log('Creating checkout session...');
+      console.log('🚀 Creating checkout session with Stripe...');
       const { url } = await createCheckoutSession({
         priceId: product.priceId,
         mode: product.mode,
         userToken,
       });
       
-      console.log('Checkout URL received:', url);
+      console.log('✅ Checkout URL received:', url);
       if (url) {
-        console.log('Redirecting to Stripe checkout...');
+        console.log('🔄 Redirecting to Stripe checkout...');
         window.location.href = url;
       } else {
-        console.error('No checkout URL received');
-        alert('Failed to create checkout session');
+        console.error('❌ No checkout URL received from Stripe');
+        alert('Failed to create checkout session. Please try again.');
       }
     } catch (error) {
-      console.error('Error creating checkout session:', error);
-      alert(`Checkout failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Checkout error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Payment setup failed: ${errorMessage}\n\nPlease try again or contact support.`);
     } finally {
       setLoading(false);
     }
