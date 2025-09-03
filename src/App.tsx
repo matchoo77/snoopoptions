@@ -12,7 +12,6 @@ import { SubscriptionOnlyGate } from './components/SubscriptionOnlyGate';
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { subscriptionStatus, loading: subscriptionLoading, refetch: refetchSubscriptionStatus } = useSubscriptionOnly();
-  
   // Initialize currentView based on URL or default to 'marketing'
   const getInitialView = () => {
     const urlParams = new URLSearchParams(window.location.search);
