@@ -105,8 +105,8 @@ export function useSnoopIdeas() {
 
       setAnalystActions(transformedActions);
 
-    } catch (err) {
-      console.error('Error fetching analyst actions:', err);
+      .gte('created_at', today)
+      .order('created_at', { ascending: false });
       setError('Failed to fetch analyst actions');
       setAnalystActions([]);
     } finally {
