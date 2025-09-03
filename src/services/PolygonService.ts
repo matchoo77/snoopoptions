@@ -95,22 +95,8 @@ export class PolygonService {
   // Get unusual options activity using the snapshot endpoint
   async getUnusualOptionsActivity(symbol: string): Promise<OptionsActivity[]> {
     try {
-      let data: PolygonOptionsChainSnapshot;
-      
-      if (this.useProxy) {
-        // Use the market data service which routes through edge function
-        try {
-          const response = await marketDataService.getOptionsSnapshot(symbol);
-          data = response;
-        } catch (proxyError) {
-          console.warn(`[PolygonService] Proxy failed for ${symbol}, falling back to sample data:`, proxyError);
-          return this.generateSampleOptionsActivity(symbol);
-        }
-      } else {
-        // Direct API call (fallback)
-        const url = `${this.baseUrl}/v3/snapshot/options/${symbol}?apikey=${this.apiKey}`;
-        data = await this.makeRequest(url);
-      }
+      // Always use the market data service proxy to avoid CORS issues
+      const data = await marketDataService.getOptionsSnapshot(symbol);
 
       if (!data.results || data.results.length === 0) {
         return this.generateSampleOptionsActivity(symbol);
@@ -174,23 +160,8 @@ export class PolygonService {
   // Get top movers using multiple endpoints for better data
   async getTopMovers(): Promise<TopMover[]> {
     try {
-      let data: PolygonStockSnapshotResponse;
-      
-      if (this.useProxy) {
-        // Use the market data service which routes through edge function
-        try {
-          const response = await marketDataService.getStockSnapshots();
-          data = response;
-        } catch (proxyError) {
-          console.warn('[PolygonService] Proxy failed for stock data, using sample data:', proxyError);
-          return this.generateSampleTopMovers();
-        }
-      } else {
-        // Direct API call (fallback)
-        const url = `${this.baseUrl}/v2/snapshot/locale/us/markets/stocks/tickers?apikey=${this.apiKey}`;
-        console.log('[PolygonService] Fetching stock data from:', url);
-        data = await this.makeRequest(url);
-      }
+      // Always use the market data service proxy to avoid CORS issues
+      const data = await marketDataService.getStockSnapshots();
 
       if (!data.tickers || data.tickers.length === 0) {
         console.log('[PolygonService] No tickers data received');
