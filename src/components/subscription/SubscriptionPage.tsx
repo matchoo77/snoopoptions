@@ -11,6 +11,8 @@ interface SubscriptionPageProps {
 export function SubscriptionPage({ userToken, onBack }: SubscriptionPageProps) {
   const { subscription, loading } = useSubscription();
 
+  console.log('SubscriptionPage rendered with userToken:', userToken ? 'present' : 'missing');
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16">

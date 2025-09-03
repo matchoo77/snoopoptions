@@ -12,7 +12,7 @@ export interface StripeProduct {
 export const STRIPE_PRODUCTS: StripeProduct[] = [
   {
     id: 'prod_SysDPjI2j3M41J',
-    priceId: 'price_1S2uSi4gvT1xDWNkG6pBkAHO', // You need to provide the price ID from Stripe dashboard
+    priceId: 'price_1S2uSi4gvT1xDWNkG6pBkAHO',
     name: 'SnoopFlow Annual',
     description: 'Get access to real-time unusual options activity alerts and advanced filtering capabilities.',
     mode: 'subscription',

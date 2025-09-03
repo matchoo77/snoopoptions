@@ -139,7 +139,7 @@ function App() {
     case 'subscription':
       return user ? (
         <SubscriptionPage
-          userToken={''}
+          userToken={user.access_token || ''}
           onBack={handleBackToDashboard}
         />
       ) : (

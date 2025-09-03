@@ -13,19 +13,34 @@ export function SubscriptionCard({ product, isCurrentPlan = false, userToken }: 
   const [loading, setLoading] = useState(false);
 
   const handleSubscribe = async () => {
+    console.log('Subscribe button clicked for product:', product);
+    
     setLoading(true);
     try {
+      if (!userToken) {
+        console.error('No user token available');
+        alert('Please log in to subscribe');
+        return;
+      }
+      
+      console.log('Creating checkout session...');
       const { url } = await createCheckoutSession({
         priceId: product.priceId,
         mode: product.mode,
         userToken,
       });
       
+      console.log('Checkout URL received:', url);
       if (url) {
+        console.log('Redirecting to Stripe checkout...');
         window.location.href = url;
+      } else {
+        console.error('No checkout URL received');
+        alert('Failed to create checkout session');
       }
     } catch (error) {
       console.error('Error creating checkout session:', error);
+      alert(`Checkout failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
