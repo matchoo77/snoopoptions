@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, TrendingUp, BarChart3 } from 'lucide-react';
+import { Clock, Calendar, TrendingUp, BarChart3, AlertCircle, Signal } from 'lucide-react';
 import { getMarketStatus, getTimeUntilMarketOpen, MarketStatus } from '../lib/marketHours';
 import { isDeveloperMode } from '../utils/developerMode';
 
@@ -29,20 +29,38 @@ export function MarketStatusBanner({ className = '' }: MarketStatusBannerProps) 
 
   if (marketStatus.isOpen) {
     return (
-      <div className={`bg-green-50 border-l-4 border-green-400 p-4 ${className}`}>
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <TrendingUp className="h-5 w-5 text-green-400" />
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-green-700">
-              <span className="font-medium">Market is open</span> - Live data streaming
-            </p>
-          </div>
-          <div className="ml-auto">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              Live
-            </span>
+      <div className={`bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 shadow-sm ${className}`}>
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex-shrink-0">
+                <div className="bg-green-100 rounded-full p-2">
+                  <TrendingUp className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-lg font-semibold text-green-800">Market is Open</h3>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-green-700 font-medium">Live Trading</span>
+                  </div>
+                </div>
+                <p className="text-sm text-green-700 mt-1">
+                  Real-time data streaming • Options activity monitoring active
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="text-right">
+                <div className="text-xs text-green-600 uppercase tracking-wide font-medium">Status</div>
+                <div className="text-sm font-semibold text-green-800">Market Hours</div>
+              </div>
+              <div className="bg-green-500 text-white px-4 py-2 rounded-lg font-medium text-sm shadow-sm flex items-center space-x-1">
+                <Signal className="w-4 h-4" />
+                <span>LIVE</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -50,31 +68,48 @@ export function MarketStatusBanner({ className = '' }: MarketStatusBannerProps) 
   }
 
   return (
-    <div className={`bg-orange-50 border-l-4 border-orange-400 p-4 ${className}`}>
-      <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <Clock className="h-5 w-5 text-orange-400" />
-        </div>
-        <div className="ml-3 flex-1">
-          <div className="text-sm text-orange-700">
-            <span className="font-medium">{marketStatus.message}</span>
-            {timeUntilOpen && (
-              <span className="ml-2">• Opens in {timeUntilOpen}</span>
-            )}
-          </div>
-          <div className="text-xs text-orange-600 mt-1">
-            Showing previous trading day data and market insights
-          </div>
-          {isDeveloperMode() && (
-            <div className="mt-1 text-[11px] text-gray-500">
-              DEV: status={marketStatus.currentStatus}, isOpen={marketStatus.isOpen}
+    <div className={`bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 shadow-sm ${className}`}>
+      <div className="px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex-shrink-0">
+              <div className="bg-amber-100 rounded-full p-2">
+                <Clock className="h-6 w-6 text-amber-600" />
+              </div>
             </div>
-          )}
-        </div>
-        <div className="ml-auto">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-            Closed
-          </span>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-lg font-semibold text-amber-800">Market is Closed</h3>
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="mt-1 space-y-1">
+                <p className="text-sm text-amber-700 font-medium">
+                  {marketStatus.message}
+                  {timeUntilOpen && (
+                    <span className="ml-2 text-amber-800">• Opens in {timeUntilOpen}</span>
+                  )}
+                </p>
+                <p className="text-xs text-amber-600">
+                  Displaying previous trading session data and market insights
+                </p>
+              </div>
+              {isDeveloperMode() && (
+                <div className="mt-2 text-[11px] text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  DEV: status={marketStatus.currentStatus}, isOpen={marketStatus.isOpen}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="text-right">
+              <div className="text-xs text-amber-600 uppercase tracking-wide font-medium">Status</div>
+              <div className="text-sm font-semibold text-amber-800">After Hours</div>
+            </div>
+            <div className="bg-amber-500 text-white px-4 py-2 rounded-lg font-medium text-sm shadow-sm flex items-center space-x-1">
+              <Clock className="w-4 h-4" />
+              <span>CLOSED</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { OptionsActivity, FilterOptions } from '../types/options';
 import { usePolygonOptions } from './usePolygonOptions';
+import { useMarketStatus } from './useMarketStatus';
 
 export function useOptionsData() {
+  const marketStatus = useMarketStatus();
+  
   const [filters, setFilters] = useState<FilterOptions>({
     minVolume: 1,
     minPremium: 1,
@@ -28,7 +31,7 @@ export function useOptionsData() {
   } = usePolygonOptions({
     symbols: ['SPY', 'QQQ', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX'],
     autoRefresh: true,
-  refreshInterval: 10000 // Update every 10 seconds per request
+    refreshInterval: 30000 // Update every 30 seconds per request
   });
 
   // Trigger single symbol search when searchSymbol changes
@@ -39,6 +42,11 @@ export function useOptionsData() {
   }, [filters.searchSymbol, fetchSingleSymbol]);
 
   const filteredActivities = useMemo(() => {
+    // Don't show any data when market is completely closed
+    if (!marketStatus || marketStatus.currentPeriod === 'closed') {
+      return [];
+    }
+
     let filtered: OptionsActivity[] = polygonActivities;
 
     // Apply search symbol filter first
@@ -83,7 +91,7 @@ export function useOptionsData() {
     });
 
     return finalFiltered;
-  }, [polygonActivities, filters]);
+  }, [polygonActivities, filters, marketStatus]);
 
   return {
     activities: filteredActivities,

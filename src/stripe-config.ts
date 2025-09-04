@@ -10,12 +10,15 @@ export interface StripeProduct {
 
 export const STRIPE_PRODUCTS: StripeProduct[] = [
   {
-    priceId: 'price_1S2uSi4gvT1xDWNkG6pBkAHO',
+    priceId: 'price_1S3JL7LH6uJIp2yEMCAcNUi9',
     name: 'SnoopFlow Annual',
     description: 'Full access to SnoopFlow for 1 year',
     mode: 'subscription',
     currency: 'USD',
-    price: 99,
+    price: 399,
     interval: 'year'
   }
 ];
+
+// Stripe live publishable key
+export const STRIPE_PUBLISHABLE_KEY = 'pk_live_51S3IrFLH6uJIp2yEmxwQi2f2cuGdB76bW9MzHhPqmrm6xr5C9WxHHVyRVgZ1EoJqTuLIwuecr7mH4LMBzx63zNDH00AFYBey1y';

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { OptionsActivity } from '../types/options';
 import { polygonService } from '../services/PolygonService';
+import { useMarketStatus } from './useMarketStatus';
 
 interface UsePolygonOptionsProps {
   symbols?: string[];
@@ -11,9 +12,10 @@ interface UsePolygonOptionsProps {
 export function usePolygonOptions({ 
   symbols = ['SPY', 'QQQ', 'AAPL', 'TSLA', 'NVDA'], 
   autoRefresh = true, 
-  refreshInterval = 10000 // 10 seconds
+  refreshInterval = 30000 // 30 seconds
 }: UsePolygonOptionsProps = {}) {
   
+  const marketStatus = useMarketStatus();
   const [activities, setActivities] = useState<OptionsActivity[]>([]);
   const [topMovers, setTopMovers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -22,6 +24,12 @@ export function usePolygonOptions({
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   const fetchUnusualActivity = useCallback(async () => {
+    // Don't fetch when market is completely closed
+    if (!marketStatus || marketStatus.currentPeriod === 'closed') {
+      console.log('[usePolygonOptions] Market is closed, skipping data fetch');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -37,9 +45,15 @@ export function usePolygonOptions({
     } finally {
       setLoading(false);
     }
-  }, [symbols]);
+  }, [symbols, marketStatus]);
 
   const fetchTopMovers = useCallback(async () => {
+    // Don't fetch when market is completely closed
+    if (!marketStatus || marketStatus.currentPeriod === 'closed') {
+      console.log('[usePolygonOptions] Market is closed, skipping top movers fetch');
+      return;
+    }
+
     setTopMoversLoading(true);
     try {
       const movers = await polygonService.getTopMovers();
@@ -49,7 +63,7 @@ export function usePolygonOptions({
     } finally {
       setTopMoversLoading(false);
     }
-  }, []);
+  }, [marketStatus]);
 
   const fetchSingleSymbol = useCallback(async (symbol: string) => {
     setLoading(true);

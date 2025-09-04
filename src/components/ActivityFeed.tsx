@@ -150,9 +150,9 @@ export function ActivityFeed({
 }: ActivityFeedProps) {
   const [sortField, setSortField] = useState<SortField>('timestamp');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [displayedActivities, setDisplayedActivities] = useState<OptionsActivity[]>(activities);
+  const [accumulatedActivities, setAccumulatedActivities] = useState<OptionsActivity[]>([]);
   const lastAppliedRef = useRef<number>(0);
-  const APPLY_INTERVAL_MS = 10000; // apply updates to UI at most every 10s
+  const APPLY_INTERVAL_MS = 30000; // apply updates to UI every 30 seconds
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -165,29 +165,29 @@ export function ActivityFeed({
 
   const sortedActivities = useMemo(() => {
     const arr = [...activities].sort((a, b) => {
-    let aValue: any;
-    let bValue: any;
+      let aValue: any;
+      let bValue: any;
 
-    switch (sortField) {
-      case 'timestamp':
-        aValue = new Date(a.timestamp).getTime();
-        bValue = new Date(b.timestamp).getTime();
-        break;
-      case 'volume':
-        aValue = a.volume;
-        bValue = b.volume;
-        break;
-      case 'premium':
-        aValue = a.premium;
-        bValue = b.premium;
-        break;
-      case 'impliedVolatility':
-        aValue = a.impliedVolatility;
-        bValue = b.impliedVolatility;
-        break;
-      default:
-        return 0;
-    }
+      switch (sortField) {
+        case 'timestamp':
+          aValue = new Date(a.timestamp).getTime();
+          bValue = new Date(b.timestamp).getTime();
+          break;
+        case 'volume':
+          aValue = a.volume;
+          bValue = b.volume;
+          break;
+        case 'premium':
+          aValue = a.premium;
+          bValue = b.premium;
+          break;
+        case 'impliedVolatility':
+          aValue = a.impliedVolatility;
+          bValue = b.impliedVolatility;
+          break;
+        default:
+          return 0;
+      }
 
       if (aValue === bValue) {
         // deterministic tie-breaker to avoid jitter
@@ -200,27 +200,50 @@ export function ActivityFeed({
         return aValue < bValue ? 1 : -1;
       }
     });
-    return arr;
+    return arr.slice(0, 200); // Show up to 200 activities
   }, [activities, sortField, sortDirection]);
 
-  // Throttle UI updates to avoid jittery re-rendering
+  // Accumulate activities and update display every 30 seconds
   useEffect(() => {
     const now = Date.now();
     const elapsed = now - lastAppliedRef.current;
 
     if (elapsed >= APPLY_INTERVAL_MS) {
-      setDisplayedActivities(sortedActivities);
+      // Get the top 50 new activities
+      const newTop50 = sortedActivities.slice(0, 50);
+
+      // Stack them on top of existing activities, but keep total at 200
+      setAccumulatedActivities(prev => {
+        const combined = [...newTop50, ...prev];
+        const uniqueActivities = Array.from(
+          new Map(combined.map(activity => [activity.id, activity])).values()
+        );
+        return uniqueActivities.slice(0, 200);
+      });
+
       lastAppliedRef.current = now;
       return;
     }
 
     const timeout = setTimeout(() => {
-      setDisplayedActivities(sortedActivities);
+      const newTop50 = sortedActivities.slice(0, 50);
+
+      setAccumulatedActivities(prev => {
+        const combined = [...newTop50, ...prev];
+        const uniqueActivities = Array.from(
+          new Map(combined.map(activity => [activity.id, activity])).values()
+        );
+        return uniqueActivities.slice(0, 200);
+      });
+
       lastAppliedRef.current = Date.now();
     }, APPLY_INTERVAL_MS - elapsed);
 
     return () => clearTimeout(timeout);
   }, [sortedActivities]);
+
+  // Use accumulated activities for display, fallback to sorted activities
+  const activitiesToShow = accumulatedActivities.length > 0 ? accumulatedActivities : sortedActivities;
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
@@ -237,7 +260,7 @@ export function ActivityFeed({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-semibold text-gray-900">Unusual Options Activity</h3>
-            <p className="text-sm text-gray-600 mt-1">Showing top 50 unusual activity alerts</p>
+            <p className="text-sm text-gray-600 mt-1">Showing top 200 unusual activity alerts</p>
           </div>
           <div className="flex items-center space-x-2">
             <div className="flex items-center">
@@ -315,7 +338,7 @@ export function ActivityFeed({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {displayedActivities.slice(0, 50).map((activity) => (
+            {activitiesToShow.map((activity) => (
               <ActivityRow
                 key={activity.id}
                 activity={activity}
