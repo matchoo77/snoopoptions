@@ -28,8 +28,8 @@ export function StatsOverview({ activities, dataSource = 'realtime' }: StatsOver
     };
   }, [activities]);
 
-  // Don't show data when market is completely closed
-  if (!marketStatus || marketStatus.currentPeriod === 'closed') {
+  // Hide data outside regular market hours
+  if (!marketStatus || marketStatus.currentPeriod !== 'market-hours') {
     return (
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="p-6 text-center">
@@ -37,7 +37,7 @@ export function StatsOverview({ activities, dataSource = 'realtime' }: StatsOver
             <Activity className="w-12 h-12 mx-auto mb-3" />
           </div>
           <h3 className="text-lg font-medium text-gray-500 mb-2">Market is Closed</h3>
-          <p className="text-sm text-gray-400">Stats will appear when the market reopens.</p>
+          <p className="text-sm text-gray-400">Stats are visible during regular market hours.</p>
         </div>
       </div>
     );
