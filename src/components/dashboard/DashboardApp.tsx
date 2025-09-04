@@ -105,7 +105,7 @@ export function DashboardApp({}: DashboardAppProps) {
             </button>
             <button
               onClick={() => setShowBacktesting(true)}
-              className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${showBacktesting
+              className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${showBacktesting}
             </button>
           </div>
         </div>
