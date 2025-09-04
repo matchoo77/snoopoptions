@@ -149,12 +149,13 @@ export function ActivityFeed({
   onUpdateNote,
   getFavoriteNote
 }: ActivityFeedProps) {
+  // All hooks must be called before any conditional returns
   const marketStatus = useMarketStatus();
   const [sortField, setSortField] = useState<SortField>('timestamp');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [accumulatedActivities, setAccumulatedActivities] = useState<OptionsActivity[]>([]);
   const lastAppliedRef = useRef<number>(0);
-  const APPLY_INTERVAL_MS = 30000; // apply updates to UI every 30 seconds
+  const APPLY_INTERVAL_MS = 40000; // apply updates to UI every 30 seconds
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -247,30 +248,121 @@ export function ActivityFeed({
   // Use accumulated activities for display, fallback to sorted activities
   const activitiesToShow = accumulatedActivities.length > 0 ? accumulatedActivities : sortedActivities;
 
-  // Hide feed outside regular market hours (premarket, after-hours, closed)
-  // Treat anything other than 'market-hours' as closed for the UI
-  if (!marketStatus || marketStatus.currentPeriod !== 'market-hours') {
+  // Don't show any activities when market is completely closed (after all hooks are called)
+  if (!marketStatus || marketStatus.currentPeriod === 'closed') {
     return (
       <div className="bg-white rounded-lg shadow-sm border">
-        <div className="p-8 text-center">
-          <div className="text-gray-400 mb-4">
-            <Zap className="w-16 h-16 mx-auto mb-4" />
+        <div className="p-6 text-center">
+          <div className="text-gray-400 mb-2">
+            <Zap className="w-12 h-12 mx-auto mb-3" />
           </div>
-          <h3 className="text-xl font-medium text-gray-700 mb-3">Market is closed right now</h3>
-          <p className="text-base text-gray-500 mb-2">Options activity is visible only during regular market hours.</p>
-          <p className="text-sm text-gray-400">Check back when the market reopens.</p>
+          <h3 className="text-lg font-medium text-gray-500 mb-2">Market is Closed</h3>
+          <p className="text-sm text-gray-400">
+            Options activity will appear when the market reopens.
+          </p>
         </div>
       </div>
     );
   }
 
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <Minus className="w-4 h-4 ml-1 text-gray-300" />;
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
     }
-    return sortDirection === 'asc'
-      ? <ChevronUp className="w-4 h-4 ml-1" />
-      : <ChevronDown className="w-4 h-4 ml-1" />;
+  };
+
+  const sortedActivities = useMemo(() => {
+    const arr = [...activities].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case 'timestamp':
+          aValue = new Date(a.timestamp).getTime();
+          bValue = new Date(b.timestamp).getTime();
+          break;
+        case 'volume':
+          aValue = a.volume;
+          bValue = b.volume;
+          break;
+        case 'premium':
+          aValue = a.premium;
+          bValue = b.premium;
+          break;
+        case 'impliedVolatility':
+          aValue = a.impliedVolatility;
+          bValue = b.impliedVolatility;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue === bValue) {
+        // deterministic tie-breaker to avoid jitter
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+      }
+
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+    return arr.slice(0, 200); // Show up to 200 activities
+  }, [activities, sortField, sortDirection]);
+
+  // Accumulate activities and update display every 30 seconds
+  useEffect(() => {
+    const now = Date.now();
+    const elapsed = now - lastAppliedRef.current;
+
+    if (elapsed >= APPLY_INTERVAL_MS) {
+      // Get the top 50 new activities
+      const newTop50 = sortedActivities.slice(0, 50);
+
+      // Stack them on top of existing activities, but keep total at 200
+      setAccumulatedActivities(prev => {
+        const combined = [...newTop50, ...prev];
+        const uniqueActivities = Array.from(
+          new Map(combined.map(activity => [activity.id, activity])).values()
+        );
+        return uniqueActivities.slice(0, 200);
+      });
+
+      lastAppliedRef.current = now;
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      const newTop50 = sortedActivities.slice(0, 50);
+
+      setAccumulatedActivities(prev => {
+        const combined = [...newTop50, ...prev];
+        const uniqueActivities = Array.from(
+          new Map(combined.map(activity => [activity.id, activity])).values()
+        );
+        return uniqueActivities.slice(0, 200);
+      });
+
+      lastAppliedRef.current = Date.now();
+    }, APPLY_INTERVAL_MS - elapsed);
+
+    return () => clearTimeout(timeout);
+  }, [sortedActivities]);
+
+  // Use accumulated activities for display, fallback to sorted activities
+  const activitiesToShow = accumulatedActivities.length > 0 ? accumulatedActivities : sortedActivities;
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? (
+      <ChevronUp className="w-4 h-4 ml-1" />
+    ) : (
+      <ChevronDown className="w-4 h-4 ml-1" />
+    );
   };
 
   return (

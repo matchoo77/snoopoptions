@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Clock, DollarSign } from 'lucide-react';
+import { useMarketStatus } from '../hooks/useMarketStatus';
 
 interface MarketData {
   symbol: string;
@@ -21,6 +22,7 @@ interface MarketStats {
 }
 
 export function MarketOverview() {
+  const marketStatus = useMarketStatus();
   const [marketData, setMarketData] = useState<MarketData[]>([]);
   const [marketStats, setMarketStats] = useState<MarketStats>({
     advancers: 0,
@@ -102,6 +104,26 @@ export function MarketOverview() {
     if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
     return num.toString();
   };
+
+  // Don't show data when market is completely closed
+  if (!marketStatus || marketStatus.currentPeriod === 'closed') {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-3 border">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Market Overview</h3>
+          <div className="flex items-center space-x-2">
+            <Clock className="w-4 h-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-500">Market Closed</span>
+          </div>
+        </div>
+        <div className="text-center py-8">
+          <div className="text-base font-medium text-gray-600 mb-2">Market is Closed Right Now</div>
+          <div className="text-sm text-gray-500">Market overview data is not available when the market is closed.</div>
+          <div className="text-xs text-gray-400 mt-1">Check back later when the market reopens.</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-2 mb-3 border">

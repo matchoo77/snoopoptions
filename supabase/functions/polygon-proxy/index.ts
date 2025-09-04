@@ -3,6 +3,8 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // Simple proxy for Polygon.io requests via Supabase Edge Functions
 // Secures your Polygon API key on the server side.
 
+declare const Deno: any;
+
 const ALLOWED_PREFIXES = [
   'https://api.polygon.io/v2/aggs/ticker/',
   'https://api.polygon.io/v3/reference/options/contracts',
@@ -24,6 +26,45 @@ function corsResponse(body: string | object | null, status = 200) {
   });
 }
 
+// Market status checking function
+function getMarketStatus() {
+  const now = new Date();
+  const eastern = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    weekday: 'short',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false
+  });
+  
+  const easternParts = eastern.formatToParts(now);
+  const weekday = easternParts.find(p => p.type === 'weekday')?.value;
+  const hour = parseInt(easternParts.find(p => p.type === 'hour')?.value || '0');
+  const minute = parseInt(easternParts.find(p => p.type === 'minute')?.value || '0');
+  const currentTime = hour * 60 + minute; // Convert to minutes since midnight
+  
+  // Weekend check
+  if (weekday === 'Sat' || weekday === 'Sun') {
+    return { currentPeriod: 'closed', isMarketOpen: false };
+  }
+  
+  // Market hours in minutes since midnight (ET)
+  const preMarketStart = 4 * 60; // 4:00 AM
+  const marketOpen = 9 * 60 + 30; // 9:30 AM
+  const marketClose = 16 * 60; // 4:00 PM
+  const afterHoursEnd = 20 * 60; // 8:00 PM
+  
+  if (currentTime >= marketOpen && currentTime < marketClose) {
+    return { currentPeriod: 'market-hours', isMarketOpen: true };
+  } else if (currentTime >= preMarketStart && currentTime < marketOpen) {
+    return { currentPeriod: 'premarket', isMarketOpen: false };
+  } else if (currentTime >= marketClose && currentTime < afterHoursEnd) {
+    return { currentPeriod: 'after-hours', isMarketOpen: false };
+  } else {
+    return { currentPeriod: 'closed', isMarketOpen: false };
+  }
+}
+
 function isAllowedUrl(url: string) {
   try {
     const u = new URL(url);
@@ -43,11 +84,28 @@ Deno.serve(async (req) => {
       return corsResponse({ error: 'Method not allowed' }, 405);
     }
 
-    const { action, symbol, limit = 50 } = await req.json();
+    // Check market status first
+    const marketStatus = getMarketStatus();
+    console.log('[Polygon Proxy] Market status:', marketStatus);
+
+    // If market is completely closed, return empty data instead of making API calls
+    if (marketStatus.currentPeriod === 'closed') {
+      console.log('[Polygon Proxy] Market is closed, returning empty data');
+      return corsResponse({
+        status: 'OK',
+        results: [],
+        count: 0,
+        market_status: marketStatus,
+        message: 'Market is closed - no data available'
+      });
+    }
+
+    const { action, symbol, limit = 50, url } = await req.json();
 
     if (action === 'options-snapshot' && symbol) {
-      const url = `https://api.polygon.io/v3/snapshot/options/${symbol}?apikey=${POLYGON_API_KEY}`;
-      const response = await fetch(url);
+      const serverKey = Deno.env.get('POLYGON_API_KEY');
+      const apiUrl = `https://api.polygon.io/v3/snapshot/options/${symbol}?apikey=${serverKey}`;
+      const response = await fetch(apiUrl);
       
       if (!response.ok) {
         throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
@@ -58,8 +116,9 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'stock-snapshots') {
-      const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers?apikey=${POLYGON_API_KEY}`;
-      const response = await fetch(url);
+      const serverKey = Deno.env.get('POLYGON_API_KEY');
+      const apiUrl = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers?apikey=${serverKey}`;
+      const response = await fetch(apiUrl);
       
       if (!response.ok) {
         throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);

@@ -96,26 +96,55 @@ export function usePolygonOptions({
 
   // Initial fetch on mount - immediate, no delays
   useEffect(() => {
-    refreshAll();
-  }, []); // Only run on mount
+    // Only fetch if market status is available and not closed
+    if (marketStatus) {
+      if (marketStatus.currentPeriod !== 'closed') {
+        console.log('[usePolygonOptions] Initial fetch triggered, market status:', marketStatus.currentPeriod);
+        refreshAll();
+      } else {
+        console.log('[usePolygonOptions] Initial fetch skipped - market is closed');
+      }
+    }
+  }, [marketStatus]); // Depend on marketStatus instead of empty array
 
   // Auto-refresh interval - refresh both activities and top movers
   useEffect(() => {
     if (!autoRefresh) return;
 
     const interval = setInterval(() => {
-      refreshAll(); // Refresh both activities and top movers
+      // Only refresh if market is open or in trading periods
+      if (marketStatus && marketStatus.currentPeriod !== 'closed') {
+        console.log('[usePolygonOptions] Auto-refresh triggered, market status:', marketStatus.currentPeriod);
+        refreshAll(); // Refresh both activities and top movers
+      } else {
+        console.log('[usePolygonOptions] Auto-refresh skipped - market is closed');
+      }
     }, refreshInterval);
 
     return () => {
       clearInterval(interval);
     };
-  }, [autoRefresh, refreshInterval, refreshAll]);
+  }, [autoRefresh, refreshInterval, refreshAll, marketStatus]);
 
   // Refetch when symbols change
   useEffect(() => {
-    fetchUnusualActivity();
-  }, [symbols, fetchUnusualActivity]);
+    // Only fetch if market is not closed
+    if (marketStatus && marketStatus.currentPeriod !== 'closed') {
+      console.log('[usePolygonOptions] Symbols changed, refetching data');
+      fetchUnusualActivity();
+    } else {
+      console.log('[usePolygonOptions] Symbols changed but market is closed, skipping fetch');
+    }
+  }, [symbols, marketStatus, fetchUnusualActivity]);
+
+  // Clear activities when market is closed
+  useEffect(() => {
+    if (!marketStatus || marketStatus.currentPeriod === 'closed') {
+      console.log('[usePolygonOptions] Market is closed, clearing cached activities');
+      setActivities([]);
+      setTopMovers([]);
+    }
+  }, [marketStatus]);
 
   return {
     activities,

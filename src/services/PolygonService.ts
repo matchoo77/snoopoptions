@@ -75,6 +75,24 @@ export class PolygonService {
     this.useProxy = !!import.meta.env.VITE_SUPABASE_URL;
   }
 
+  private isMarketClosed(): boolean {
+    const now = new Date();
+    const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const currentHour = easternTime.getHours();
+    const currentMinute = easternTime.getMinutes();
+    const currentDay = easternTime.getDay(); // 0 = Sunday, 6 = Saturday
+    
+    const isWeekday = currentDay >= 1 && currentDay <= 5;
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    
+    // Market periods in minutes from midnight
+    const preMarketStart = 4 * 60; // 4:00 AM
+    const afterHoursEnd = 20 * 60; // 8:00 PM
+    
+    // Market is closed if it's weekend or outside 4 AM - 8 PM ET
+    return !isWeekday || currentTimeInMinutes < preMarketStart || currentTimeInMinutes >= afterHoursEnd;
+  }
+
   private async makeRequest(url: string): Promise<any> {
     try {
       const response = await fetch(url);
@@ -94,9 +112,21 @@ export class PolygonService {
 
   // Get unusual options activity using the snapshot endpoint
   async getUnusualOptionsActivity(symbol: string): Promise<OptionsActivity[]> {
+    // Early return if market is closed
+    if (this.isMarketClosed()) {
+      console.log('[PolygonService] Market is closed, returning empty activities for', symbol);
+      return [];
+    }
+
     try {
       // Always use the market data service proxy to avoid CORS issues
       const data = await marketDataService.getOptionsSnapshot(symbol);
+
+      // Check if the response indicates market is closed
+      if (data.market_status && data.market_status.currentPeriod === 'closed') {
+        console.log('[PolygonService] Market is closed, returning empty activities for', symbol);
+        return [];
+      }
 
       if (!data.results || data.results.length === 0) {
         return this.generateSampleOptionsActivity(symbol);
@@ -159,9 +189,21 @@ export class PolygonService {
 
   // Get top movers using multiple endpoints for better data
   async getTopMovers(): Promise<TopMover[]> {
+    // Early return if market is closed
+    if (this.isMarketClosed()) {
+      console.log('[PolygonService] Market is closed, returning empty top movers');
+      return [];
+    }
+
     try {
       // Always use the market data service proxy to avoid CORS issues
       const data = await marketDataService.getStockSnapshots();
+
+      // Check if the response indicates market is closed
+      if (data.market_status && data.market_status.currentPeriod === 'closed') {
+        console.log('[PolygonService] Market is closed, returning empty top movers');
+        return [];
+      }
 
       if (!data.tickers || data.tickers.length === 0) {
         console.log('[PolygonService] No tickers data received');
@@ -220,6 +262,12 @@ export class PolygonService {
 
   // Get unusual activity for multiple symbols
   async getMultiSymbolUnusualActivity(symbols: string[]): Promise<OptionsActivity[]> {
+    // Early return if market is closed
+    if (this.isMarketClosed()) {
+      console.log('[PolygonService] Market is closed, returning empty multi-symbol activities');
+      return [];
+    }
+
     try {
       const allActivities: OptionsActivity[] = [];
 

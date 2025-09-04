@@ -1,5 +1,6 @@
 import { TrendingUp, TrendingDown, Flame, Loader2 } from 'lucide-react';
 import { TopMover } from '../types/options';
+import { useMarketStatus } from '../hooks/useMarketStatus';
 
 interface TopMoversProps {
   topMovers?: TopMover[];
@@ -7,6 +8,8 @@ interface TopMoversProps {
 }
 
 export function TopMovers({ topMovers = [], loading = false }: TopMoversProps) {
+  const marketStatus = useMarketStatus();
+
   const formatCurrency = (value: number) => {
     if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
     if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
@@ -27,7 +30,15 @@ export function TopMovers({ topMovers = [], loading = false }: TopMoversProps) {
       </div>
 
       <div className="space-y-3" style={{ minHeight: '280px' }}>
-        {loading ? (
+        {!marketStatus || marketStatus.currentPeriod === 'closed' ? (
+          <div className="flex items-center justify-center p-6 text-gray-500" style={{ height: '280px' }}>
+            <div className="text-center">
+              <div className="text-base font-medium text-gray-600 mb-2">Market is Closed Right Now</div>
+              <div className="text-sm text-gray-500">Top movers data is not available when the market is closed.</div>
+              <div className="text-xs text-gray-400 mt-1">Check back later when the market reopens.</div>
+            </div>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center p-6 text-gray-500" style={{ height: '280px' }}>
             <div className="flex items-center space-x-2">
               <Loader2 className="w-5 h-5 animate-spin" />

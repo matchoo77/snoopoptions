@@ -32,6 +32,24 @@ export class MarketDataService {
     console.log('MarketDataService initialized - Using real Polygon API data through Supabase proxy');
   }
 
+  private isMarketClosed(): boolean {
+    const now = new Date();
+    const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const currentHour = easternTime.getHours();
+    const currentMinute = easternTime.getMinutes();
+    const currentDay = easternTime.getDay(); // 0 = Sunday, 6 = Saturday
+    
+    const isWeekday = currentDay >= 1 && currentDay <= 5;
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    
+    // Market periods in minutes from midnight
+    const preMarketStart = 4 * 60; // 4:00 AM
+    const afterHoursEnd = 20 * 60; // 8:00 PM
+    
+    // Market is closed if it's weekend or outside 4 AM - 8 PM ET
+    return !isWeekday || currentTimeInMinutes < preMarketStart || currentTimeInMinutes >= afterHoursEnd;
+  }
+
   private async makeRequest(url: string): Promise<any> {
     // Check cache first
     if (this.cache.has(url)) {
@@ -111,6 +129,18 @@ export class MarketDataService {
   }
 
   async getOptionsSnapshot(symbol: string): Promise<any> {
+    // Check if market is closed before making API call
+    if (this.isMarketClosed()) {
+      console.log('[MarketDataService] Market is closed, returning empty options snapshot');
+      return {
+        status: 'OK',
+        results: [],
+        count: 0,
+        market_status: { currentPeriod: 'closed', isMarketOpen: false },
+        message: 'Market is closed - no data available'
+      };
+    }
+
     const response = await supabase.functions.invoke('polygon-proxy', {
       body: { 
         action: 'options-snapshot',
@@ -126,6 +156,18 @@ export class MarketDataService {
   }
 
   async getStockSnapshots(): Promise<any> {
+    // Check if market is closed before making API call
+    if (this.isMarketClosed()) {
+      console.log('[MarketDataService] Market is closed, returning empty stock snapshots');
+      return {
+        status: 'OK',
+        tickers: [],
+        count: 0,
+        market_status: { currentPeriod: 'closed', isMarketOpen: false },
+        message: 'Market is closed - no data available'
+      };
+    }
+
     const response = await supabase.functions.invoke('polygon-proxy', {
       body: { 
         action: 'stock-snapshots'

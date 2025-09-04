@@ -31,13 +31,14 @@ export function StatsOverview({ activities, dataSource = 'realtime' }: StatsOver
   // Don't show data when market is completely closed
   if (!marketStatus || marketStatus.currentPeriod === 'closed') {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-4">
-        {[...Array(6)].map((_, index) => (
-          <div key={index} className="bg-gray-100 rounded-lg p-3 text-center">
-            <div className="text-lg font-bold text-gray-400">--</div>
-            <div className="text-xs text-gray-400 font-medium">Market Closed</div>
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className="p-6 text-center">
+          <div className="text-gray-400 mb-2">
+            <Activity className="w-12 h-12 mx-auto mb-3" />
           </div>
-        ))}
+          <h3 className="text-lg font-medium text-gray-500 mb-2">Market is Closed</h3>
+          <p className="text-sm text-gray-400">Stats will appear when the market reopens.</p>
+        </div>
       </div>
     );
   }
