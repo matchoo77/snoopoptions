@@ -67,7 +67,7 @@ export function DashboardApp({}: DashboardAppProps) {
     if (!showBacktesting) {
       const interval = setInterval(() => {
         refreshData();
-      }, 10000); // 10 seconds (10000ms)
+      }, 30000); // 30 seconds as requested
 
       return () => clearInterval(interval);
     }
@@ -149,10 +149,6 @@ export function DashboardApp({}: DashboardAppProps) {
             </div>
 
             {/* Full Width Top Movers */}
-            <div className="w-full mb-6">
-              <TopMovers topMovers={topMovers} loading={topMoversLoading} />
-            </div>
-
             {/* Full Width Activity Feed */}
             <div className="w-full">
               <ActivityFeed

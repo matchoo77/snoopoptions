@@ -263,7 +263,16 @@ export class MarketDataService {
         .slice(0, 100);
 
       console.log(`[MarketDataService] Filtered REAL unusual activities: ${filteredActivities.length}`);
-      return filteredActivities;
+      
+      // Sort by timestamp descending (newest first) then by premium
+      return filteredActivities.sort((a, b) => {
+        // First sort by timestamp (newest first)
+        const timeA = new Date(a.timestamp).getTime();
+        const timeB = new Date(b.timestamp).getTime();
+        if (timeB !== timeA) return timeB - timeA;
+        // Then by premium (highest first)
+        return b.premium - a.premium;
+      });
     } catch (error) {
       console.error('[MarketDataService] Error in getUnusualActivityMultiSymbol:', error);
       return []; // Return empty array instead of fallback data

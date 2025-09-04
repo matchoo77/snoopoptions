@@ -58,12 +58,22 @@ export function useRealTimeData({ symbols = [], enabled = true }: UseRealTimeDat
       
       // Add new data on top of existing data instead of replacing it
       setActivities(prevActivities => {
-        // Remove duplicates by ID to avoid duplicate entries
+        // For single symbol search, replace data for that symbol
+        if (finalSymbols.length === 1) {
+          const searchSymbol = finalSymbols[0];
+          const otherSymbolActivities = prevActivities.filter(a => a.symbol !== searchSymbol);
+          return [...enhancedActivities, ...otherSymbolActivities]
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+            .slice(0, 200);
+        }
+        
+        // For multi-symbol, add new activities on top (newest first)
         const existingIds = new Set(prevActivities.map(a => a.id));
         const newActivities = enhancedActivities.filter(a => !existingIds.has(a.id));
         
-        // Combine new activities on top, keep only last 200 activities for performance
-        const combined = [...newActivities, ...prevActivities].slice(0, 200);
+        const combined = [...newActivities, ...prevActivities]
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 200);
         
         return combined;
       });

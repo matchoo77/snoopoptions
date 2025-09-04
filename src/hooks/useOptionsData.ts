@@ -20,9 +20,7 @@ export function useOptionsData() {
   // Use the new Polygon hook
   const {
     activities: polygonActivities,
-    topMovers,
     loading,
-    topMoversLoading,
     error,
     lastUpdate,
     refreshAll,
@@ -30,7 +28,7 @@ export function useOptionsData() {
   } = usePolygonOptions({
     symbols: ['SPY', 'QQQ', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX'],
     autoRefresh: true,
-    refreshInterval: 10000 // Reduced to 10 seconds for faster updates
+    refreshInterval: 30000 // 30 seconds as requested
   });
 
   // Trigger single symbol search when searchSymbol changes
@@ -89,7 +87,6 @@ export function useOptionsData() {
 
   return {
     activities: filteredActivities,
-    topMovers,
     filters,
     setFilters,
     isConnected: true,
@@ -97,7 +94,6 @@ export function useOptionsData() {
     dataSource: 'polygon' as const,
     error,
     loading,
-    topMoversLoading,
     lastUpdate,
     refreshData: refreshAll,
   };

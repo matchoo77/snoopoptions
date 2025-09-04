@@ -244,8 +244,16 @@ export class PolygonService {
         }
       }
 
+      // Sort by timestamp descending (newest first) and premium
       return allActivities
-        .sort((a, b) => b.premium - a.premium)
+        .sort((a, b) => {
+          // First sort by timestamp (newest first)
+          const timeA = new Date(a.timestamp).getTime();
+          const timeB = new Date(b.timestamp).getTime();
+          if (timeB !== timeA) return timeB - timeA;
+          // Then by premium (highest first)
+          return b.premium - a.premium;
+        })
         .slice(0, 50);
 
     } catch (error) {
