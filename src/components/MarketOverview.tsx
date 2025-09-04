@@ -82,8 +82,8 @@ export function MarketOverview() {
     // Initial load
     fetchData();
 
-    // Update every 30 seconds for responsive market data
-    const interval = setInterval(fetchData, 30000);
+    // Update every 2 minutes for less frequent market data updates
+    const interval = setInterval(fetchData, 120000); // Changed from 30 seconds to 2 minutes
 
     return () => clearInterval(interval);
   }, []);

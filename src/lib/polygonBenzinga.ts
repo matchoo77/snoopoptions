@@ -1,4 +1,4 @@
-interface BenzingaRating {
+export interface BenzingaRating {
   ticker: string;
   action_type: string;
   analyst?: string;
@@ -14,7 +14,7 @@ interface PolygonBenzingaResponse {
   count?: number;
 }
 
-interface OptionsTradeResult {
+export interface OptionsTradeResult {
   conditions: number[];
   exchange: number;
   participant_timestamp: number;
@@ -39,24 +39,51 @@ interface PolygonOptionsTradesResponse {
   next_url?: string;
 }
 
+import { getResolvedSupabaseUrl, getResolvedSupabaseAnonKey } from './supabase';
+
 export class PolygonBenzingaService {
   private supabaseUrl: string;
+  private supabaseAnonKey: string;
 
   constructor() {
-    this.supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    if (!this.supabaseUrl) {
-      throw new Error('VITE_SUPABASE_URL environment variable is required');
-    }
+    // Use resolved Supabase config to avoid missing env issues
+    this.supabaseUrl = getResolvedSupabaseUrl();
+    this.supabaseAnonKey = getResolvedSupabaseAnonKey();
   }
 
   async fetchTodaysBenzingaRatings(): Promise<BenzingaRating[]> {
     try {
-      // Always use sample data for now to avoid API issues
-      console.log('[PolygonBenzingaService] Using sample data');
-      return this.generateSampleData();
+      const response = await fetch(`${this.supabaseUrl}/functions/v1/benzinga-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.supabaseAnonKey}`,
+        },
+        body: JSON.stringify({ action: 'analyst-actions', noMock: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Benzinga proxy error: ${response.status} ${response.statusText}`);
+      }
+
+  const data = await response.json();
+      const actions = (data.actions || []) as Array<{
+        ticker: string;
+        actionType: string;
+        analystFirm?: string;
+        actionDate?: string;
+      }>;
+
+      // Map to a BenzingaRating-shaped object so formatActionType can still work if needed
+      return actions.map((a) => ({
+        ticker: a.ticker,
+        action_type: a.actionType,
+        firm: a.analystFirm,
+        date: a.actionDate,
+      }));
     } catch (error) {
-      console.warn('[PolygonBenzingaService] Error fetching Benzinga ratings:', error);
-      return this.generateSampleData();
+      console.warn('[PolygonBenzingaService] Error fetching Benzinga ratings via proxy:', error);
+      return [];
     }
   }
 
@@ -64,14 +91,16 @@ export class PolygonBenzingaService {
     try {
       console.log(`Fetching options trades for ${ticker} via Supabase proxy...`);
       
-      const response = await fetch(`${this.supabaseUrl}/functions/v1/benzinga-proxy`, {
+    const response = await fetch(`${this.supabaseUrl}/functions/v1/benzinga-proxy`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.supabaseAnonKey}`,
         },
         body: JSON.stringify({
-          action: 'block-trades',
-          ticker: ticker
+      action: 'block-trades',
+      ticker: ticker,
+      noMock: true
         })
       });
       

@@ -1,16 +1,22 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
-import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+// Fallback for editors/lint that don't pick up the Edge runtime types
+// deno-lint-ignore no-explicit-any
+declare const Deno: any;
 
 function corsResponse(body: any, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': '*',
-    },
-  });
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': '*',
+  } as Record<string, string>;
+
+  // Per Fetch spec, certain statuses must not include a body
+  if (status === 204 || status === 205 || status === 304) {
+    return new Response(null, { status, headers });
+  }
+
+  return new Response(JSON.stringify(body ?? {}), { status, headers });
 }
 
 // Rate limiter for Polygon API
@@ -35,12 +41,17 @@ class RateLimiter {
 
 const rateLimiter = new RateLimiter();
 
+function getPolygonApiKey(): string {
+  return Deno.env.get('POLYGON_API_KEY') ?? '';
+}
+
 async function fetchCurrentPrice(ticker: string): Promise<{ price: number } | null> {
   try {
     await rateLimiter.throttle();
 
     console.log(`Fetching current price for ${ticker}...`);
-    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apikey=${POLYGON_API_KEY}`;
+    const apiKey = getPolygonApiKey();
+    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apikey=${apiKey}`;
 
     const response = await fetch(url);
     if (!response.ok) {
@@ -66,7 +77,8 @@ async function fetchCompanyInfo(ticker: string): Promise<{ name: string; descrip
     await rateLimiter.throttle();
 
     console.log(`Fetching company info for ${ticker}...`);
-    const url = `https://api.polygon.io/v3/reference/tickers/${ticker}?apikey=${POLYGON_API_KEY}`;
+    const apiKey = getPolygonApiKey();
+    const url = `https://api.polygon.io/v3/reference/tickers/${ticker}?apikey=${apiKey}`;
 
     const response = await fetch(url);
     if (!response.ok) {
@@ -93,12 +105,12 @@ function isMarketHours(): boolean {
   const now = new Date();
   const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
   const currentHour = now.getHours();
-  
+
   // Check if it's weekend
   if (currentDay === 0 || currentDay === 6) {
     return false;
   }
-  
+
   // Check if it's during market hours (9:30 AM - 4:00 PM ET)
   // Note: This is simplified and doesn't account for holidays or timezone
   return currentHour >= 9 && currentHour < 16;
@@ -106,57 +118,69 @@ function isMarketHours(): boolean {
 
 async function fetchTodaysAnalystActions(): Promise<any[]> {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Call real Polygon Benzinga API
-    await rateLimiter.throttle();
-    
-    console.log(`Fetching Benzinga ratings for ${today}...`);
-    const url = `https://api.polygon.io/v1/benzinga/ratings?date=${today}&apikey=${POLYGON_API_KEY}`;
-    
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      console.warn(`Failed to fetch Benzinga ratings: ${response.status} ${response.statusText}`);
-      // Fall back to sample data if API fails
-      return generateSampleAnalystActions(today);
+    const apiKey = getPolygonApiKey();
+
+    // Helper to get ratings for a specific date, trying both known paths
+    const fetchForDate = async (dateStr: string): Promise<any[]> => {
+      await rateLimiter.throttle();
+      console.log(`Fetching Benzinga ratings for ${dateStr}...`);
+      const base = 'https://api.polygon.io';
+      const paths = [
+        `/v1/benzinga/ratings?date=${dateStr}&apikey=${apiKey}`,
+        `/benzinga/v1/ratings?date=${dateStr}&apikey=${apiKey}`,
+      ];
+
+      for (const p of paths) {
+        const url = `${base}${p}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          console.warn(`Ratings fetch failed for path ${p}: ${res.status} ${res.statusText}`);
+          continue;
+        }
+        const data = await res.json();
+        const results = Array.isArray(data?.results) ? data.results : [];
+        if (results.length > 0) {
+          const actions = results.map((rating: any, index: number) => ({
+            id: `benzinga_${rating.ticker}_${index}_${Date.now()}`,
+            ticker: rating.ticker || 'UNKNOWN',
+            actionType: formatActionType(rating),
+            analystFirm: rating.firm || 'Unknown Firm',
+            actionDate: rating.date || dateStr,
+            previousTarget: extractPreviousTarget(rating),
+            newTarget: extractNewTarget(rating),
+            rating: rating.rating_change || rating.action_type || 'Unknown',
+            createdAt: new Date().toISOString(),
+          }));
+          console.log(`Fetched ${actions.length} ratings from ${p}`);
+          return actions;
+        }
+      }
+      console.log(`No Benzinga ratings found for ${dateStr}`);
+      return [];
+    };
+
+    // Try today and then fallback to previous days (up to 4 days back)
+    const baseDate = new Date();
+    const toISODate = (d: Date) => d.toISOString().split('T')[0];
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() - i);
+      const dateStr = toISODate(d);
+      const actions = await fetchForDate(dateStr);
+      if (actions.length > 0) return actions;
     }
-    
-    const data = await response.json();
-    
-    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
-      console.log('No Benzinga ratings found for today, using sample data');
-      return generateSampleAnalystActions(today);
-    }
-    
-    // Transform real Polygon data to our format
-    const actions = data.results.map((rating: any, index: number) => ({
-      id: `benzinga_${rating.ticker}_${index}_${Date.now()}`,
-      ticker: rating.ticker || 'UNKNOWN',
-      actionType: formatActionType(rating),
-      analystFirm: rating.firm || 'Unknown Firm',
-      actionDate: rating.date || today,
-      previousTarget: extractPreviousTarget(rating),
-      newTarget: extractNewTarget(rating),
-      rating: rating.rating_change || rating.action_type || 'Unknown',
-      createdAt: new Date().toISOString(),
-    }));
-    
-    console.log(`Successfully fetched ${actions.length} real Benzinga ratings`);
-    return actions;
+    return [];
 
   } catch (error) {
-    console.error('Error fetching real Benzinga data:', error);
-    console.log('Falling back to sample data...');
-    const today = new Date().toISOString().split('T')[0];
-    return generateSampleAnalystActions(today);
+    console.error('Error fetching Benzinga data:', error);
+    return [];
   }
 }
 
 function formatActionType(rating: any): string {
   const actionType = rating.action_type?.toLowerCase() || '';
   const firm = rating.firm || 'Unknown Firm';
-  
+
   if (actionType.includes('upgrade')) {
     return `Upgrade by ${firm}`;
   } else if (actionType.includes('downgrade')) {
@@ -190,128 +214,100 @@ function extractNewTarget(rating: any): number | undefined {
   return undefined;
 }
 
-function generateSampleAnalystActions(date: string): any[] {
-  const firms = ['Goldman Sachs', 'Morgan Stanley', 'JPMorgan', 'Barclays', 'Credit Suisse', 'Deutsche Bank', 'Wells Fargo', 'Citi'];
-  const tickers = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'GOOGL', 'AMZN', 'META', 'SPY', 'QQQ', 'AMD', 'NFLX', 'CRM'];
-  const actionTypes = [
-    'Upgrade',
-    'Downgrade', 
-    'Price Target Raised',
-    'Price Target Lowered',
-    'Initiated Coverage',
-    'Reiterated Buy',
-    'Reiterated Sell'
-  ];
-
-  const actions: any[] = [];
-  
-  // Generate different number of actions based on market hours
-  const isOpen = isMarketHours();
-  const numActions = isOpen ? (8 + Math.floor(Math.random() * 7)) : (3 + Math.floor(Math.random() * 4)); // Less during closed hours
-
-  for (let i = 0; i < numActions; i++) {
-    const ticker = tickers[Math.floor(Math.random() * tickers.length)];
-    const firm = firms[Math.floor(Math.random() * firms.length)];
-    const actionType = actionTypes[Math.floor(Math.random() * actionTypes.length)];
-
-    let previousTarget, newTarget;
-    if (actionType.includes('Price Target')) {
-      const basePrice = 50 + Math.random() * 450; // $50-$500 range
-      previousTarget = Math.round(basePrice);
-      newTarget = actionType.includes('Raised')
-        ? Math.round(basePrice * (1.05 + Math.random() * 0.25)) // 5-30% increase
-        : Math.round(basePrice * (0.75 + Math.random() * 0.15)); // 10-25% decrease
-    }
-
-    actions.push({
-      id: `action_${ticker}_${i}_${Date.now()}`,
-      ticker,
-      actionType: `${actionType}`,
-      analystFirm: firm,
-      actionDate: date,
-      previousTarget,
-      newTarget,
-      rating: getRandomRating(),
-      createdAt: new Date().toISOString(),
-    });
-  }
-
-  return actions;
+function getDayBoundsNs(offsetDays: number): { gte: number; lte: number; label: string } {
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  // apply offset
+  d.setUTCDate(d.getUTCDate() - offsetDays);
+  const start = new Date(d);
+  const end = new Date(d);
+  end.setUTCHours(23, 59, 59, 999);
+  const gte = start.getTime() * 1_000_000; // ns
+  const lte = end.getTime() * 1_000_000; // ns
+  const label = start.toISOString().split('T')[0];
+  return { gte, lte, label };
 }
 
-function getRandomRating(): string {
-  const ratings = ['Buy', 'Sell', 'Hold', 'Overweight', 'Underweight', 'Equal-Weight', 'Outperform', 'Underperform'];
-  return ratings[Math.floor(Math.random() * ratings.length)];
-}
-
-async function fetchBlockTradesForTicker(ticker: string): Promise<any[]> {
+async function fetchBlockTradesForTicker(ticker: string, lookbackDays = 3): Promise<any[]> {
   try {
-    await rateLimiter.throttle();
+    console.log(`Fetching options block trades for ${ticker} with lookback ${lookbackDays}d...`);
+    const apiKey = getPolygonApiKey();
+    const isOptionContract = ticker.startsWith('O:');
+    const base = 'https://api.polygon.io/v3/trades/options';
 
-    console.log(`Fetching options block trades for ${ticker}...`);
-    
-    // Use the exact endpoint format specified in requirements
-    const url = `https://api.polygon.io/v3/trades/options/${ticker}?order=desc&limit=50&conditions=at,above_ask&apikey=${POLYGON_API_KEY}`;
+    for (let offset = 0; offset <= Math.max(0, lookbackDays); offset++) {
+      await rateLimiter.throttle();
+      const { gte, lte, label } = getDayBoundsNs(offset);
+      // Use numeric condition codes: 1=At Ask, 4=Above Ask
+      const common = `order=desc&limit=200&conditions=1,4&timestamp.gte=${gte}&timestamp.lte=${lte}&apikey=${apiKey}`;
+      const url = isOptionContract
+        ? `${base}/${ticker}?${common}`
+        : `${base}?underlying_ticker=${encodeURIComponent(ticker)}&${common}`;
 
-    const response = await fetch(url);
+      console.log(`Options fetch (${label}) -> ${isOptionContract ? 'contract' : 'underlying'}`);
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.warn(`Failed to fetch options trades for ${ticker} (${label}): ${response.status} ${response.statusText}`);
+        continue;
+      }
 
-    if (!response.ok) {
-      console.warn(`Failed to fetch options trades for ${ticker}: ${response.status} ${response.statusText}`);
-      return generateSampleBlockTrades(ticker);
-    }
+      const data = await response.json();
+      if (!data.results || data.results.length === 0) {
+        console.log(`No options trades found for ${ticker} on ${label}`);
+        continue;
+      }
 
-    const data = await response.json();
-    
-    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
-      console.log(`No options trades found for ${ticker}, using sample data`);
-      return generateSampleBlockTrades(ticker);
-    }
+      const blockTrades: any[] = [];
 
-    const blockTrades: any[] = [];
-
-    for (const trade of data.results) {
+      for (const trade of data.results) {
       // Calculate amount = size * price * 100 as specified
       const amount = trade.size * trade.price * 100;
-      
+
       // Only include significant trades (you can adjust this threshold)
       if (amount < 1000) continue; // Skip trades under $1,000
-      
+
       // Determine trade location from conditions
-      const tradeLocation = getTradeLocationFromConditions(trade.conditions);
-      
+        const tradeLocation = getTradeLocationFromConditions(trade.conditions || []);
+
+        // Convert Polygon ns timestamps to ms if necessary
+        const tsNs = trade.participant_timestamp as number;
+        const tsMs = typeof tsNs === 'number' && tsNs > 1e12 ? Math.floor(tsNs / 1_000_000) : tsNs; // if already ms, keep
+
       blockTrades.push({
-        id: `${ticker}_${trade.participant_timestamp}`,
-        date: new Date(trade.participant_timestamp).toISOString().split('T')[0],
-        time: new Date(trade.participant_timestamp).toLocaleTimeString('en-US', {
+          id: `${ticker}_${tsMs}`,
+          date: new Date(tsMs).toISOString().split('T')[0],
+          time: new Date(tsMs).toLocaleTimeString('en-US', {
           hour12: false,
           hour: '2-digit',
           minute: '2-digit'
         }),
-        optionType: trade.details?.contract_type || 'unknown',
+          optionType: trade.details?.contract_type || 'unknown',
         amount,
         tradeLocation,
         strike: trade.details?.strike_price || 0,
         volume: trade.size,
         price: trade.price,
       });
+      }
+
+      if (blockTrades.length === 0) {
+        console.log(`No qualifying block trades found for ${ticker} on ${label}`);
+        continue;
+      }
+
+      const sortedTrades = blockTrades
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 15);
+      console.log(`Successfully fetched ${sortedTrades.length} options trades for ${ticker} on ${label}`);
+      return sortedTrades;
     }
 
-    if (blockTrades.length === 0) {
-      console.log(`No qualifying block trades found for ${ticker}, using sample data`);
-      return generateSampleBlockTrades(ticker);
-    }
-
-    // Sort by amount descending as specified
-    const sortedTrades = blockTrades
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 15); // Limit to top 15 trades
-
-    console.log(`Successfully fetched ${sortedTrades.length} real options trades for ${ticker}`);
-    return sortedTrades;
+    // Nothing across lookback window
+    return [];
 
   } catch (error) {
-    console.error(`Error fetching real options trades for ${ticker}:`, error);
-    return generateSampleBlockTrades(ticker);
+    console.error(`Error fetching options trades for ${ticker}:`, error);
+    return [];
   }
 }
 
@@ -324,72 +320,31 @@ function getTradeLocationFromConditions(conditions: number[]): string {
   return 'Unknown';
 }
 
-function generateSampleBlockTrades(ticker: string): any[] {
-  const trades: any[] = [];
-  const today = new Date();
-
-  // Generate 5-8 sample block trades
-  const numTrades = 5 + Math.floor(Math.random() * 4);
-
-  for (let i = 0; i < numTrades; i++) {
-    const tradeDate = new Date(today);
-    tradeDate.setHours(9 + Math.floor(Math.random() * 7));
-    tradeDate.setMinutes(Math.floor(Math.random() * 60));
-
-    const volume = 100 + Math.floor(Math.random() * 1500); // 100-1600 contracts
-    const price = 2 + Math.random() * 25; // $2-$27 per contract
-    const amount = volume * price * 100;
-
-    trades.push({
-      id: `sample_${ticker}_${i}_${Date.now()}`,
-      date: tradeDate.toISOString().split('T')[0],
-      time: tradeDate.toLocaleTimeString('en-US', {
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit'
-      }),
-      optionType: Math.random() > 0.6 ? 'call' : 'put', // Bias toward calls
-      amount,
-      tradeLocation: Math.random() > 0.5 ? 'above-ask' : 'at-ask',
-      strike: 50 + Math.floor(Math.random() * 400),
-      volume,
-      price: Math.round(price * 100) / 100,
-    });
-  }
-
-  return trades.sort((a, b) => b.amount - a.amount);
-}
-
 Deno.serve(async (req) => {
   try {
-    // Check for required API key at the start of each request
-    const POLYGON_API_KEY = Deno.env.get('POLYGON_API_KEY') ?? '';
-    
-    if (!POLYGON_API_KEY || POLYGON_API_KEY.trim() === '') {
-      console.error('POLYGON_API_KEY environment variable is not set or empty');
-      return corsResponse({ 
-        error: 'Server configuration error: POLYGON_API_KEY not configured in Supabase secrets. Please contact support.' 
-      }, 500);
-    }
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const apiKey = getPolygonApiKey();
 
     if (req.method === 'OPTIONS') {
-      return corsResponse({}, 204);
+      return corsResponse(null, 204);
     }
 
-    const { action, ticker } = await req.json();
+  const { action, ticker, lookbackDays } = await req.json();
+    console.log('[benzinga-proxy] request', { action, ticker, hasKey: !!(apiKey && apiKey.trim()) });
 
     if (action === 'analyst-actions') {
+      if (!apiKey || apiKey.trim() === '') {
+        return corsResponse({ actions: [] });
+      }
       const actions = await fetchTodaysAnalystActions();
       return corsResponse({ actions });
     }
 
     if (action === 'block-trades' && ticker) {
-      const blockTrades = await fetchBlockTradesForTicker(ticker);
+      if (!apiKey || apiKey.trim() === '') {
+        return corsResponse({ blockTrades: [] });
+      }
+      const lb = typeof lookbackDays === 'number' && lookbackDays >= 0 && lookbackDays <= 10 ? lookbackDays : 3;
+      const blockTrades = await fetchBlockTradesForTicker(ticker, lb);
       return corsResponse({ blockTrades });
     }
 

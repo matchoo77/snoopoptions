@@ -38,127 +38,63 @@ export function SnoopIdeasPanel() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">SnoopIdeas</h1>
-            <p className="text-sm text-gray-600">Analyst actions paired with unusual options activity</p>
-          </div>
-          <button
-            onClick={refreshData}
-            disabled={loading}
-            className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh Ideas</span>
-          </button>
-        </div>
+    <div className="bg-white p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold text-gray-900">SnoopIdeas</h1>
+        <button
+          onClick={refreshData}
+          disabled={loading}
+          className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh Data</span>
+        </button>
       </div>
 
-      {/* Section Header */}
-      <div className="px-4 py-4 bg-gray-50 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Latest Analyst Actions</h2>
-          <span className="text-sm text-blue-600 font-medium">
-            {analystActions.length} actions today
-          </span>
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+          <p className="text-red-600 text-sm">{error}</p>
         </div>
-      </div>
+      )}
 
-      {/* Content */}
-      <div className="px-4 py-4">
-        {loading && analystActions.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <RefreshCw className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-2" />
-              <p className="text-gray-600">Loading analyst actions...</p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-600 text-sm">{error}</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {analystActions.map((action: AnalystAction) => (
-              <div key={action.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-lg font-bold text-blue-600">{action.ticker}</span>
-                      {getActionIcon(action.actionType)}
-                      <span className="text-sm text-gray-500">{new Date(action.actionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                    </div>
-
-                    <div className="mb-2">
-                      <h3 className="font-medium text-gray-900">{action.company}</h3>
-                      <p className="text-sm text-gray-600">{action.analystFirm}</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      {action.previousTarget && action.newTarget && (
-                        <div className="text-sm">
-                          <span className="text-gray-600">Target: </span>
-                          <span className="font-medium">${action.previousTarget.toFixed(2)} → ${action.newTarget.toFixed(2)}</span>
-                        </div>
-                      )}
-
-                      {action.previousRating && action.newRating && (
-                        <div className="text-sm">
-                          <span className="text-gray-600">Rating: </span>
-                          <span className="font-medium">{action.previousRating} → {action.newRating}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-2">
-                      <span className="text-sm text-gray-600">Current Price</span>
-                      <div className="text-lg font-bold text-gray-900">
-                        --
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center">
+      <div className="overflow-x-auto mx-auto" style={{ width: '80%' }}>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ticker</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action Type</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Flow Check</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {loading && analystActions.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-4 py-6 text-center text-gray-600 text-sm">Loading analyst actions...</td>
+              </tr>
+            ) : analystActions.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-4 py-6 text-center text-gray-600 text-sm">No Analyst Actions Today</td>
+              </tr>
+            ) : (
+              analystActions.map((action: AnalystAction) => (
+                <tr key={action.id}>
+                  <td className="px-4 py-3 font-bold text-gray-900">{action.ticker}</td>
+                  <td className="px-4 py-3 text-gray-800">{action.actionType}</td>
+                  <td className="px-4 py-3">
                     <button
                       onClick={() => handleFlowCheck(action.ticker)}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center space-x-1"
+                      className="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700"
                     >
-                      <span>Flow Check</span>
-                      <ArrowRight className="w-4 h-4" />
+                      Flow Check
                     </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {analystActions.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Analyst Actions Today</h3>
-                <p className="text-gray-600 text-sm">Check back later for the latest analyst upgrades and downgrades</p>
-              </div>
+                  </td>
+                </tr>
+              ))
             )}
-          </div>
-        )}
-
-        {/* Bottom instruction */}
-        {analystActions.length > 0 && (
-          <div className="mt-8 text-center py-8 border-t border-gray-200">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <div className="w-6 h-6 border-2 border-gray-400 rounded-full border-dashed"></div>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Select an Analyst Action</h3>
-            <p className="text-gray-600 text-sm">Click on any analyst action to view related unusual options activity</p>
-          </div>
-        )}
+          </tbody>
+        </table>
       </div>
 
-      {/* Flow Check Modal */}
       {showFlowModal && selectedTicker && (
         <FlowCheckModal
           ticker={selectedTicker}

@@ -72,7 +72,7 @@ export function DashboardApp({}: DashboardAppProps) {
         {/* Market Status and Data Source Indicators */}
         <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
           <MarketStatusIndicator 
-            refreshRate={10000} 
+            refreshRate={60000} 
             showDetailed={true} 
           />
           <DataSourceIndicator

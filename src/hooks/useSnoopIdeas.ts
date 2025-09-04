@@ -34,8 +34,8 @@ export function useSnoopIdeas() {
         const { data: cachedIdeas, error: dbError } = await supabase
           .from('snoopideas')
           .select('*')
-          .gte('created_at', `${today}T00:00:00.000Z`)
-          .order('created_at', { ascending: false });
+          .gte('fetched_at', `${today}T00:00:00.000Z`)
+          .order('fetched_at', { ascending: false });
 
         if (!dbError && cachedIdeas && cachedIdeas.length > 0) {
           console.log(`Found ${cachedIdeas.length} cached Benzinga ratings for today`);
@@ -55,11 +55,9 @@ export function useSnoopIdeas() {
         }
       }
 
-      // If no cached data or forcing refresh, fetch from Polygon Benzinga API
-      console.log(forceRefresh ? 'Force refreshing from Polygon Benzinga API...' : 'No cached data found, fetching from Polygon Benzinga API...');
-      
-      // Use sample data for now to avoid API issues
-      const benzingaRatings = await polygonBenzingaService.generateSampleData();
+  // If no cached data or forcing refresh, fetch from Polygon Benzinga API via proxy
+  console.log(forceRefresh ? 'Force refreshing from Polygon Benzinga API...' : 'No cached data found, fetching from Polygon Benzinga API...');
+  const benzingaRatings = await polygonBenzingaService.fetchTodaysBenzingaRatings();
       
       if (benzingaRatings.length === 0) {
         console.log('No Benzinga ratings found for today');
@@ -79,7 +77,7 @@ export function useSnoopIdeas() {
         await supabase
           .from('snoopideas')
           .delete()
-          .gte('created_at', `${today}T00:00:00.000Z`);
+          .gte('fetched_at', `${today}T00:00:00.000Z`);
       }
 
       // Insert new data into Supabase
@@ -101,7 +99,7 @@ export function useSnoopIdeas() {
         company: getCompanyName(rating.ticker),
         actionType: polygonBenzingaService.formatActionType(rating),
         analystFirm: rating.firm || 'Unknown Firm',
-        actionDate: today,
+        actionDate: rating.date || today,
       }));
 
       setAnalystActions(transformedActions);
