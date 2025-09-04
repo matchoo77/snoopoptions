@@ -9,8 +9,6 @@ import { StatsOverview } from '../StatsOverview';
 import { DataSourceIndicator } from '../DataSourceIndicator';
 import { ActivityFeed } from '../ActivityFeed';
 import { AlertsPanel } from '../AlertsPanel';
-import { TopMovers } from '../TopMovers';
-import { WatchlistPanel } from '../WatchlistPanel';
 import { SnoopIdeasPanel } from '../snoopideas/SnoopIdeasPanel';
 
 interface DashboardAppProps {
@@ -67,7 +65,7 @@ export function DashboardApp({}: DashboardAppProps) {
     if (!showBacktesting) {
       const interval = setInterval(() => {
         refreshData();
-      }, 30000); // 30 seconds as requested
+      }, 10000); // 10 seconds
 
       return () => clearInterval(interval);
     }
@@ -108,11 +106,6 @@ export function DashboardApp({}: DashboardAppProps) {
             <button
               onClick={() => setShowBacktesting(true)}
               className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${showBacktesting
-                ? 'bg-teal-600 text-white'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-            >
-              SnoopIdeas
             </button>
           </div>
         </div>

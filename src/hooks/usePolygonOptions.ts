@@ -11,7 +11,7 @@ interface UsePolygonOptionsProps {
 export function usePolygonOptions({ 
   symbols = ['SPY', 'QQQ', 'AAPL', 'TSLA', 'NVDA'], 
   autoRefresh = true, 
-  refreshInterval = 30000 // 30 seconds
+  refreshInterval = 10000 // 10 seconds
 }: UsePolygonOptionsProps = {}) {
   
   const [activities, setActivities] = useState<OptionsActivity[]>([]);
