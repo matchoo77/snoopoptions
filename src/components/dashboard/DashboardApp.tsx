@@ -106,9 +106,10 @@ export function DashboardApp({}: DashboardAppProps) {
             <button
               onClick={() => setShowBacktesting(true)}
               className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${showBacktesting
-                                                                                                ? 'bg-blue-600 text-white'
-                                                                                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                                                                                              }}>
+                    ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                 }`}
+              >
             </button>
           </div>
         </div>
