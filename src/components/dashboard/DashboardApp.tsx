@@ -69,20 +69,22 @@ export function DashboardApp({}: DashboardAppProps) {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Market Status and Data Source Indicators */}
-        <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <MarketStatusIndicator 
-            refreshRate={60000} 
-            showDetailed={true} 
-          />
-          <DataSourceIndicator
-            isConnected={isConnected}
-            isUsingRealData={isUsingRealData}
-            dataSource={dataSource}
-            loading={dataLoading}
-            error={error}
-            onRefresh={refreshData}
-          />
+        {/* Market Status and Data Source Indicators - Full Width */}
+        <div className="mb-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+            <MarketStatusIndicator 
+              refreshRate={60000} 
+              showDetailed={true} 
+            />
+            <DataSourceIndicator
+              isConnected={isConnected}
+              isUsingRealData={isUsingRealData}
+              dataSource={dataSource}
+              loading={dataLoading}
+              error={error}
+              onRefresh={refreshData}
+            />
+          </div>
         </div>
 
         {/* Navigation Tabs */}
@@ -113,6 +115,11 @@ export function DashboardApp({}: DashboardAppProps) {
           <SnoopIdeasPanel />
         ) : (
           <>
+            {/* Full Width Stats Overview */}
+            <div className="mb-6">
+              <StatsOverview activities={displayActivities} dataSource={dataSource} />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
               {/* Main Content */}
               <div className="lg:col-span-3 space-y-6">
@@ -125,8 +132,6 @@ export function DashboardApp({}: DashboardAppProps) {
                 />
 
                 <FilterPanel filters={filters} onFiltersChange={setFilters} />
-
-                <StatsOverview activities={displayActivities} dataSource={dataSource} />
               </div>
 
               {/* Sidebar - Only AlertsPanel remains */}
