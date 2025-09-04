@@ -18,14 +18,12 @@ interface DashboardAppProps {
 export function DashboardApp({}: DashboardAppProps) {
   const {
     activities,
-    topMovers,
     filters,
     setFilters,
     isConnected,
     isUsingRealData,
     dataSource,
     loading: dataLoading,
-    topMoversLoading,
     error,
     refreshData
   } = useOptionsData();
@@ -54,18 +52,14 @@ export function DashboardApp({}: DashboardAppProps) {
     }
   };
 
-  const handleSymbolSelect = (symbol: string) => {
-    setFilters(prev => ({ ...prev, searchSymbol: symbol }));
-  };
-
   const [showBacktesting, setShowBacktesting] = useState(false);
 
-  // Auto-refresh every 10 seconds for more responsive feel
+  // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!showBacktesting) {
       const interval = setInterval(() => {
         refreshData();
-      }, 10000); // 10 seconds
+      }, 30000);
 
       return () => clearInterval(interval);
     }
@@ -106,10 +100,11 @@ export function DashboardApp({}: DashboardAppProps) {
             <button
               onClick={() => setShowBacktesting(true)}
               className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${showBacktesting
-                    ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                 }`}
-              >
+                ? 'bg-teal-600 text-white'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+            >
+              SnoopIdeas
             </button>
           </div>
         </div>
@@ -134,18 +129,12 @@ export function DashboardApp({}: DashboardAppProps) {
                 <StatsOverview activities={displayActivities} dataSource={dataSource} />
               </div>
 
-              {/* Sidebar */}
+              {/* Sidebar - Only AlertsPanel remains */}
               <div className="lg:col-span-1 space-y-6">
                 <AlertsPanel activities={activities} />
-
-                <WatchlistPanel
-                  activities={activities}
-                  onSymbolSelect={handleSymbolSelect}
-                />
               </div>
             </div>
 
-            {/* Full Width Top Movers */}
             {/* Full Width Activity Feed */}
             <div className="w-full">
               <ActivityFeed
