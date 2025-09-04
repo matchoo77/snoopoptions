@@ -134,7 +134,7 @@ export function useEODData({ symbols = [], enabled = true }: Omit<UseEODDataProp
     const activityInterval = setInterval(() => {
       // Fetch fresh data at good intervals
       fetchEODData();
-    }, 30 * 1000); // Every 30 seconds for responsive activity feed
+    }, 10 * 1000); // Every 10 seconds for responsive activity feed
 
     return () => clearInterval(activityInterval);
   }, [enabled]); return {
