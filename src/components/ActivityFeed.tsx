@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronUp, ChevronDown, TrendingUp, TrendingDown, Minus, Zap } from 'lucide-react';
 import { OptionsActivity } from '../types/options';
 import { FavoriteButton } from './FavoriteButton';
@@ -150,6 +150,9 @@ export function ActivityFeed({
 }: ActivityFeedProps) {
   const [sortField, setSortField] = useState<SortField>('timestamp');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [displayedActivities, setDisplayedActivities] = useState<OptionsActivity[]>(activities);
+  const lastAppliedRef = useRef<number>(0);
+  const APPLY_INTERVAL_MS = 10000; // apply updates to UI at most every 10s
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -160,7 +163,8 @@ export function ActivityFeed({
     }
   };
 
-  const sortedActivities = [...activities].sort((a, b) => {
+  const sortedActivities = useMemo(() => {
+    const arr = [...activities].sort((a, b) => {
     let aValue: any;
     let bValue: any;
 
@@ -185,12 +189,38 @@ export function ActivityFeed({
         return 0;
     }
 
-    if (sortDirection === 'asc') {
-      return aValue > bValue ? 1 : -1;
-    } else {
-      return aValue < bValue ? 1 : -1;
+      if (aValue === bValue) {
+        // deterministic tie-breaker to avoid jitter
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+      }
+
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+    return arr;
+  }, [activities, sortField, sortDirection]);
+
+  // Throttle UI updates to avoid jittery re-rendering
+  useEffect(() => {
+    const now = Date.now();
+    const elapsed = now - lastAppliedRef.current;
+
+    if (elapsed >= APPLY_INTERVAL_MS) {
+      setDisplayedActivities(sortedActivities);
+      lastAppliedRef.current = now;
+      return;
     }
-  });
+
+    const timeout = setTimeout(() => {
+      setDisplayedActivities(sortedActivities);
+      lastAppliedRef.current = Date.now();
+    }, APPLY_INTERVAL_MS - elapsed);
+
+    return () => clearTimeout(timeout);
+  }, [sortedActivities]);
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
@@ -207,13 +237,11 @@ export function ActivityFeed({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-semibold text-gray-900">Unusual Options Activity</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Showing {Math.min(activities.length, 50)} of {activities.length} unusual activity alerts
-            </p>
+            <p className="text-sm text-gray-600 mt-1">Showing top 50 unusual activity alerts</p>
           </div>
           <div className="flex items-center space-x-2">
             <div className="flex items-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
               <span className="text-sm font-medium text-green-600">LIVE</span>
             </div>
           </div>
@@ -287,7 +315,7 @@ export function ActivityFeed({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {sortedActivities.slice(0, 50).map((activity) => (
+            {displayedActivities.slice(0, 50).map((activity) => (
               <ActivityRow
                 key={activity.id}
                 activity={activity}

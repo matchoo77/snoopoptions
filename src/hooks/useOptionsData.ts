@@ -28,7 +28,7 @@ export function useOptionsData() {
   } = usePolygonOptions({
     symbols: ['SPY', 'QQQ', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX'],
     autoRefresh: true,
-    refreshInterval: 60000 // Further reduced from 30 seconds to 1 minute for slower updates
+  refreshInterval: 10000 // Update every 10 seconds per request
   });
 
   // Trigger single symbol search when searchSymbol changes
