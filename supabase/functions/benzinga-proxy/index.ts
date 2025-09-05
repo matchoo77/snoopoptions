@@ -2,6 +2,11 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // Fallback for editors/lint that don't pick up the Edge runtime types
 // deno-lint-ignore no-explicit-any
 declare const Deno: any;
+          previousRating: extractPreviousRating(rating),
+          newRating: extractNewRating(rating),
+          createdAt: new Date().toISOString(),
+        }));plicit-any
+declare const Deno: any;
 
 function corsResponse(body: any, status = 200) {
   const headers = {
@@ -143,12 +148,14 @@ async function fetchTodaysAnalystActions(): Promise<any[]> {
           const actions = results.map((rating: any, index: number) => ({
             id: `benzinga_${rating.ticker}_${index}_${Date.now()}`,
             ticker: rating.ticker || 'UNKNOWN',
-            actionType: formatActionType(rating),
+            actionType: rating.action_type || formatActionType(rating),
             analystFirm: rating.firm || 'Unknown Firm',
             actionDate: rating.date || dateStr,
             previousTarget: extractPreviousTarget(rating),
             newTarget: extractNewTarget(rating),
             rating: rating.rating_change || rating.action_type || 'Unknown',
+            previousRating: extractPreviousRating(rating),
+            newRating: extractNewRating(rating),
             createdAt: new Date().toISOString(),
           }));
           console.log(`Fetched ${actions.length} ratings from ${p}`);
@@ -210,6 +217,24 @@ function extractNewTarget(rating: any): number | undefined {
   if (rating.price_target_change) {
     const match = rating.price_target_change.match(/to\s*\$?(\d+(?:\.\d+)?)/i);
     return match ? parseFloat(match[1]) : undefined;
+  }
+  return undefined;
+}
+
+function extractPreviousRating(rating: any): string | undefined {
+  // Extract previous rating from strings like "Upgraded from Hold to Buy"
+  if (rating.rating_change) {
+    const match = rating.rating_change.match(/from\s+([A-Za-z\s]+)\s+to\s+/i);
+    return match ? match[1].trim() : undefined;
+  }
+  return undefined;
+}
+
+function extractNewRating(rating: any): string | undefined {
+  // Extract new rating from strings like "Upgraded from Hold to Buy"
+  if (rating.rating_change) {
+    const match = rating.rating_change.match(/to\s+([A-Za-z\s]+)$/i);
+    return match ? match[1].trim() : undefined;
   }
   return undefined;
 }
