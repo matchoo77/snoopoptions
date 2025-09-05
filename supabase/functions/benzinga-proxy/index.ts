@@ -2,11 +2,6 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 // Fallback for editors/lint that don't pick up the Edge runtime types
 // deno-lint-ignore no-explicit-any
 declare const Deno: any;
-          previousRating: extractPreviousRating(rating),
-          newRating: extractNewRating(rating),
-          createdAt: new Date().toISOString(),
-        }));plicit-any
-declare const Deno: any;
 
 function corsResponse(body: any, status = 200) {
   const headers = {
@@ -285,34 +280,34 @@ async function fetchBlockTradesForTicker(ticker: string, lookbackDays = 3): Prom
       const blockTrades: any[] = [];
 
       for (const trade of data.results) {
-      // Calculate amount = size * price * 100 as specified
-      const amount = trade.size * trade.price * 100;
+        // Calculate amount = size * price * 100 as specified
+        const amount = trade.size * trade.price * 100;
 
-      // Only include significant trades (you can adjust this threshold)
-      if (amount < 1000) continue; // Skip trades under $1,000
+        // Only include significant trades (you can adjust this threshold)
+        if (amount < 1000) continue; // Skip trades under $1,000
 
-      // Determine trade location from conditions
+        // Determine trade location from conditions
         const tradeLocation = getTradeLocationFromConditions(trade.conditions || []);
 
         // Convert Polygon ns timestamps to ms if necessary
         const tsNs = trade.participant_timestamp as number;
         const tsMs = typeof tsNs === 'number' && tsNs > 1e12 ? Math.floor(tsNs / 1_000_000) : tsNs; // if already ms, keep
 
-      blockTrades.push({
+        blockTrades.push({
           id: `${ticker}_${tsMs}`,
           date: new Date(tsMs).toISOString().split('T')[0],
           time: new Date(tsMs).toLocaleTimeString('en-US', {
-          hour12: false,
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
           optionType: trade.details?.contract_type || 'unknown',
-        amount,
-        tradeLocation,
-        strike: trade.details?.strike_price || 0,
-        volume: trade.size,
-        price: trade.price,
-      });
+          amount,
+          tradeLocation,
+          strike: trade.details?.strike_price || 0,
+          volume: trade.size,
+          price: trade.price,
+        });
       }
 
       if (blockTrades.length === 0) {
@@ -353,7 +348,7 @@ Deno.serve(async (req) => {
       return corsResponse(null, 204);
     }
 
-  const { action, ticker, lookbackDays } = await req.json();
+    const { action, ticker, lookbackDays } = await req.json();
     console.log('[benzinga-proxy] request', { action, ticker, hasKey: !!(apiKey && apiKey.trim()) });
 
     if (action === 'analyst-actions') {
