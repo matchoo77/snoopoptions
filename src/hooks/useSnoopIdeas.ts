@@ -21,95 +21,31 @@ export function useSnoopIdeas() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAnalystActions = async (forceRefresh = false) => {
+  const fetchAnalystActions = async () => {
     setLoading(true);
     setError(null);
 
     try {
       const today = new Date().toISOString().split('T')[0];
 
-      // Only check cache if not forcing refresh
-      if (!forceRefresh) {
-        // First try to get cached data from Supabase
-        const { data: cachedIdeas, error: dbError } = await supabase
-          .from('snoopideas')
-          .select('*')
-          .gte('fetched_at', `${today}T00:00:00.000Z`)
-          .order('fetched_at', { ascending: false });
-
-        if (!dbError && cachedIdeas && cachedIdeas.length > 0) {
-          console.log(`Found ${cachedIdeas.length} cached Benzinga ratings for today`);
-          
-          // Transform cached data to component format
-          const transformedActions: AnalystAction[] = cachedIdeas.map(cached => ({
-            id: cached.id,
-            ticker: cached.ticker,
-            company: getCompanyName(cached.ticker),
-            actionType: cached.action_type,
-            analystFirm: extractFirm(cached.action_type),
-            actionDate: cached.action_date || today,
-            previousTarget: cached.previous_target,
-            newTarget: cached.new_target,
-            rating: cached.rating,
-            previousRating: cached.previous_rating,
-            newRating: cached.new_rating,
-          }));
-
-          setAnalystActions(transformedActions);
-          return;
-        }
-      }
-
-      // If no cached data or forcing refresh, fetch from Polygon Benzinga API via proxy
-      console.log(forceRefresh ? 'Force refreshing from Polygon Benzinga API...' : 'No cached data found, fetching from Polygon Benzinga API...');
+      // Fetch fresh data directly from Polygon Benzinga API via proxy
+      console.log('🔄 [useSnoopIdeas] Fetching fresh data from Polygon Benzinga API...');
       const benzingaRatings = await polygonBenzingaService.fetchTodaysBenzingaRatings();
       
+      console.log(`📊 [useSnoopIdeas] Received ${benzingaRatings.length} analyst actions from API`);
+      
       if (benzingaRatings.length === 0) {
-        console.log('No Benzinga ratings found for today');
+        console.log('📭 [useSnoopIdeas] No Benzinga ratings found for today');
         setAnalystActions([]);
         return;
       }
 
-      // Transform and cache the data (upsert to handle refresh case)
-      const ideasToCache = benzingaRatings.map(rating => ({
-        ticker: rating.ticker,
-        action_type: rating.action_type,
-        analyst_firm: rating.firm || 'Unknown Firm',
-        action_date: rating.date || today,
-        previous_target: extractPreviousTarget(rating.action_type),
-        new_target: extractNewTarget(rating.action_type),
-        rating: rating.rating_change,
-        previous_rating: extractPreviousRating(rating.action_type),
-        new_rating: extractNewRating(rating.action_type),
-      }));
-
-      // For refresh, we want to replace existing data for today
-      if (forceRefresh) {
-        // Delete existing entries for today first
-        await supabase
-          .from('snoopideas')
-          .delete()
-          .gte('fetched_at', `${today}T00:00:00.000Z`);
-      }
-
-      // Insert new data into Supabase
-      const { data: insertedData, error: insertError } = await supabase
-        .from('snoopideas')
-        .insert(ideasToCache)
-        .select();
-
-      if (insertError) {
-        console.error('Error caching data to Supabase:', insertError);
-      } else {
-        console.log(`Cached ${insertedData?.length || 0} new Benzinga ratings`);
-      }
-
-      // Transform API data to component format
+      // Transform API data to component format - using the formatted actionType from API
       const transformedActions: AnalystAction[] = benzingaRatings.map((rating, index) => ({
-        id: `api_${index}`,
+        id: `api_${index}_${Date.now()}`,
         ticker: rating.ticker,
         company: getCompanyName(rating.ticker),
-        actionType: rating.action_type,
+        actionType: rating.action_type, // This comes formatted from the API
         analystFirm: rating.firm || 'Unknown Firm',
         actionDate: rating.date || today,
         previousTarget: extractPreviousTarget(rating.action_type),
@@ -119,9 +55,10 @@ export function useSnoopIdeas() {
         newRating: extractNewRating(rating.action_type),
       }));
 
+      console.log(`✅ [useSnoopIdeas] Transformed ${transformedActions.length} actions for display:`, transformedActions);
       setAnalystActions(transformedActions);
     } catch (error) {
-      console.warn('Error fetching analyst actions:', error);
+      console.error('❌ [useSnoopIdeas] Error fetching analyst actions:', error);
       setError('Failed to fetch analyst actions');
       setAnalystActions([]);
     } finally {
@@ -186,11 +123,11 @@ export function useSnoopIdeas() {
   };
 
   const refreshData = async () => {
-    await fetchAnalystActions(true); // Force refresh from API
+    await fetchAnalystActions(); // Fetch fresh data
   };
 
   useEffect(() => {
-    fetchAnalystActions(); // Initial load uses cache if available
+    fetchAnalystActions(); // Initial load gets fresh data
   }, []);
 
   return {

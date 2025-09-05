@@ -117,6 +117,7 @@ export class PolygonBenzingaService {
         hasBlockTrades: !!data.blockTrades,
         blockTradesCount: data.blockTrades?.length || 0,
         hasError: !!data.error,
+        sampleTrade: data.blockTrades?.[0],
         fullResponse: data
       });
       
@@ -131,15 +132,36 @@ export class PolygonBenzingaService {
         return [];
       }
 
-      console.log(`🔄 [PolygonBenzinga] Transforming ${blockTrades.length} trades...`);
+      console.log(`🔄 [PolygonBenzinga] Processing ${blockTrades.length} trades from edge function...`);
 
-      // Transform block trades to OptionsTradeResult format
+      // The edge function now returns data in the format we need, so we just need to convert it to OptionsTradeResult format
       const trades: OptionsTradeResult[] = blockTrades.map((trade: any, index: number) => {
-        // Parse the date and time properly
-        const dateTimeStr = `${trade.date}T${trade.time}:00.000Z`;
-        const timestamp = new Date(dateTimeStr).getTime();
+        // Better timestamp handling - use the original timestamp if available, otherwise parse date/time
+        let timestamp: number;
         
-        const result = {
+        if (trade.originalTimestamp && typeof trade.originalTimestamp === 'number') {
+          // Use original timestamp if available
+          timestamp = trade.originalTimestamp;
+        } else {
+          // Parse date and time from the edge function response
+          try {
+            // Handle formats like "19:31" -> "2025-09-03T19:31:00.000Z"
+            const timeStr = trade.time.includes(':') ? `${trade.time}:00` : trade.time;
+            const dateTimeStr = `${trade.date}T${timeStr}.000Z`;
+            timestamp = new Date(dateTimeStr).getTime();
+            
+            // If parsing failed, use current time
+            if (isNaN(timestamp)) {
+              console.warn(`❌ [PolygonBenzinga] Failed to parse timestamp for trade ${index}: ${dateTimeStr}`);
+              timestamp = Date.now();
+            }
+          } catch (error) {
+            console.warn(`❌ [PolygonBenzinga] Error parsing timestamp for trade ${index}:`, error);
+            timestamp = Date.now();
+          }
+        }
+        
+        const result: OptionsTradeResult = {
           conditions: trade.tradeLocation === 'Above Ask' ? [4] : 
                      trade.tradeLocation === 'At Ask' ? [1] :
                      trade.tradeLocation === 'At Bid' ? [2] :
@@ -161,16 +183,20 @@ export class PolygonBenzingaService {
         };
         
         if (index < 3) { // Log first 3 trades for debugging
-          console.log(`🔧 [PolygonBenzinga] Transformed trade ${index}:`, { original: trade, transformed: result });
+          console.log(`🔧 [PolygonBenzinga] Converted trade ${index}:`, { 
+            original: trade, 
+            converted: result,
+            timestamp: new Date(timestamp).toISOString()
+          });
         }
         
         return result;
       });
       
-      console.log(`✅ [PolygonBenzinga] Successfully transformed ${trades.length} trades for ${ticker}`);
+      console.log(`✅ [PolygonBenzinga] Successfully converted ${trades.length} trades for ${ticker}`);
       return trades.sort((a, b) => (b.amount || 0) - (a.amount || 0));
     } catch (error) {
-      console.error('Error fetching options trades:', error);
+      console.error('❌ [PolygonBenzinga] Error fetching options trades:', error);
       return [];
     }
   }

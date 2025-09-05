@@ -45,13 +45,15 @@ export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
   const fetchBlockTrades = async () => {
     setLoading(true);
     try {
-      console.log(`Fetching options trades for ${ticker}...`);
+      console.log(`🎯 [FlowCheckModal] Fetching options trades for ${ticker}...`);
       
       // Fetch real options trades from Polygon API - NO DEMO DATA
       const optionsData = await polygonBenzingaService.fetchOptionsTradesForTicker(ticker);
       
+      console.log(`📊 [FlowCheckModal] Received ${optionsData.length} trades from service:`, optionsData);
+      
       if (optionsData.length === 0) {
-        console.log(`No options trades found for ${ticker}`);
+        console.log(`📭 [FlowCheckModal] No options trades found for ${ticker}`);
         setBlockTrades([]);
         return;
       }
@@ -61,28 +63,37 @@ export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
         const ts = trade.participant_timestamp;
         const id = `${ticker}_${ts || index}`;
         const amount = (trade.size || 0) * (trade.price || 0) * 100;
-        return {
+        
+        const transformed = {
           id,
           date: polygonBenzingaService.formatDate(ts),
           time: polygonBenzingaService.formatTime(ts),
-          optionType:
+          optionType: (
             trade.details?.contract_type === 'call'
               ? 'call'
               : trade.details?.contract_type === 'put'
               ? 'put'
-              : 'unknown',
+              : 'unknown'
+          ) as 'call' | 'put' | 'unknown',
           strike: trade.details?.strike_price || 0,
           volume: trade.size || 0,
           price: trade.price || 0,
           execution: polygonBenzingaService.getTradeLocation(trade.conditions || []),
           amount,
         };
+        
+        if (index < 3) {
+          console.log(`🔧 [FlowCheckModal] Transformed trade ${index}:`, { original: trade, transformed });
+        }
+        
+        return transformed;
       });
 
+      console.log(`✅ [FlowCheckModal] Setting ${transformedTrades.length} block trades`);
       setBlockTrades(transformedTrades);
 
     } catch (error) {
-      console.error('Error fetching options trades:', error);
+      console.error('❌ [FlowCheckModal] Error fetching options trades:', error);
       setBlockTrades([]);
     } finally {
       setLoading(false);

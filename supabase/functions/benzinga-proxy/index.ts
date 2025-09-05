@@ -376,16 +376,18 @@ async function fetchOptionsContractsEndpoint(ticker: string, apiKey: string): Pr
   }
 }
 
-// Method 3: Options snapshot endpoint
+// Optimized snapshot endpoint - the only one that works
 async function fetchOptionsSnapshotEndpoint(ticker: string, apiKey: string): Promise<any[]> {
   try {
-    console.log(`📷 [benzinga-proxy] Trying options snapshot endpoint for ${ticker}...`);
+    console.log(`📷 [benzinga-proxy] Fetching snapshot options for ${ticker}...`);
     await rateLimiter.throttle();
     
     const snapshotUrl = `https://api.polygon.io/v3/snapshot/options/${ticker}?apikey=${apiKey}`;
     
     console.log(`🔗 [benzinga-proxy] Snapshot URL: ${snapshotUrl}`);
+    const startTime = Date.now();
     const response = await fetch(snapshotUrl);
+    const duration = Date.now() - startTime;
     
     if (!response.ok) {
       console.warn(`❌ [benzinga-proxy] Snapshot endpoint failed: ${response.status}`);
@@ -393,6 +395,8 @@ async function fetchOptionsSnapshotEndpoint(ticker: string, apiKey: string): Pro
     }
     
     const data = await response.json();
+    console.log(`⚡ [benzinga-proxy] Snapshot request completed in ${duration}ms`);
+    
     if (!data.results || data.results.length === 0) {
       console.log(`📭 [benzinga-proxy] No snapshot data for ${ticker}`);
       return [];
@@ -400,8 +404,8 @@ async function fetchOptionsSnapshotEndpoint(ticker: string, apiKey: string): Pro
     
     console.log(`📊 [benzinga-proxy] Found ${data.results.length} snapshot options for ${ticker}`);
     
-    // Transform snapshot data to trades-like format
-    return data.results
+    // Transform and filter snapshot data efficiently
+    const trades = data.results
       .filter((option: any) => option.last_trade && option.last_trade.size > 0)
       .map((option: any, index: number) => {
         const trade = option.last_trade;
@@ -413,6 +417,10 @@ async function fetchOptionsSnapshotEndpoint(ticker: string, apiKey: string): Pro
         }
         
         const tradeDate = new Date(timestamp);
+        const amount = (trade.size || 0) * (trade.price || 0) * 100;
+        
+        // Only return significant trades
+        if (amount < 100) return null;
         
         return {
           id: `snapshot_${ticker}_${index}`,
@@ -423,18 +431,22 @@ async function fetchOptionsSnapshotEndpoint(ticker: string, apiKey: string): Pro
             minute: '2-digit'
           }),
           optionType: option.details?.contract_type || 'unknown',
-          amount: (trade.size || 0) * (trade.price || 0) * 100,
+          amount,
           tradeLocation: getTradeLocationFromConditions(trade.conditions || []),
           strike: option.details?.strike_price || 0,
           volume: trade.size || 0,
           price: trade.price || 0,
         };
       })
-      .filter((trade: any) => trade.amount >= 100) // Only significant trades
-      .sort((a: any, b: any) => b.amount - a.amount); // Sort by amount descending
+      .filter(Boolean) // Remove null entries
+      .sort((a: any, b: any) => b.amount - a.amount) // Sort by amount descending
+      .slice(0, 15); // Limit to top 15 trades for performance
+    
+    console.log(`✅ [benzinga-proxy] Returning ${trades.length} optimized trades for ${ticker}`);
+    return trades;
       
   } catch (error) {
-    console.error(`❌ [benzinga-proxy] Error in options snapshot endpoint:`, error);
+    console.error(`❌ [benzinga-proxy] Error in snapshot endpoint:`, error);
     return [];
   }
 }
@@ -513,8 +525,10 @@ Deno.serve(async (req) => {
       if (!apiKey || apiKey.trim() === '') {
         return corsResponse({ blockTrades: [] });
       }
-      const lb = typeof lookbackDays === 'number' && lookbackDays >= 0 && lookbackDays <= 10 ? lookbackDays : 7;
-      const blockTrades = await fetchOptionsDataMultipleEndpoints(ticker, lb);
+      
+      // Use only the snapshot endpoint since it's the only one that works
+      console.log(`🎯 [benzinga-proxy] Using snapshot endpoint directly for ${ticker}`);
+      const blockTrades = await fetchOptionsSnapshotEndpoint(ticker, apiKey);
       return corsResponse({ blockTrades });
     }
 
