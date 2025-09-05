@@ -405,10 +405,19 @@ async function fetchOptionsSnapshotEndpoint(ticker: string, apiKey: string): Pro
       .filter((option: any) => option.last_trade && option.last_trade.size > 0)
       .map((option: any, index: number) => {
         const trade = option.last_trade;
+        
+        // Handle timestamp properly - convert ns to ms if needed
+        let timestamp = trade.participant_timestamp || trade.sip_timestamp || Date.now();
+        if (timestamp > 1e15) { // If in nanoseconds
+          timestamp = Math.floor(timestamp / 1_000_000);
+        }
+        
+        const tradeDate = new Date(timestamp);
+        
         return {
           id: `snapshot_${ticker}_${index}`,
-          date: new Date().toISOString().split('T')[0],
-          time: new Date(trade.participant_timestamp / 1_000_000).toLocaleTimeString('en-US', {
+          date: tradeDate.toISOString().split('T')[0],
+          time: tradeDate.toLocaleTimeString('en-US', {
             hour12: false,
             hour: '2-digit',
             minute: '2-digit'
@@ -421,7 +430,8 @@ async function fetchOptionsSnapshotEndpoint(ticker: string, apiKey: string): Pro
           price: trade.price || 0,
         };
       })
-      .filter((trade: any) => trade.amount >= 100); // Only significant trades
+      .filter((trade: any) => trade.amount >= 100) // Only significant trades
+      .sort((a: any, b: any) => b.amount - a.amount); // Sort by amount descending
       
   } catch (error) {
     console.error(`❌ [benzinga-proxy] Error in options snapshot endpoint:`, error);
