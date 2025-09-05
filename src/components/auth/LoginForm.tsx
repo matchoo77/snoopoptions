@@ -31,6 +31,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
         onSuccess();
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);

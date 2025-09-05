@@ -48,6 +48,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         onSuccess();
       }
     } catch (err) {
+      console.error('Signup error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
