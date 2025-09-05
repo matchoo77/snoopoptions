@@ -10,12 +10,15 @@ import { SuccessPage } from './components/subscription/SuccessPage';
 import { SubscriptionOnlyGate } from './components/SubscriptionOnlyGate';
 
 function App() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, userToken } = useAuth();
   const { subscriptionStatus, loading: subscriptionLoading, refetch: refetchSubscriptionStatus } = useSubscriptionOnly();
   // Initialize currentView based on URL or default to 'marketing'
   const getInitialView = () => {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success') === 'true') {
+    const currentPath = window.location.pathname;
+    
+    // Check for success from both query param and path
+    if (urlParams.get('success') === 'true' || currentPath === '/success') {
       return 'success';
     }
     return 'marketing';
@@ -35,7 +38,9 @@ function App() {
   // Check URL parameters for payment success/cancel
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success') === 'true') {
+    const currentPath = window.location.pathname;
+    
+    if (urlParams.get('success') === 'true' || currentPath === '/success') {
       setCurrentView('success');
     } else if (urlParams.get('canceled') === 'true') {
       console.log('Payment was canceled');
@@ -47,7 +52,9 @@ function App() {
     if (!authLoading) {
       if (user) {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('success') === 'true') {
+        const currentPath = window.location.pathname;
+        
+        if (urlParams.get('success') === 'true' || currentPath === '/success') {
           setCurrentView('success');
         } else if (currentView === 'login' || currentView === 'signup' || currentView === 'marketing') {
           // Only auto-navigate to dashboard if user is coming from auth pages or marketing
@@ -138,7 +145,7 @@ function App() {
     case 'subscription':
       return user ? (
         <SubscriptionPage
-          userToken={user.access_token || (user as any).access_token || (user as any).aud || ''}
+          userToken={userToken || ''}
           onBack={handleBackToDashboard}
         />
       ) : (

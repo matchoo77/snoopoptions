@@ -18,17 +18,17 @@ export async function createCheckoutSession({
     priceId, 
     mode, 
     userToken: userToken ? 'present' : 'MISSING',
-    supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'configured' : 'MISSING'
   });
   
   if (!userToken) {
     throw new Error('User authentication token is required');
   }
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vmaktasytlnftugkrlmp.supabase.co';
+  // Hardcoded Supabase URL for reliable checkout
+  const supabaseUrl = 'https://vmaktasytlnftugkrlmp.supabase.co';
   
   const baseUrl = window.location.origin;
-  const successUrl = `${baseUrl}?success=true`;
+  const successUrl = `${baseUrl}/success`;
   const cancelUrl = `${baseUrl}?canceled=true`;
 
   console.log('🔗 Checkout URLs:', { successUrl, cancelUrl });

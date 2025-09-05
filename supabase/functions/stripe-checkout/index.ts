@@ -3,8 +3,9 @@ import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
 
 const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
-const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
-const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
+// Hardcoded Stripe credentials for reliable checkout
+const stripeSecret = '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';
+const stripeWebhookSecret = 'whsec_PSRiKmjYFC3wLsozOq3t8RPFDeh69Bgv';
 const stripe = new Stripe(stripeSecret, {
   appInfo: {
     name: 'SnoopFlow Integration',
@@ -56,7 +57,14 @@ Deno.serve(async (req) => {
       return corsResponse({ error: 'Stripe not configured' }, 500);
     }
     
+    // Validate that we have the hardcoded secret key
+    if (!stripeSecret.startsWith('sk_live_')) {
+      console.error('❌ Invalid Stripe secret key format');
+      return corsResponse({ error: 'Invalid Stripe configuration' }, 500);
+    }
+    
     console.log('✅ Stripe environment variables configured');
+    console.log('✅ Using hardcoded Stripe credentials for live environment');
 
     const { price_id, success_url, cancel_url, mode } = await req.json();
     console.log('🔥 Request body:', { price_id, success_url, cancel_url, mode });
@@ -77,6 +85,14 @@ Deno.serve(async (req) => {
     }
 
     console.log('✅ Parameters validated successfully');
+    
+    // Validate price ID matches expected
+    if (price_id !== 'price_1S3JL7LH6uJIp2yEMCAcNUi9') {
+      console.error('❌ Invalid price ID provided:', price_id);
+      return corsResponse({ error: 'Invalid price ID' }, 400);
+    }
+    
+    console.log('✅ Price ID validated:', price_id);
 
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');

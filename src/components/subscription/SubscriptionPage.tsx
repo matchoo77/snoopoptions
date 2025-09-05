@@ -48,7 +48,7 @@ export function SubscriptionPage({ userToken, onBack }: SubscriptionPageProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {STRIPE_PRODUCTS.map((product) => (
             <SubscriptionCard
-              key={product.id}
+              key={product.priceId}
               product={product}
               isCurrentPlan={subscription?.price_id === product.priceId && subscription?.subscription_status === 'active'}
               userToken={userToken}

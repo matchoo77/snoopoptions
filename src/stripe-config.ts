@@ -20,5 +20,5 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
   }
 ];
 
-// Stripe live publishable key
+// Hardcoded Stripe live publishable key for reliable checkout
 export const STRIPE_PUBLISHABLE_KEY = 'pk_live_51S3IrFLH6uJIp2yEmxwQi2f2cuGdB76bW9MzHhPqmrm6xr5C9WxHHVyRVgZ1EoJqTuLIwuecr7mH4LMBzx63zNDH00AFYBey1y';
