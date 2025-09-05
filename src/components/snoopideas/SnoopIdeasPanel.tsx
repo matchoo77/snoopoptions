@@ -1,26 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { RefreshCw, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { FlowCheckModal } from './FlowCheckModal';
 import { useSnoopIdeas } from '../../hooks/useSnoopIdeas';
-
-interface AnalystAction {
-  id: string;
-  ticker: string;
-  company: string;
-  actionType: string;
-  analystFirm: string;
-  actionDate: string;
-  previousTarget?: number;
-  newTarget?: number;
-  rating?: string;
-  previousRating?: string;
-  newRating?: string;
-}
+import { supabase } from '../../lib/supabase';
 
 export function SnoopIdeasPanel() {
   const { analystActions, loading, error, refreshData } = useSnoopIdeas();
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [showFlowModal, setShowFlowModal] = useState(false);
+  const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({});
+
+  // Fetch current prices for all tickers when analyst actions change
+  useEffect(() => {
+    const fetchPrices = async () => {
+      const prices: Record<string, number> = {};
+      
+      for (const action of analystActions) {
+        try {
+          const { data, error } = await supabase.functions.invoke('benzinga-proxy', {
+            body: {
+              action: 'current-price',
+              ticker: action.ticker
+            }
+          });
+
+          if (!error && data?.price) {
+            prices[action.ticker] = data.price;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch price for ${action.ticker}:`, error);
+        }
+      }
+      
+      setCurrentPrices(prices);
+    };
+
+    if (analystActions.length > 0) {
+      fetchPrices();
+    }
+  }, [analystActions]);
 
   const handleFlowCheck = (ticker: string) => {
     setSelectedTicker(ticker);
@@ -35,25 +53,6 @@ export function SnoopIdeasPanel() {
       return <TrendingDown className="w-4 h-4 text-red-500" />;
     }
     return <TrendingUp className="w-4 h-4 text-blue-500" />;
-  };
-
-  const getActionColor = (actionType: string) => {
-    if (actionType.toLowerCase().includes('upgrade') || actionType.toLowerCase().includes('raised')) {
-      return 'text-green-600';
-    }
-    if (actionType.toLowerCase().includes('downgrade') || actionType.toLowerCase().includes('lowered')) {
-      return 'text-red-600';
-    }
-    return 'text-blue-600';
-  };
-
-  const formatActionType = (action: AnalystAction) => {
-    if (action.actionType.toLowerCase().includes('price target')) {
-      if (action.previousTarget && action.newTarget) {
-        return `Price Target ${action.actionType.toLowerCase().includes('raised') ? 'Raise' : 'Cut'} to $${action.newTarget}`;
-      }
-    }
-    return `${action.actionType} by ${action.analystFirm}`;
   };
 
   return (
@@ -133,9 +132,12 @@ export function SnoopIdeasPanel() {
                     </div>
 
                     <div className="mt-2">
-                      <span className="text-sm text-gray-600">Action Type</span>
-                      <div className={`text-sm font-medium ${getActionColor(action.actionType)}`}>
-                        {action.actionType}
+                      <span className="text-sm text-gray-600">Current Price</span>
+                      <div className="text-lg font-bold text-gray-900">
+                        {currentPrices[action.ticker] ? 
+                          `$${currentPrices[action.ticker].toFixed(2)}` : 
+                          '$---.--'
+                        }
                       </div>
                     </div>
                   </div>
