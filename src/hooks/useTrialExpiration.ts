@@ -8,7 +8,7 @@ interface TrialStatus {
   trialEndDate: string | null;
   trialStartDate: string | null;
 }
-
+//
 interface UseTrialExpirationProps {
   trialStatus: TrialStatus | null;
   onTrialExpired: () => void;
@@ -28,8 +28,8 @@ export function useTrialExpiration({ trialStatus, onTrialExpired }: UseTrialExpi
     }
 
     // Only notify once when trial expires
-    if (!trialStatus.hasActiveTrial && !trialStatus.hasActiveSubscription && 
-        trialStatus.accessType === 'expired' && !hasNotifiedExpiration.current) {
+    if (!trialStatus.hasActiveTrial && !trialStatus.hasActiveSubscription &&
+      trialStatus.accessType === 'expired' && !hasNotifiedExpiration.current) {
       console.log('[useTrialExpiration] Trial expired, notifying parent component (first time)');
       hasNotifiedExpiration.current = true;
       onTrialExpired();
@@ -43,7 +43,7 @@ export function useTrialExpiration({ trialStatus, onTrialExpired }: UseTrialExpi
     const checkTrialExpiration = () => {
       const trialEndTime = new Date(trialStatus.trialEndDate!).getTime();
       const now = new Date().getTime();
-      
+
       if (now >= trialEndTime && !hasNotifiedExpiration.current) {
         console.log('[useTrialExpiration] Real-time trial expiration detected');
         hasNotifiedExpiration.current = true;
