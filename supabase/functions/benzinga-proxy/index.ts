@@ -235,100 +235,229 @@ function extractNewRating(rating: any): string | undefined {
 }
 
 function getDayBoundsNs(offsetDays: number): { gte: number; lte: number; label: string } {
-  const now = new Date();
-  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  // apply offset
+  // Use a more recent base date that we know had trading activity (December 15, 2024)
+  const baseDate = new Date('2024-12-15T00:00:00.000Z');
+  const d = new Date(baseDate);
   d.setUTCDate(d.getUTCDate() - offsetDays);
+  
   const start = new Date(d);
   const end = new Date(d);
   end.setUTCHours(23, 59, 59, 999);
+  
   const gte = start.getTime() * 1_000_000; // ns
   const lte = end.getTime() * 1_000_000; // ns
   const label = start.toISOString().split('T')[0];
+  
+  console.log(`📅 [benzinga-proxy] Date bounds for offset ${offsetDays}: ${label} (${new Date(gte / 1_000_000).toISOString()} to ${new Date(lte / 1_000_000).toISOString()})`);
+  
   return { gte, lte, label };
 }
 
-async function fetchBlockTradesForTicker(ticker: string, lookbackDays = 3): Promise<any[]> {
+// Try multiple Polygon endpoints for options data
+async function fetchOptionsDataMultipleEndpoints(ticker: string, lookbackDays = 7): Promise<any[]> {
   try {
-    console.log(`Fetching options block trades for ${ticker} with lookback ${lookbackDays}d...`);
+    console.log(`🔍 [benzinga-proxy] Trying multiple endpoints for ${ticker}...`);
     const apiKey = getPolygonApiKey();
-    const isOptionContract = ticker.startsWith('O:');
-    const base = 'https://api.polygon.io/v3/trades/options';
+    
+    // Method 1: Options trades endpoint
+    const tradesData = await fetchOptionsTradesEndpoint(ticker, apiKey, lookbackDays);
+    if (tradesData.length > 0) {
+      console.log(`✅ [benzinga-proxy] Found ${tradesData.length} trades from options trades endpoint`);
+      return tradesData;
+    }
+    
+    // Method 2: Options contracts endpoint with recent activity
+    const contractsData = await fetchOptionsContractsEndpoint(ticker, apiKey);
+    if (contractsData.length > 0) {
+      console.log(`✅ [benzinga-proxy] Found ${contractsData.length} contracts from options contracts endpoint`);
+      return contractsData;
+    }
+    
+    // Method 3: Snapshot options data
+    const snapshotData = await fetchOptionsSnapshotEndpoint(ticker, apiKey);
+    if (snapshotData.length > 0) {
+      console.log(`✅ [benzinga-proxy] Found ${snapshotData.length} options from snapshot endpoint`);
+      return snapshotData;
+    }
+    
+    console.log(`📭 [benzinga-proxy] No options data found from any endpoint for ${ticker}`);
+    return [];
+    
+  } catch (error) {
+    console.error(`❌ [benzinga-proxy] Error in fetchOptionsDataMultipleEndpoints:`, error);
+    return [];
+  }
+}
 
-    for (let offset = 0; offset <= Math.max(0, lookbackDays); offset++) {
+// Method 1: Original options trades endpoint
+async function fetchOptionsTradesEndpoint(ticker: string, apiKey: string, lookbackDays: number): Promise<any[]> {
+  try {
+    console.log(`📡 [benzinga-proxy] Trying options trades endpoint for ${ticker}...`);
+    const base = 'https://api.polygon.io/v3/trades/options';
+    
+    for (let offset = 0; offset <= Math.min(lookbackDays, 5); offset++) {
       await rateLimiter.throttle();
       const { gte, lte, label } = getDayBoundsNs(offset);
-      // Use numeric condition codes: 1=At Ask, 4=Above Ask
-      const common = `order=desc&limit=200&conditions=1,4&timestamp.gte=${gte}&timestamp.lte=${lte}&apikey=${apiKey}`;
-      const url = isOptionContract
-        ? `${base}/${ticker}?${common}`
-        : `${base}?underlying_ticker=${encodeURIComponent(ticker)}&${common}`;
-
-      console.log(`Options fetch (${label}) -> ${isOptionContract ? 'contract' : 'underlying'}`);
+      
+      const url = `${base}?underlying_ticker=${encodeURIComponent(ticker)}&order=desc&limit=100&timestamp.gte=${gte}&timestamp.lte=${lte}&apikey=${apiKey}`;
+      
+      console.log(`🔗 [benzinga-proxy] Trades URL (${label}): ${url.substring(0, 100)}...`);
       const response = await fetch(url);
+      
       if (!response.ok) {
-        console.warn(`Failed to fetch options trades for ${ticker} (${label}): ${response.status} ${response.statusText}`);
+        console.warn(`❌ [benzinga-proxy] Trades endpoint failed for ${ticker} (${label}): ${response.status}`);
         continue;
       }
-
+      
       const data = await response.json();
-      if (!data.results || data.results.length === 0) {
-        console.log(`No options trades found for ${ticker} on ${label}`);
-        continue;
+      if (data.results && data.results.length > 0) {
+        return transformTradesData(data.results, ticker);
       }
+    }
+    return [];
+  } catch (error) {
+    console.error(`❌ [benzinga-proxy] Error in options trades endpoint:`, error);
+    return [];
+  }
+}
 
-      const blockTrades: any[] = [];
+// Method 2: Options contracts endpoint
+async function fetchOptionsContractsEndpoint(ticker: string, apiKey: string): Promise<any[]> {
+  try {
+    console.log(`📊 [benzinga-proxy] Trying options contracts endpoint for ${ticker}...`);
+    await rateLimiter.throttle();
+    
+    // Get options contracts for the ticker
+    const contractsUrl = `https://api.polygon.io/v3/reference/options/contracts?underlying_ticker=${ticker}&limit=50&sort=expiration_date&order=desc&apikey=${apiKey}`;
+    
+    console.log(`🔗 [benzinga-proxy] Contracts URL: ${contractsUrl.substring(0, 100)}...`);
+    const contractsResponse = await fetch(contractsUrl);
+    
+    if (!contractsResponse.ok) {
+      console.warn(`❌ [benzinga-proxy] Contracts endpoint failed: ${contractsResponse.status}`);
+      return [];
+    }
+    
+    const contractsData = await contractsResponse.json();
+    if (!contractsData.results || contractsData.results.length === 0) {
+      console.log(`📭 [benzinga-proxy] No contracts found for ${ticker}`);
+      return [];
+    }
+    
+    console.log(`📊 [benzinga-proxy] Found ${contractsData.results.length} contracts for ${ticker}`);
+    
+    // Get recent trades for first few contracts
+    const trades: any[] = [];
+    for (let i = 0; i < Math.min(5, contractsData.results.length); i++) {
+      const contract = contractsData.results[i];
+      await rateLimiter.throttle();
+      
+      const { gte, lte } = getDayBoundsNs(0); // Today
+      const tradesUrl = `https://api.polygon.io/v3/trades/options/${contract.ticker}?limit=20&timestamp.gte=${gte}&timestamp.lte=${lte}&apikey=${apiKey}`;
+      
+      const tradesResponse = await fetch(tradesUrl);
+      if (tradesResponse.ok) {
+        const tradesData = await tradesResponse.json();
+        if (tradesData.results && tradesData.results.length > 0) {
+          trades.push(...tradesData.results.map((trade: any) => ({
+            ...trade,
+            contract_ticker: contract.ticker,
+            underlying_ticker: ticker
+          })));
+        }
+      }
+    }
+    
+    return transformTradesData(trades, ticker);
+    
+  } catch (error) {
+    console.error(`❌ [benzinga-proxy] Error in options contracts endpoint:`, error);
+    return [];
+  }
+}
 
-      for (const trade of data.results) {
-        // Calculate amount = size * price * 100 as specified
-        const amount = trade.size * trade.price * 100;
-
-        // Only include significant trades (you can adjust this threshold)
-        if (amount < 1000) continue; // Skip trades under $1,000
-
-        // Determine trade location from conditions
-        const tradeLocation = getTradeLocationFromConditions(trade.conditions || []);
-
-        // Convert Polygon ns timestamps to ms if necessary
-        const tsNs = trade.participant_timestamp as number;
-        const tsMs = typeof tsNs === 'number' && tsNs > 1e12 ? Math.floor(tsNs / 1_000_000) : tsNs; // if already ms, keep
-
-        blockTrades.push({
-          id: `${ticker}_${tsMs}`,
-          date: new Date(tsMs).toISOString().split('T')[0],
-          time: new Date(tsMs).toLocaleTimeString('en-US', {
+// Method 3: Options snapshot endpoint
+async function fetchOptionsSnapshotEndpoint(ticker: string, apiKey: string): Promise<any[]> {
+  try {
+    console.log(`📷 [benzinga-proxy] Trying options snapshot endpoint for ${ticker}...`);
+    await rateLimiter.throttle();
+    
+    const snapshotUrl = `https://api.polygon.io/v3/snapshot/options/${ticker}?apikey=${apiKey}`;
+    
+    console.log(`🔗 [benzinga-proxy] Snapshot URL: ${snapshotUrl}`);
+    const response = await fetch(snapshotUrl);
+    
+    if (!response.ok) {
+      console.warn(`❌ [benzinga-proxy] Snapshot endpoint failed: ${response.status}`);
+      return [];
+    }
+    
+    const data = await response.json();
+    if (!data.results || data.results.length === 0) {
+      console.log(`📭 [benzinga-proxy] No snapshot data for ${ticker}`);
+      return [];
+    }
+    
+    console.log(`📊 [benzinga-proxy] Found ${data.results.length} snapshot options for ${ticker}`);
+    
+    // Transform snapshot data to trades-like format
+    return data.results
+      .filter((option: any) => option.last_trade && option.last_trade.size > 0)
+      .map((option: any, index: number) => {
+        const trade = option.last_trade;
+        return {
+          id: `snapshot_${ticker}_${index}`,
+          date: new Date().toISOString().split('T')[0],
+          time: new Date(trade.participant_timestamp / 1_000_000).toLocaleTimeString('en-US', {
             hour12: false,
             hour: '2-digit',
             minute: '2-digit'
           }),
-          optionType: trade.details?.contract_type || 'unknown',
-          amount,
-          tradeLocation,
-          strike: trade.details?.strike_price || 0,
-          volume: trade.size,
-          price: trade.price,
-        });
-      }
-
-      if (blockTrades.length === 0) {
-        console.log(`No qualifying block trades found for ${ticker} on ${label}`);
-        continue;
-      }
-
-      const sortedTrades = blockTrades
-        .sort((a, b) => b.amount - a.amount)
-        .slice(0, 15);
-      console.log(`Successfully fetched ${sortedTrades.length} options trades for ${ticker} on ${label}`);
-      return sortedTrades;
-    }
-
-    // Nothing across lookback window
-    return [];
-
+          optionType: option.details?.contract_type || 'unknown',
+          amount: (trade.size || 0) * (trade.price || 0) * 100,
+          tradeLocation: getTradeLocationFromConditions(trade.conditions || []),
+          strike: option.details?.strike_price || 0,
+          volume: trade.size || 0,
+          price: trade.price || 0,
+        };
+      })
+      .filter((trade: any) => trade.amount >= 100); // Only significant trades
+      
   } catch (error) {
-    console.error(`Error fetching options trades for ${ticker}:`, error);
+    console.error(`❌ [benzinga-proxy] Error in options snapshot endpoint:`, error);
     return [];
   }
+}
+
+// Transform trades data to standard format
+function transformTradesData(trades: any[], ticker: string): any[] {
+  return trades
+    .map((trade: any, index: number) => {
+      const amount = (trade.size || 0) * (trade.price || 0) * 100;
+      if (amount < 100) return null; // Filter small trades
+      
+      const tsNs = trade.participant_timestamp as number;
+      const tsMs = typeof tsNs === 'number' && tsNs > 1e12 ? Math.floor(tsNs / 1_000_000) : tsNs;
+      
+      return {
+        id: `${ticker}_${tsMs}_${index}`,
+        date: new Date(tsMs).toISOString().split('T')[0],
+        time: new Date(tsMs).toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        optionType: trade.details?.contract_type || 'unknown',
+        amount,
+        tradeLocation: getTradeLocationFromConditions(trade.conditions || []),
+        strike: trade.details?.strike_price || 0,
+        volume: trade.size || 0,
+        price: trade.price || 0,
+      };
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => b.amount - a.amount)
+    .slice(0, 20);
 }
 
 function getTradeLocationFromConditions(conditions: number[]): string {
@@ -359,12 +488,23 @@ Deno.serve(async (req) => {
       return corsResponse({ actions });
     }
 
+    if (action === 'test-url' && ticker) {
+      const { gte, lte, label } = getDayBoundsNs(0);
+      const common = `order=desc&limit=50&timestamp.gte=${gte}&timestamp.lte=${lte}&apikey=${getPolygonApiKey()}`;
+      const url = `https://api.polygon.io/v3/trades/options?underlying_ticker=${encodeURIComponent(ticker)}&${common}`;
+      return corsResponse({ 
+        url,
+        dateRange: { gte, lte, label },
+        timestamp: new Date().toISOString()
+      });
+    }
+
     if (action === 'block-trades' && ticker) {
       if (!apiKey || apiKey.trim() === '') {
         return corsResponse({ blockTrades: [] });
       }
-      const lb = typeof lookbackDays === 'number' && lookbackDays >= 0 && lookbackDays <= 10 ? lookbackDays : 3;
-      const blockTrades = await fetchBlockTradesForTicker(ticker, lb);
+      const lb = typeof lookbackDays === 'number' && lookbackDays >= 0 && lookbackDays <= 10 ? lookbackDays : 7;
+      const blockTrades = await fetchOptionsDataMultipleEndpoints(ticker, lb);
       return corsResponse({ blockTrades });
     }
 

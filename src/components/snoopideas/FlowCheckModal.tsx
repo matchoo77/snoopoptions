@@ -22,11 +22,11 @@ interface FlowCheckModalProps {
 export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
   const [blockTrades, setBlockTrades] = useState<BlockTrade[]>([]);
   const [loading, setLoading] = useState(true);
-  const [companyInfo, setCompanyInfo] = useState<{ name: string } | null>(null);
+  const [companyInfo, setCompanyInfo] = useState<{ name: string } | null>({ name: `${ticker} Corporation` });
 
   useEffect(() => {
-    fetchCompanyInfo();
     fetchBlockTrades();
+    fetchCompanyInfo();
   }, [ticker]);
 
   const fetchCompanyInfo = async () => {
@@ -38,7 +38,6 @@ export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
       GOOGL: 'Alphabet Inc.',
       AMZN: 'Amazon.com Inc.',
       META: 'Meta Platforms Inc.',
-      AEO: 'American Eagle Outfitters',
     };
     setCompanyInfo({ name: companyNames[ticker] || `${ticker} Corporation` });
   };
@@ -48,9 +47,8 @@ export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
     try {
       console.log(`Fetching options trades for ${ticker}...`);
       
-      // Fetch real options trades from Polygon API
+      // Fetch real options trades from Polygon API - NO DEMO DATA
       const optionsData = await polygonBenzingaService.fetchOptionsTradesForTicker(ticker);
-      console.log(`Raw options data for ${ticker}:`, optionsData);
       
       if (optionsData.length === 0) {
         console.log(`No options trades found for ${ticker}`);
@@ -63,8 +61,6 @@ export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
         const ts = trade.participant_timestamp;
         const id = `${ticker}_${ts || index}`;
         const amount = (trade.size || 0) * (trade.price || 0) * 100;
-        console.log(`Transforming trade ${index}:`, { trade, ts, amount });
-        
         return {
           id,
           date: polygonBenzingaService.formatDate(ts),
@@ -83,7 +79,6 @@ export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
         };
       });
 
-      console.log(`Transformed trades for ${ticker}:`, transformedTrades);
       setBlockTrades(transformedTrades);
 
     } catch (error) {
@@ -92,7 +87,9 @@ export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
     } finally {
       setLoading(false);
     }
-  };  const formatCurrency = (amount: number) => {
+  };
+
+  const formatCurrency = (amount: number) => {
     if (amount >= 1000000) {
       return `$${(amount / 1000000).toFixed(1)}M`;
     }

@@ -89,54 +89,88 @@ export class PolygonBenzingaService {
 
   async fetchOptionsTradesForTicker(ticker: string): Promise<OptionsTradeResult[]> {
     try {
-      console.log(`Fetching options trades for ${ticker} via Supabase proxy...`);
+      console.log(`🔄 [PolygonBenzinga] Fetching options trades for ${ticker} via Supabase proxy...`);
+      const startTime = Date.now();
       
-    const response = await fetch(`${this.supabaseUrl}/functions/v1/benzinga-proxy`, {
+      const response = await fetch(`${this.supabaseUrl}/functions/v1/benzinga-proxy`, {
         method: 'POST',
         headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.supabaseAnonKey}`,
         },
         body: JSON.stringify({
-      action: 'block-trades',
-      ticker: ticker,
-      noMock: true
+          action: 'block-trades',
+          ticker: ticker,
+          lookbackDays: 7 // Increased for better data coverage
         })
       });
+      
+      const duration = Date.now() - startTime;
+      console.log(`⏱️ [PolygonBenzinga] Request completed in ${duration}ms`);
       
       if (!response.ok) {
         throw new Error(`Benzinga proxy error: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log(`📊 [PolygonBenzinga] Raw benzinga-proxy response for ${ticker}:`, {
+        hasBlockTrades: !!data.blockTrades,
+        blockTradesCount: data.blockTrades?.length || 0,
+        hasError: !!data.error,
+        fullResponse: data
+      });
       
       if (data.error) {
         throw new Error(`Benzinga proxy returned error: ${data.error}`);
       }
       
-      // Transform block trades to OptionsTradeResult format
-      const trades: OptionsTradeResult[] = (data.blockTrades || []).map((trade: any) => ({
-        conditions: trade.tradeLocation === 'above-ask' ? [4] : [1], // Map trade location to condition codes
-        exchange: 1,
-        participant_timestamp: new Date(`${trade.date} ${trade.time}`).getTime(),
-        price: trade.price,
-        size: trade.volume,
-        sip_timestamp: new Date(`${trade.date} ${trade.time}`).getTime(),
-        timeframe: 'REAL_TIME',
-        details: {
-          contract_type: trade.optionType,
-          exercise_style: 'american',
-          expiration_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
-          strike_price: trade.strike,
-          ticker: ticker,
-        },
-        amount: trade.amount, // This will be available from the proxy
-      }));
+      const blockTrades = data.blockTrades || [];
       
+      if (blockTrades.length === 0) {
+        console.warn(`📭 [PolygonBenzinga] No block trades returned for ${ticker}`);
+        return [];
+      }
+
+      console.log(`🔄 [PolygonBenzinga] Transforming ${blockTrades.length} trades...`);
+
+      // Transform block trades to OptionsTradeResult format
+      const trades: OptionsTradeResult[] = blockTrades.map((trade: any, index: number) => {
+        // Parse the date and time properly
+        const dateTimeStr = `${trade.date}T${trade.time}:00.000Z`;
+        const timestamp = new Date(dateTimeStr).getTime();
+        
+        const result = {
+          conditions: trade.tradeLocation === 'Above Ask' ? [4] : 
+                     trade.tradeLocation === 'At Ask' ? [1] :
+                     trade.tradeLocation === 'At Bid' ? [2] :
+                     trade.tradeLocation === 'Below Bid' ? [3] : [1],
+          exchange: 1,
+          participant_timestamp: timestamp,
+          price: trade.price || 0,
+          size: trade.volume || 0,
+          sip_timestamp: timestamp,
+          timeframe: 'REAL_TIME',
+          details: {
+            contract_type: trade.optionType === 'unknown' ? 'call' : trade.optionType,
+            exercise_style: 'american',
+            expiration_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            strike_price: trade.strike || 0,
+            ticker: ticker,
+          },
+          amount: trade.amount || 0,
+        };
+        
+        if (index < 3) { // Log first 3 trades for debugging
+          console.log(`🔧 [PolygonBenzinga] Transformed trade ${index}:`, { original: trade, transformed: result });
+        }
+        
+        return result;
+      });
+      
+      console.log(`✅ [PolygonBenzinga] Successfully transformed ${trades.length} trades for ${ticker}`);
       return trades.sort((a, b) => (b.amount || 0) - (a.amount || 0));
     } catch (error) {
       console.error('Error fetching options trades:', error);
-      // Return empty array instead of throwing to allow fallback to sample data
       return [];
     }
   }

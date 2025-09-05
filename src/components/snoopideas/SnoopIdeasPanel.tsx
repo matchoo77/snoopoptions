@@ -15,7 +15,8 @@ export function SnoopIdeasPanel() {
     const fetchPrices = async () => {
       const prices: Record<string, number> = {};
       
-      for (const action of analystActions) {
+      // Fetch prices in parallel instead of sequentially
+      const pricePromises = analystActions.map(async (action) => {
         try {
           const { data, error } = await supabase.functions.invoke('benzinga-proxy', {
             body: {
@@ -25,12 +26,21 @@ export function SnoopIdeasPanel() {
           });
 
           if (!error && data?.price) {
-            prices[action.ticker] = data.price;
+            return { ticker: action.ticker, price: data.price };
           }
         } catch (error) {
           console.error(`Failed to fetch price for ${action.ticker}:`, error);
         }
-      }
+        return null;
+      });
+
+      const results = await Promise.all(pricePromises);
+      
+      results.forEach(result => {
+        if (result) {
+          prices[result.ticker] = result.price;
+        }
+      });
       
       setCurrentPrices(prices);
     };
