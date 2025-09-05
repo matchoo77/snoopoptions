@@ -1,7 +1,8 @@
-import React from 'react';
+ 
 import { STRIPE_PRODUCTS } from '../../stripe-config';
 import { SubscriptionCard } from './SubscriptionCard';
 import { useSubscription } from '../../hooks/useSubscription';
+import { Star } from 'lucide-react';
 
 interface SubscriptionPageProps {
   userToken: string;
@@ -25,86 +26,85 @@ export function SubscriptionPage({ userToken, onBack }: SubscriptionPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 pt-20">
-      <div className="max-w-4xl mx-auto">
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="mb-6 text-blue-600 hover:text-blue-700 font-medium flex items-center"
-          >
-            ← Back to Dashboard
-          </button>
-        )}
-        
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            SnoopFlow Scanner Plans
-          </h1>
-          <p className="text-lg text-gray-600">
-            Choose the plan that works best for your trading needs
-          </p>
-        </div>
+    <div className="min-h-screen bg-white pt-20">
+      <div className="relative isolate">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-600 to-purple-700 opacity-95" />
+        <div className="mx-auto max-w-5xl px-6 lg:px-8 py-16">
+          {onBack && (
+            <button onClick={onBack} className="mb-6 text-white/90 hover:text-white font-medium">
+              ← Back to Dashboard
+            </button>
+          )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {STRIPE_PRODUCTS.map((product) => (
-            <SubscriptionCard
-              key={product.priceId}
-              product={product}
-              isCurrentPlan={subscription?.price_id === product.priceId && subscription?.subscription_status === 'active'}
-              userToken={userToken}
-            />
-          ))}
-        </div>
-
-        <div className="mt-12 text-center">
-          <div className="bg-blue-50 rounded-lg p-6 max-w-2xl mx-auto">
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">
-              Why Choose Annual?
-            </h3>
-            <p className="text-blue-700">
-              Save over 55% with our annual plan! That's more than 6 months free compared to monthly billing.
-            </p>
+          <div className="text-center text-white mb-10">
+            <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur rounded-full px-4 py-2 mb-4">
+              <Star className="w-4 h-4 text-yellow-300" />
+              <span className="text-sm font-medium">Best Value</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold">SnoopFlow Annual Plan</h1>
+            <p className="mt-2 text-blue-100">One simple plan with everything included. Cancel anytime.</p>
           </div>
-        </div>
 
-        {subscription && subscription.subscription_status === 'active' && (
-          <div className="mt-12 bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Current Subscription
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-gray-700">Status:</span>
-                <span className="ml-2 capitalize text-green-600">
-                  {subscription.subscription_status}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-700">Next billing:</span>
-                <span className="ml-2 text-gray-600">
-                  {subscription.current_period_end 
-                    ? new Date(subscription.current_period_end * 1000).toLocaleDateString()
-                    : 'N/A'
-                  }
-                </span>
-              </div>
-              {subscription.payment_method_brand && subscription.payment_method_last4 && (
-                <div>
-                  <span className="font-medium text-gray-700">Payment method:</span>
-                  <span className="ml-2 text-gray-600 capitalize">
-                    {subscription.payment_method_brand} ending in {subscription.payment_method_last4}
-                  </span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 bg-white rounded-2xl shadow-2xl ring-1 ring-gray-200 p-6 sm:p-8">
+              <h2 className="text-xl font-semibold text-gray-900">What's included</h2>
+              <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+                <li className="flex items-center"><span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2" /> Real-time unusual options alerts</li>
+                <li className="flex items-center"><span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2" /> Advanced filtering & analytics</li>
+                <li className="flex items-center"><span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2" /> Block trade detection</li>
+                <li className="flex items-center"><span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2" /> Priority support</li>
+                <li className="flex items-center"><span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2" /> Mobile-friendly dashboard</li>
+                <li className="flex items-center"><span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2" /> Continuous updates</li>
+              </ul>
+
+              {subscription && subscription.subscription_status === 'active' && (
+                <div className="mt-8 bg-blue-50 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-blue-900">Current Subscription</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mt-2 text-blue-900/90">
+                    <div>
+                      <span className="font-medium">Status:</span>
+                      <span className="ml-2 capitalize text-green-700">
+                        {subscription.subscription_status}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Next billing:</span>
+                      <span className="ml-2">
+                        {subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+                    {subscription.payment_method_brand && subscription.payment_method_last4 && (
+                      <div>
+                        <span className="font-medium">Payment method:</span>
+                        <span className="ml-2 capitalize">
+                          {subscription.payment_method_brand} ending in {subscription.payment_method_last4}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="font-medium">Auto-renewal:</span>
+                      <span className="ml-2">
+                        {subscription.cancel_at_period_end ? 'Disabled' : 'Enabled'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               )}
-              <div>
-                <span className="font-medium text-gray-700">Auto-renewal:</span>
-                <span className="ml-2 text-gray-600">
-                  {subscription.cancel_at_period_end ? 'Disabled' : 'Enabled'}
-                </span>
-              </div>
+            </div>
+
+            <div className="md:col-span-1">
+              {STRIPE_PRODUCTS.map((product) => (
+                <SubscriptionCard
+                  key={product.priceId}
+                  product={product}
+                  isCurrentPlan={subscription?.price_id === product.priceId && subscription?.subscription_status === 'active'}
+                  userToken={userToken}
+                />
+              ))}
+              <p className="text-xs text-white/80 text-center mt-4">Secure payment processing by Stripe</p>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

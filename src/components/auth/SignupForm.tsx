@@ -55,17 +55,17 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   };
 
   return (
-    <div className="bg-gradient-to-br from-orange-900 via-red-900 to-amber-900 py-12 px-4">
+    <div className="bg-gradient-to-br from-blue-700 via-indigo-800 to-purple-800 py-12 px-4">
       <div className="w-full max-w-md md:max-w-2xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           {/* Left panel - compact marketing/info for desktop */}
           <div className="hidden md:flex flex-col items-start justify-center p-6 rounded-xl bg-white/5 text-white">
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 rounded-xl shadow-lg mb-4">
+            <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-3 rounded-xl shadow-lg mb-4">
               <UserPlus className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-2xl font-bold mb-2">Create Account</h1>
-            <p className="text-sm text-orange-200 mb-4">Join SnoopFlow for professional options insights.</p>
-            <ul className="space-y-2 text-sm text-orange-100">
+            <p className="text-sm text-blue-200 mb-4">Join SnoopFlow for professional options insights.</p>
+            <ul className="space-y-2 text-sm text-blue-100">
               <li>- Instant unusual options alerts</li>
               <li>- Compact mobile-first UI</li>
               <li>- Backtesting & pattern recognition</li>
@@ -96,7 +96,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 focus:bg-white text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-gray-50 focus:bg-white text-sm"
                   placeholder="your@email.com"
                 />
               </div>
@@ -112,7 +112,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 focus:bg-white text-sm"
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-gray-50 focus:bg-white text-sm"
                     placeholder="Create password"
                   />
                   <button
@@ -137,7 +137,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 focus:bg-white text-sm"
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-gray-50 focus:bg-white text-sm"
                     placeholder="Confirm password"
                   />
                   <button
@@ -153,7 +153,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-2.5 px-4 rounded-lg hover:from-orange-700 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-all font-medium text-sm"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2.5 px-4 rounded-lg hover:from-blue-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 disabled:opacity-50 transition-all font-medium text-sm"
               >
                 {loading ? (
                   <div className="flex items-center justify-center">
@@ -182,7 +182,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
 
         {/* Compact Footer */}
         <div className="text-center mt-4">
-          <p className="text-xs text-orange-200">SnoopFlow - Professional Options Intelligence</p>
+          <p className="text-xs text-blue-200">SnoopFlow - Professional Options Intelligence</p>
         </div>
       </div>
     </div>

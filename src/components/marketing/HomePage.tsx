@@ -1,8 +1,10 @@
-import React from 'react';
-import { ArrowRight, TrendingUp, Zap, Shield, Clock, CheckCircle, Star } from 'lucide-react';
+ 
+import { ArrowRight, TrendingUp, Zap, Shield, Star, Check } from 'lucide-react';
 import { PageProps } from '../../types/navigation';
+import { STRIPE_PRODUCTS } from '../../stripe-config';
 
 export function HomePage({ onNavigate }: PageProps) {
+  const annualPlan = STRIPE_PRODUCTS.find((p) => p.interval === 'year');
   return (
     <div className="bg-white">
       {/* Hero Section */}
@@ -122,6 +124,52 @@ export function HomePage({ onNavigate }: PageProps) {
         </div>
       </div>
 
+      {/* Pricing Highlight - Annual Plan */}
+      {annualPlan && (
+        <div className="relative isolate">
+          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-600 to-purple-700 opacity-95" />
+          <div className="mx-auto max-w-7xl px-6 lg:px-8 py-20">
+            <div className="mx-auto max-w-3xl text-center text-white">
+              <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur rounded-full px-4 py-2 mb-6">
+                <Star className="w-4 h-4 text-yellow-300" />
+                <span className="text-sm font-medium">Best Value</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Go Annual, Save Big</h2>
+              <p className="mt-3 text-blue-100 text-base sm:text-lg">
+                Unlock full access to SnoopFlow for a year. One simple price, professional-grade insights.
+              </p>
+              <div className="mt-8 bg-white rounded-2xl shadow-2xl p-6 sm:p-8 text-left max-w-2xl mx-auto">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500">Annual Plan</div>
+                    <div className="mt-1 flex items-baseline gap-2">
+                      <span className="text-4xl font-bold text-gray-900">
+                        ${annualPlan.price}
+                      </span>
+                      <span className="text-gray-500">/year</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => onNavigate('signup')} className="inline-flex items-center justify-center rounded-md bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                      Start Now
+                    </button>
+                    <button onClick={() => onNavigate('pricing')} className="inline-flex items-center justify-center rounded-md bg-gray-900 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-gray-800">
+                      View Details <ArrowRight className="w-4 h-4 ml-2" />
+                    </button>
+                  </div>
+                </div>
+                <ul className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <li className="flex items-center text-sm text-gray-700"><Check className="w-5 h-5 text-green-600 mr-2" /> Real-time unusual options alerts</li>
+                  <li className="flex items-center text-sm text-gray-700"><Check className="w-5 h-5 text-green-600 mr-2" /> Advanced filtering & analytics</li>
+                  <li className="flex items-center text-sm text-gray-700"><Check className="w-5 h-5 text-green-600 mr-2" /> Block trade detection</li>
+                  <li className="flex items-center text-sm text-gray-700"><Check className="w-5 h-5 text-green-600 mr-2" /> Priority support</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Testimonials */}
       <div className="bg-gray-50 py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -189,8 +237,8 @@ export function HomePage({ onNavigate }: PageProps) {
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="bg-blue-600">
+  {/* CTA Section */}
+  <div className="bg-blue-600">
         <div className="px-6 py-24 sm:px-6 sm:py-32 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">

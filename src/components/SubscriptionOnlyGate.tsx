@@ -28,14 +28,14 @@ export function SubscriptionOnlyGate({ onUpgrade, onLogout }: SubscriptionOnlyGa
             </div>
             <span className="text-sm text-gray-700">Real-time unusual options activity alerts</span>
           </div>
-          
+
           <div className="flex items-center text-left">
             <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
               <Zap className="w-4 h-4 text-blue-600" />
             </div>
             <span className="text-sm text-gray-700">Advanced filtering and analytics</span>
           </div>
-          
+
           <div className="flex items-center text-left">
             <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
               <Shield className="w-4 h-4 text-purple-600" />
@@ -51,7 +51,7 @@ export function SubscriptionOnlyGate({ onUpgrade, onLogout }: SubscriptionOnlyGa
           >
             Subscribe Now - $399/year
           </button>
-          
+
           <button
             onClick={onLogout}
             className="w-full text-gray-500 py-2 text-sm hover:text-gray-700 transition-colors"

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Check, Loader2, CreditCard } from 'lucide-react';
 import { StripeProduct } from '../../stripe-config';
 import { createCheckoutSession } from '../../lib/stripe';
@@ -68,61 +68,30 @@ export function SubscriptionCard({ product, isCurrentPlan = false, userToken }: 
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-lg p-6 border-2 ${
-      isCurrentPlan ? 'border-green-500' : 'border-gray-200'
-    }`}>
+    <div className={`bg-white rounded-2xl shadow-2xl ring-1 p-6 sm:p-8 ${isCurrentPlan ? 'ring-green-500' : 'ring-gray-200'}`}>
       <div className="text-center">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          {product.name}
-        </h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">{product.name}</h3>
         <div className="mb-4">
-          <span className="text-3xl font-bold text-gray-900">
-            {formatPrice(product.price)}
-          </span>
-          {product.interval && (
-            <span className="text-gray-600">
-              /{product.interval === 'year' ? 'year' : 'month'}
-            </span>
-          )}
+          <span className="text-4xl font-bold text-gray-900">{formatPrice(product.price)}</span>
+          {product.interval && <span className="text-gray-600">/{product.interval === 'year' ? 'year' : 'month'}</span>}
         </div>
-        <p className="text-gray-600 mb-6">
-          {product.description}
-        </p>
+        <p className="text-gray-600 mb-6">{product.description}</p>
       </div>
 
       <div className="space-y-3 mb-6">
-        <div className="flex items-center">
-          <Check className="w-5 h-5 text-green-500 mr-3" />
-          <span className="text-gray-700">Real-time unusual options alerts</span>
-        </div>
-        <div className="flex items-center">
-          <Check className="w-5 h-5 text-green-500 mr-3" />
-          <span className="text-gray-700">Advanced filtering capabilities</span>
-        </div>
-        <div className="flex items-center">
-          <Check className="w-5 h-5 text-green-500 mr-3" />
-          <span className="text-gray-700">Block trade notifications</span>
-        </div>
-        <div className="flex items-center">
-          <Check className="w-5 h-5 text-green-500 mr-3" />
-          <span className="text-gray-700">Premium support</span>
-        </div>
+        <div className="flex items-center"><Check className="w-5 h-5 text-green-600 mr-3" /><span className="text-gray-700">Real-time unusual options alerts</span></div>
+        <div className="flex items-center"><Check className="w-5 h-5 text-green-600 mr-3" /><span className="text-gray-700">Advanced filtering capabilities</span></div>
+        <div className="flex items-center"><Check className="w-5 h-5 text-green-600 mr-3" /><span className="text-gray-700">Block trade notifications</span></div>
+        <div className="flex items-center"><Check className="w-5 h-5 text-green-600 mr-3" /><span className="text-gray-700">Premium support</span></div>
         {product.interval === 'year' && (
-          <div className="flex items-center">
-            <Check className="w-5 h-5 text-green-500 mr-3" />
-            <span className="text-gray-700">Save significantly vs monthly</span>
-          </div>
+          <div className="flex items-center"><Check className="w-5 h-5 text-green-600 mr-3" /><span className="text-gray-700">Save significantly vs monthly</span></div>
         )}
       </div>
 
       <button
         onClick={handleSubscribe}
         disabled={loading || isCurrentPlan}
-        className={`w-full py-3 px-4 rounded-md font-medium transition-colors flex items-center justify-center ${
-          isCurrentPlan
-            ? 'bg-green-100 text-green-800 cursor-not-allowed'
-            : 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
-        } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`w-full py-3 px-4 rounded-md font-medium transition-all flex items-center justify-center ${isCurrentPlan ? 'bg-green-100 text-green-800 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         {loading ? (
           <>
@@ -140,9 +109,7 @@ export function SubscriptionCard({ product, isCurrentPlan = false, userToken }: 
       </button>
 
       {!isCurrentPlan && (
-        <p className="text-xs text-gray-500 text-center mt-3">
-          Secure payment processing by Stripe
-        </p>
+        <p className="text-xs text-gray-500 text-center mt-3">Secure payment processing by Stripe</p>
       )}
     </div>
   );
