@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, ArrowRight, Clock } from 'lucide-react';
 import { FlowCheckModal } from './FlowCheckModal';
 import { useSnoopIdeas } from '../../hooks/useSnoopIdeas';
 import { supabase } from '../../lib/supabase';
+import { getMarketStatus } from '../../utils/marketHours';
 
 export function SnoopIdeasPanel() {
   const { analystActions, loading, error, refreshData } = useSnoopIdeas();
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
+  const [selectedAction, setSelectedAction] = useState<any>(null);
   const [showFlowModal, setShowFlowModal] = useState(false);
   const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({});
+  const marketStatus = getMarketStatus();
 
   // Fetch current prices for all tickers when analyst actions change
   useEffect(() => {
@@ -50,19 +53,24 @@ export function SnoopIdeasPanel() {
     }
   }, [analystActions]);
 
-  const handleFlowCheck = (ticker: string) => {
-    setSelectedTicker(ticker);
+  const handleFlowCheck = (action: any) => {
+    setSelectedTicker(action.ticker);
+    setSelectedAction(action);
     setShowFlowModal(true);
   };
 
   const getActionIcon = (actionType: string) => {
-    if (actionType.toLowerCase().includes('upgrade') || actionType.toLowerCase().includes('raised')) {
+    const type = actionType.toLowerCase();
+    if (type.includes('upgrade') || type.includes('raised') || type.includes('buy')) {
       return <TrendingUp className="w-4 h-4 text-green-500" />;
     }
-    if (actionType.toLowerCase().includes('downgrade') || actionType.toLowerCase().includes('lowered')) {
+    if (type.includes('downgrade') || type.includes('lowered') || type.includes('sell')) {
       return <TrendingDown className="w-4 h-4 text-red-500" />;
     }
-    return <TrendingUp className="w-4 h-4 text-blue-500" />;
+    if (type.includes('initiated') || type.includes('coverage')) {
+      return <TrendingUp className="w-4 h-4 text-blue-500" />;
+    }
+    return <TrendingUp className="w-4 h-4 text-gray-500" />;
   };
 
   return (
@@ -97,7 +105,20 @@ export function SnoopIdeasPanel() {
 
       {/* Content */}
       <div className="px-4 py-4">
-        {loading && analystActions.length === 0 ? (
+        {!marketStatus.isOpen ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-10 h-10 text-red-500" />
+              </div>
+              <h3 className="text-xl font-medium text-gray-900 mb-2">Market Closed</h3>
+              <p className="text-gray-600 text-base mb-4">{marketStatus.message}</p>
+              <p className="text-sm text-gray-500">
+                SnoopIdeas data is only available during market hours (9:30 AM - 4:00 PM ET, Monday-Friday)
+              </p>
+            </div>
+          </div>
+        ) : loading && analystActions.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <RefreshCw className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-2" />
@@ -122,7 +143,8 @@ export function SnoopIdeasPanel() {
                     
                     <div className="mb-2">
                       <h3 className="font-medium text-gray-900">{action.company}</h3>
-                      <p className="text-sm text-gray-600">{action.analystFirm}</p>
+                      <p className="text-sm font-medium text-green-600">{action.actionType}</p>
+                      <p className="text-xs text-gray-500">{action.analystFirm}</p>
                     </div>
 
                     <div className="space-y-1">
@@ -154,7 +176,7 @@ export function SnoopIdeasPanel() {
 
                   <div className="flex items-center">
                     <button
-                      onClick={() => handleFlowCheck(action.ticker)}
+                      onClick={() => handleFlowCheck(action)}
                       className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center space-x-1"
                     >
                       <span>Flow Check</span>
@@ -190,12 +212,20 @@ export function SnoopIdeasPanel() {
       </div>
 
       {/* Flow Check Modal */}
-      {showFlowModal && selectedTicker && (
+      {showFlowModal && selectedTicker && selectedAction && (
         <FlowCheckModal
           ticker={selectedTicker}
+          analystAction={{
+            company: selectedAction.company,
+            actionType: selectedAction.actionType,
+            analystFirm: selectedAction.analystFirm,
+            actionDate: selectedAction.actionDate,
+            currentPrice: currentPrices[selectedTicker]
+          }}
           onClose={() => {
             setShowFlowModal(false);
             setSelectedTicker(null);
+            setSelectedAction(null);
           }}
         />
       )}

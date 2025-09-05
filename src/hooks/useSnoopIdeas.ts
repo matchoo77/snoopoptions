@@ -40,8 +40,11 @@ export function useSnoopIdeas() {
         return;
       }
 
+      // Limit to top 10 most important actions for better UX
+      const limitedRatings = benzingaRatings.slice(0, 10);
+
       // Transform API data to component format - using the formatted actionType from API
-      const transformedActions: AnalystAction[] = benzingaRatings.map((rating, index) => ({
+      const transformedActions: AnalystAction[] = limitedRatings.map((rating, index) => ({
         id: `api_${index}_${Date.now()}`,
         ticker: rating.ticker,
         company: getCompanyName(rating.ticker),
@@ -64,12 +67,6 @@ export function useSnoopIdeas() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const extractFirm = (actionType: string): string => {
-    // Extract firm name from action type string like "Upgrade by Morgan Stanley"
-    const byMatch = actionType.match(/by (.+)$/);
-    return byMatch ? byMatch[1] : 'Unknown Firm';
   };
 
   const extractPreviousTarget = (actionType: string): number | undefined => {

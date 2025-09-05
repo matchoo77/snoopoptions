@@ -140,10 +140,20 @@ async function fetchTodaysAnalystActions(): Promise<any[]> {
         const data = await res.json();
         const results = Array.isArray(data?.results) ? data.results : [];
         if (results.length > 0) {
-          const actions = results.map((rating: any, index: number) => ({
+          // Filter and limit the results to only important/meaningful actions
+          const filteredResults = results
+            .filter((rating: any) => {
+              // Only include ratings with meaningful action types, price targets, or from major firms
+              const hasMeaningfulData = rating.action_type || rating.rating_change || rating.price_target_change;
+              const isMajorFirm = ['Goldman Sachs', 'Morgan Stanley', 'JP Morgan', 'Barclays', 'Wells Fargo', 'RBC Capital', 'Guggenheim', 'Citigroup'].includes(rating.firm);
+              return hasMeaningfulData || isMajorFirm;
+            })
+            .slice(0, 12); // Limit to 12 most recent meaningful actions instead of 100+
+
+          const actions = filteredResults.map((rating: any, index: number) => ({
             id: `benzinga_${rating.ticker}_${index}_${Date.now()}`,
             ticker: rating.ticker || 'UNKNOWN',
-            actionType: rating.action_type || formatActionType(rating),
+            actionType: formatActionType(rating), // Use the formatted action type always
             analystFirm: rating.firm || 'Unknown Firm',
             actionDate: rating.date || dateStr,
             previousTarget: extractPreviousTarget(rating),
@@ -153,7 +163,7 @@ async function fetchTodaysAnalystActions(): Promise<any[]> {
             newRating: extractNewRating(rating),
             createdAt: new Date().toISOString(),
           }));
-          console.log(`Fetched ${actions.length} ratings from ${p}`);
+          console.log(`✅ [benzinga-proxy] Fetched ${actions.length} filtered meaningful ratings from ${p} for ${dateStr}`);
           return actions;
         }
       }
@@ -161,16 +171,22 @@ async function fetchTodaysAnalystActions(): Promise<any[]> {
       return [];
     };
 
-    // Try today and then fallback to previous days (up to 4 days back)
-    const baseDate = new Date();
-    const toISODate = (d: Date) => d.toISOString().split('T')[0];
-    for (let i = 0; i < 5; i++) {
-      const d = new Date(baseDate);
-      d.setDate(d.getDate() - i);
-      const dateStr = toISODate(d);
+    // Try today first, then yesterday only (not 5 days back)
+    const today = new Date();
+    const dates = [
+      today.toISOString().split('T')[0], // Today
+      new Date(today.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Yesterday
+    ];
+
+    for (const dateStr of dates) {
       const actions = await fetchForDate(dateStr);
-      if (actions.length > 0) return actions;
+      if (actions.length > 0) {
+        console.log(`🎯 [benzinga-proxy] Returning ${actions.length} meaningful actions from ${dateStr}`);
+        return actions;
+      }
     }
+    
+    console.log(`📭 [benzinga-proxy] No recent meaningful analyst actions found`);
     return [];
 
   } catch (error) {
@@ -181,20 +197,50 @@ async function fetchTodaysAnalystActions(): Promise<any[]> {
 
 function formatActionType(rating: any): string {
   const actionType = rating.action_type?.toLowerCase() || '';
+  const ratingChange = rating.rating_change?.toLowerCase() || '';
+  const priceTargetChange = rating.price_target_change?.toLowerCase() || '';
   const firm = rating.firm || 'Unknown Firm';
 
-  if (actionType.includes('upgrade')) {
+  console.log(`🔍 [formatActionType] Raw data for ${rating.ticker}:`, { actionType, ratingChange, priceTargetChange, firm });
+
+  // Check for specific action types first
+  if (actionType.includes('upgrade') || ratingChange.includes('upgrade')) {
     return `Upgrade by ${firm}`;
-  } else if (actionType.includes('downgrade')) {
+  } else if (actionType.includes('downgrade') || ratingChange.includes('downgrade')) {
     return `Downgrade by ${firm}`;
-  } else if (actionType.includes('initiated') || actionType.includes('coverage')) {
+  } else if (actionType.includes('initiated') || actionType.includes('coverage') || ratingChange.includes('initiated')) {
     return `Coverage Initiated by ${firm}`;
+  } else if (actionType.includes('reiterat') || ratingChange.includes('reiterat')) {
+    return `Rating Reiterated by ${firm}`;
+  } else if (actionType.includes('maintain') || ratingChange.includes('maintain')) {
+    return `Rating Maintained by ${firm}`;
+  } else if (priceTargetChange.includes('raised') || priceTargetChange.includes('increase') || actionType.includes('raised')) {
+    return `Price Target Raised by ${firm}`;
+  } else if (priceTargetChange.includes('lowered') || priceTargetChange.includes('decrease') || actionType.includes('lowered')) {
+    return `Price Target Lowered by ${firm}`;
   } else if (rating.price_target_change) {
-    return `Price Target ${rating.price_target_change} by ${firm}`;
+    return `Price Target Updated by ${firm}`;
+  } else if (rating.rating_change && (ratingChange.includes('buy') || ratingChange.includes('sell') || ratingChange.includes('hold'))) {
+    return `Rating Changed to ${rating.rating_change} by ${firm}`;
   } else if (rating.rating_change) {
-    return `Rating ${rating.rating_change} by ${firm}`;
+    return `Rating Updated by ${firm}`;
   } else {
-    return `${rating.action_type || 'Unknown Action'} by ${firm}`;
+    // Provide more descriptive fallbacks
+    if (firm.includes('Goldman Sachs')) {
+      return `Goldman Sachs Research Note`;
+    } else if (firm.includes('Morgan Stanley')) {
+      return `Morgan Stanley Research Update`;
+    } else if (firm.includes('JP Morgan')) {
+      return `JP Morgan Analysis`;
+    } else if (firm.includes('Guggenheim')) {
+      return `Guggenheim Research`;
+    } else if (firm.includes('RBC')) {
+      return `RBC Capital Markets Update`;
+    } else if (firm.includes('Wells Fargo')) {
+      return `Wells Fargo Research`;
+    } else {
+      return `${firm} Research Note`;
+    }
   }
 }
 

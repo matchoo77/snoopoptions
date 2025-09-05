@@ -17,30 +17,26 @@ interface BlockTrade {
 interface FlowCheckModalProps {
   ticker: string;
   onClose: () => void;
+  analystAction?: {
+    company: string;
+    actionType: string;
+    analystFirm: string;
+    actionDate: string;
+    currentPrice?: number;
+  };
 }
 
-export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
+export function FlowCheckModal({ ticker, onClose, analystAction }: FlowCheckModalProps) {
   const [blockTrades, setBlockTrades] = useState<BlockTrade[]>([]);
   const [loading, setLoading] = useState(true);
-  const [companyInfo, setCompanyInfo] = useState<{ name: string } | null>({ name: `${ticker} Corporation` });
+  const [currentPrice] = useState<number | null>(analystAction?.currentPrice || null);
+  const [companyInfo] = useState<{ name: string } | null>(
+    analystAction ? { name: analystAction.company } : { name: `${ticker} Corporation` }
+  );
 
   useEffect(() => {
     fetchBlockTrades();
-    fetchCompanyInfo();
   }, [ticker]);
-
-  const fetchCompanyInfo = async () => {
-    const companyNames: Record<string, string> = {
-      AAPL: 'Apple Inc.',
-      NVDA: 'NVIDIA Corporation',
-      TSLA: 'Tesla, Inc.',
-      MSFT: 'Microsoft Corporation',
-      GOOGL: 'Alphabet Inc.',
-      AMZN: 'Amazon.com Inc.',
-      META: 'Meta Platforms Inc.',
-    };
-    setCompanyInfo({ name: companyNames[ticker] || `${ticker} Corporation` });
-  };
 
   const fetchBlockTrades = async () => {
     setLoading(true);
@@ -133,15 +129,20 @@ export function FlowCheckModal({ ticker, onClose }: FlowCheckModalProps) {
           {/* Company Info Section */}
           <div className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
-              <div>
+              <div className="flex-1">
                 <h3 className="text-lg font-bold text-gray-900">{companyInfo.name}</h3>
-                {/* No price display for now */}
+                <div className="text-lg font-bold text-blue-600 mt-1">
+                  {currentPrice ? `$${currentPrice.toFixed(2)}` : 'Loading price...'}
+                </div>
               </div>
+              {analystAction && (
+                <div className="text-right">
+                  <div className="text-sm font-medium text-green-600">{analystAction.actionType}</div>
+                  <div className="text-xs text-gray-500">{analystAction.analystFirm}</div>
+                  <div className="text-xs text-gray-500">{new Date(analystAction.actionDate).toLocaleDateString()}</div>
+                </div>
+              )}
             </div>
-
-            {/* No firm/targets in this simplified modal */}
-
-            {/* Remove hardcoded description */}
           </div>
         </div>
 
