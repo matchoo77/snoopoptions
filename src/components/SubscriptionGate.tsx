@@ -15,21 +15,21 @@ export function SubscriptionGate({ onUpgrade, trialExpired = false, onBack, onLo
         <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
           <Lock className="w-8 h-8 text-white" />
         </div>
-        
+
         <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          {trialExpired ? 
+          {trialExpired ?
             '🐕 Your Trading Pup\'s Trial Has Ended!' :
             '🐕 Your Trading Pup Needs Food!'
           }
         </h1>
-        
+
         <p className="text-gray-600 mb-6">
           {trialExpired ?
             'Thanks for trying SnoopFlow! Your 7-day free trial has ended, but your trading dog is still hungry for more opportunities. Subscribe now to keep the hunt going!' :
             'Your 7-day free trial has ended and your trading dog is getting hungry! Subscribe now to keep your loyal companion sniffing out profitable opportunities.'
           }
         </p>
-        
+
         <div className="space-y-3 mb-8 text-left">
           <div className="flex items-center text-sm text-gray-700">
             <Crown className="w-4 h-4 text-blue-600 mr-2" />
@@ -48,7 +48,7 @@ export function SubscriptionGate({ onUpgrade, trialExpired = false, onBack, onLo
             Unlimited watchlist symbols
           </div>
         </div>
-        
+
         <div className="flex flex-col space-y-3">
           <button
             onClick={onUpgrade}
@@ -58,7 +58,7 @@ export function SubscriptionGate({ onUpgrade, trialExpired = false, onBack, onLo
             Subscribe Now
             <ArrowRight className="w-4 h-4 ml-2" />
           </button>
-          
+          //
           <div className="flex space-x-2">
             {onBack && (
               <button
@@ -69,7 +69,7 @@ export function SubscriptionGate({ onUpgrade, trialExpired = false, onBack, onLo
                 Go Back
               </button>
             )}
-            
+
             {onLogout && (
               <button
                 onClick={onLogout}
@@ -81,7 +81,7 @@ export function SubscriptionGate({ onUpgrade, trialExpired = false, onBack, onLo
             )}
           </div>
         </div>
-        
+
         <p className="text-xs text-gray-500 mt-4">
           Cancel anytime • 30-day money-back guarantee
         </p>
