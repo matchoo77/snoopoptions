@@ -5,7 +5,6 @@ import { useOptionsData } from '../../hooks/useOptionsData';
 import { useFavorites } from '../../hooks/useFavorites';
 import { SearchBar } from '../SearchBar';
 import { FilterPanel } from '../FilterPanel';
-import { StatsOverview } from '../StatsOverview';
 import { DataSourceIndicator } from '../DataSourceIndicator';
 import { ActivityFeed } from '../ActivityFeed';
 import { AlertsPanel } from '../AlertsPanel';
@@ -115,10 +114,6 @@ export function DashboardApp({}: DashboardAppProps) {
           <SnoopIdeasPanel />
         ) : (
           <>
-            {/* Full Width Stats Overview */}
-            <div className="mb-6">
-              <StatsOverview activities={displayActivities} dataSource={dataSource} />
-            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
               {/* Main Content */}
