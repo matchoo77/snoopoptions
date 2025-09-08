@@ -148,6 +148,18 @@ export function DashboardApp({}: DashboardAppProps) {
                 onToggleFavorite={handleToggleFavorite}
                 onUpdateNote={updateFavoriteNote}
                 getFavoriteNote={getFavoriteNote}
+                filterKey={JSON.stringify({
+                  minVolume: filters.minVolume,
+                  minPremium: filters.minPremium,
+                  maxDaysToExpiration: filters.maxDaysToExpiration,
+                  optionTypes: filters.optionTypes,
+                  sentiment: filters.sentiment,
+                  tradeLocations: filters.tradeLocations,
+                  blockTradesOnly: filters.blockTradesOnly,
+                  minOpenInterest: filters.minOpenInterest,
+                  searchSymbol: filters.searchSymbol,
+                  showFavoritesOnly: filters.showFavoritesOnly,
+                })}
               />
             </div>
           </>

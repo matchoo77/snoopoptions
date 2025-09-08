@@ -1,4 +1,4 @@
-import { Filter, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Filter, TrendingUp, TrendingDown, Minus, RotateCcw } from 'lucide-react';
 import { FilterOptions } from '../types/options';
 
 interface FilterPanelProps {
@@ -7,7 +7,7 @@ interface FilterPanelProps {
 }
 
 export function FilterPanel({ filters, onFiltersChange }: FilterPanelProps) {
-  const updateFilter = (key: keyof FilterOptions, value: any) => {
+  const updateFilter = <K extends keyof FilterOptions>(key: K, value: FilterOptions[K]) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 
@@ -25,11 +25,36 @@ export function FilterPanel({ filters, onFiltersChange }: FilterPanelProps) {
     updateFilter('optionTypes', newTypes);
   };
 
+  const handleReset = () => {
+    onFiltersChange({
+      minVolume: 1,
+      minPremium: 1,
+      maxDaysToExpiration: 365,
+      optionTypes: ['call', 'put'],
+      sentiment: ['bullish', 'bearish', 'neutral'],
+      tradeLocations: ['below-bid', 'at-bid', 'midpoint', 'at-ask', 'above-ask'],
+      blockTradesOnly: false,
+      minOpenInterest: 0,
+      symbols: [],
+      searchSymbol: '',
+      showFavoritesOnly: false,
+    });
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 mb-4 border">
-      <div className="flex items-center mb-3">
-        <Filter className="w-4 h-4 text-blue-600 mr-2" />
-        <h3 className="text-md font-semibold text-gray-900">Scanner Filters</h3>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center">
+          <Filter className="w-4 h-4 text-blue-600 mr-2" />
+          <h3 className="text-md font-semibold text-gray-900">Scanner Filters</h3>
+        </div>
+        <button
+          onClick={handleReset}
+          type="button"
+          className="flex items-center text-xs text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          <RotateCcw className="w-3 h-3 mr-1" /> Reset
+        </button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

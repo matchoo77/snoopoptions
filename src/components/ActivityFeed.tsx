@@ -10,6 +10,8 @@ interface ActivityFeedProps {
   onToggleFavorite: (activityId: string, note?: string) => void;
   onUpdateNote: (activityId: string, note: string) => void;
   getFavoriteNote: (activityId: string) => string;
+  /** Changing key derived from filters to reset internal accumulation */
+  filterKey?: string;
 }
 
 type SortField = 'timestamp' | 'volume' | 'premium' | 'impliedVolatility';
@@ -23,7 +25,7 @@ const ActivityRow = React.memo(({
   onToggleFavorite,
   onUpdateNote
 }: {
-  activity: any;
+  activity: OptionsActivity;
   isFavorite: boolean;
   favoriteNote: string;
   onToggleFavorite: (activityId: string) => void;
@@ -147,7 +149,8 @@ export function ActivityFeed({
   favoriteActivityIds,
   onToggleFavorite,
   onUpdateNote,
-  getFavoriteNote
+  getFavoriteNote,
+  filterKey
 }: ActivityFeedProps) {
   const marketStatus = useMarketStatus();
   const [sortField, setSortField] = useState<SortField>('timestamp');
@@ -167,8 +170,8 @@ export function ActivityFeed({
 
   const sortedActivities = useMemo(() => {
     const arr = [...activities].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+      let aValue: number;
+      let bValue: number;
 
       switch (sortField) {
         case 'timestamp':
@@ -243,6 +246,15 @@ export function ActivityFeed({
 
     return () => clearTimeout(timeout);
   }, [sortedActivities]);
+
+  // Reset accumulation immediately when filters change
+  useEffect(() => {
+    if (filterKey !== undefined) {
+      setAccumulatedActivities(sortedActivities.slice(0, 200));
+      lastAppliedRef.current = Date.now();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey]);
 
   // Use accumulated activities for display, fallback to sorted activities
   const activitiesToShow = accumulatedActivities.length > 0 ? accumulatedActivities : sortedActivities;
