@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { getMarketStatus } from '../../utils/marketHours';
 
 export function SnoopIdeasPanel() {
-  const { analystActions, loading, error, refreshData } = useSnoopIdeas();
+  const { analystActions, loading, error, refreshData, loadMore, hasMore } = useSnoopIdeas();
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<any>(null);
   const [showFlowModal, setShowFlowModal] = useState(false);
@@ -98,7 +98,7 @@ export function SnoopIdeasPanel() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Latest Analyst Actions</h2>
           <span className="text-sm text-blue-600 font-medium">
-            {analystActions.length} actions today
+            {analystActions.length} actions loaded{hasMore ? '' : ' (all)'}
           </span>
         </div>
       </div>
@@ -142,8 +142,12 @@ export function SnoopIdeasPanel() {
                     </div>
                     
                     <div className="mb-2">
-                      <h3 className="font-medium text-gray-900">{action.company}</h3>
-                      <p className="text-sm font-medium text-green-600">{action.actionType}</p>
+                      <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                        {action.company}
+                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-600 border border-blue-100">
+                          {action.actionType}
+                        </span>
+                      </h3>
                       <p className="text-xs text-gray-500">{action.analystFirm}</p>
                     </div>
 
@@ -196,17 +200,31 @@ export function SnoopIdeasPanel() {
                 <p className="text-gray-600 text-sm">Check back later for the latest analyst upgrades and downgrades</p>
               </div>
             )}
+
+            {hasMore && analystActions.length > 0 && (
+              <div className="pt-4 flex justify-center">
+                <button
+                  onClick={loadMore}
+                  disabled={loading}
+                  className="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
+                  Load More
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {/* Bottom instruction */}
-        {analystActions.length > 0 && (
+    {analystActions.length > 0 && (
           <div className="mt-8 text-center py-8 border-t border-gray-200">
             <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <div className="w-6 h-6 border-2 border-gray-400 rounded-full border-dashed"></div>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Select an Analyst Action</h3>
-            <p className="text-gray-600 text-sm">Click on any analyst action to view related unusual options activity</p>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">Select an Analyst Action</h3>
+      <p className="text-gray-600 text-sm">Click on any analyst action to view related unusual options activity</p>
+      {!hasMore && <p className="mt-2 text-xs text-gray-400">All available actions loaded</p>}
           </div>
         )}
       </div>

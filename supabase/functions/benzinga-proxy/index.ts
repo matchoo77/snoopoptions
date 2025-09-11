@@ -116,7 +116,7 @@ function isMarketHours(): boolean {
   return currentHour >= 9 && currentHour < 16;
 }
 
-async function fetchTodaysAnalystActions(): Promise<any[]> {
+async function fetchTodaysAnalystActions(limit: number = 50): Promise<any[]> {
   try {
     const apiKey = getPolygonApiKey();
 
@@ -143,12 +143,13 @@ async function fetchTodaysAnalystActions(): Promise<any[]> {
           // Filter and limit the results to only important/meaningful actions
           const filteredResults = results
             .filter((rating: any) => {
-              // Only include ratings with meaningful action types, price targets, or from major firms
-              const hasMeaningfulData = rating.action_type || rating.rating_change || rating.price_target_change;
-              const isMajorFirm = ['Goldman Sachs', 'Morgan Stanley', 'JP Morgan', 'Barclays', 'Wells Fargo', 'RBC Capital', 'Guggenheim', 'Citigroup'].includes(rating.firm);
-              return hasMeaningfulData || isMajorFirm;
+              // Keep broader set but still filter obvious noise (must have a ticker & firm)
+              const hasTicker = !!rating.ticker;
+              const hasFirm = !!rating.firm;
+              const hasSignal = rating.action_type || rating.rating_change || rating.price_target_change;
+              return hasTicker && hasFirm && hasSignal;
             })
-            .slice(0, 12); // Limit to 12 most recent meaningful actions instead of 100+
+            .slice(0, limit); // Respect dynamic limit from caller
 
           const actions = filteredResults.map((rating: any, index: number) => ({
             id: `benzinga_${rating.ticker}_${index}_${Date.now()}`,
@@ -545,14 +546,15 @@ Deno.serve(async (req) => {
       return corsResponse(null, 204);
     }
 
-    const { action, ticker, lookbackDays } = await req.json();
-    console.log('[benzinga-proxy] request', { action, ticker, hasKey: !!(apiKey && apiKey.trim()) });
+  const { action, ticker, lookbackDays, limit } = await req.json();
+  console.log('[benzinga-proxy] request', { action, ticker, limit, hasKey: !!(apiKey && apiKey.trim()) });
 
     if (action === 'analyst-actions') {
       if (!apiKey || apiKey.trim() === '') {
         return corsResponse({ actions: [] });
       }
-      const actions = await fetchTodaysAnalystActions();
+      const effectiveLimit = typeof limit === 'number' && limit > 0 && limit <= 200 ? limit : 50;
+      const actions = await fetchTodaysAnalystActions(effectiveLimit);
       return corsResponse({ actions });
     }
 

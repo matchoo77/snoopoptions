@@ -8,11 +8,6 @@ export interface BenzingaRating {
   date?: string;
 }
 
-interface PolygonBenzingaResponse {
-  results?: BenzingaRating[];
-  status: string;
-  count?: number;
-}
 
 export interface OptionsTradeResult {
   conditions: number[];
@@ -32,12 +27,6 @@ export interface OptionsTradeResult {
   };
 }
 
-interface PolygonOptionsTradesResponse {
-  results?: OptionsTradeResult[];
-  status: string;
-  count?: number;
-  next_url?: string;
-}
 
 import { getResolvedSupabaseUrl, getResolvedSupabaseAnonKey } from './supabase';
 
@@ -51,7 +40,7 @@ export class PolygonBenzingaService {
     this.supabaseAnonKey = getResolvedSupabaseAnonKey();
   }
 
-  async fetchTodaysBenzingaRatings(): Promise<BenzingaRating[]> {
+  async fetchTodaysBenzingaRatings(limit: number = 50): Promise<BenzingaRating[]> {
     try {
       const response = await fetch(`${this.supabaseUrl}/functions/v1/benzinga-proxy`, {
         method: 'POST',
@@ -59,7 +48,7 @@ export class PolygonBenzingaService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.supabaseAnonKey}`,
         },
-        body: JSON.stringify({ action: 'analyst-actions', noMock: true }),
+        body: JSON.stringify({ action: 'analyst-actions', noMock: true, limit }),
       });
 
       if (!response.ok) {
@@ -75,7 +64,7 @@ export class PolygonBenzingaService {
       }>;
 
       // Map to a BenzingaRating-shaped object so formatActionType can still work if needed
-      return actions.map((a) => ({
+  return actions.map((a) => ({
         ticker: a.ticker,
         action_type: a.actionType,
         firm: a.analystFirm,
