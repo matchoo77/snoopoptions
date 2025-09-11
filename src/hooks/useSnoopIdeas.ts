@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { polygonBenzingaService } from '../lib/polygonBenzinga';
 
 interface AnalystAction {
@@ -19,55 +20,47 @@ export function useSnoopIdeas() {
   const [analystActions, setAnalystActions] = useState<AnalystAction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pageSize] = useState(25); // fetch this many at a time from edge
-  const [fetchedCount, setFetchedCount] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
 
-  const fetchAnalystActions = async (append = false) => {
-    if (loading) return;
+  const fetchAnalystActions = async () => {
     setLoading(true);
     setError(null);
 
     try {
       const today = new Date().toISOString().split('T')[0];
-      const targetLimit = append ? fetchedCount + pageSize : pageSize;
-      console.log('🔄 [useSnoopIdeas] Fetching analyst actions', { targetLimit, append });
-      const benzingaRatings = await polygonBenzingaService.fetchTodaysBenzingaRatings(targetLimit);
+
+      // Fetch fresh data directly from Polygon Benzinga API via proxy
+      console.log('🔄 [useSnoopIdeas] Fetching fresh data from Polygon Benzinga API...');
+      const benzingaRatings = await polygonBenzingaService.fetchTodaysBenzingaRatings();
       
       console.log(`📊 [useSnoopIdeas] Received ${benzingaRatings.length} analyst actions from API`);
       
       if (benzingaRatings.length === 0) {
         console.log('📭 [useSnoopIdeas] No Benzinga ratings found for today');
         setAnalystActions([]);
-        setHasMore(false);
         return;
       }
-      const transformedActions: AnalystAction[] = benzingaRatings.map((rating, index) => {
-        const baseId = `${rating.ticker}_${rating.date || today}_${index}`;
-        return {
-          id: baseId,
-          ticker: rating.ticker,
-          company: formatCompanySymbol(rating.ticker),
-          actionType: rating.action_type, // Already formatted by edge function
-          analystFirm: rating.firm || 'Unknown Firm',
-          actionDate: rating.date || today,
-          previousTarget: extractPreviousTarget(rating.action_type),
-          newTarget: extractNewTarget(rating.action_type),
-          rating: rating.rating_change,
-          previousRating: extractPreviousRating(rating.action_type),
-          newRating: extractNewRating(rating.action_type),
-        };
-      });
+
+      // Transform API data to component format - using the normalized action_type from API (already classified)
+      const transformedActions: AnalystAction[] = benzingaRatings.map((rating: any, index: number) => ({
+        id: rating.id || `api_${index}_${Date.now()}`,
+        ticker: rating.ticker,
+        company: rating.company_name || getCompanyName(rating.ticker),
+        actionType: rating.action_type, // classification string (e.g., Upgrade, Maintains, Raises PT ...)
+        analystFirm: rating.firm || 'Unknown Firm',
+        actionDate: rating.date || today,
+        previousTarget: rating.previous_price_target ?? extractPreviousTarget(rating.action_type),
+        newTarget: rating.price_target ?? extractNewTarget(rating.action_type),
+        rating: rating.rating || rating.rating_change,
+        previousRating: rating.previous_rating ?? extractPreviousRating(rating.action_type),
+        newRating: rating.rating ?? extractNewRating(rating.action_type),
+      }));
 
       console.log(`✅ [useSnoopIdeas] Transformed ${transformedActions.length} actions for display:`, transformedActions);
       setAnalystActions(transformedActions);
-      setFetchedCount(transformedActions.length);
-      setHasMore(transformedActions.length >= targetLimit); // if we filled the target limit, assume more may exist
     } catch (error) {
       console.error('❌ [useSnoopIdeas] Error fetching analyst actions:', error);
       setError('Failed to fetch analyst actions');
       setAnalystActions([]);
-      setHasMore(false);
     } finally {
       setLoading(false);
     }
@@ -97,8 +90,7 @@ export function useSnoopIdeas() {
     return match ? match[1].trim() : undefined;
   };
 
-  // Basic fallback mapping if company info not yet retrieved
-  const formatCompanySymbol = (ticker: string): string => {
+  const getCompanyName = (ticker: string): string => {
     const companies: Record<string, string> = {
       'AAPL': 'Apple Inc.',
       'NVDA': 'NVIDIA Corporation',
@@ -121,22 +113,15 @@ export function useSnoopIdeas() {
       'JPM': 'JPMorgan Chase & Co.',
       'BAC': 'Bank of America Corp.',
     };
-    return companies[ticker] || ticker;
+    return companies[ticker] || `${ticker} Corporation`;
   };
 
   const refreshData = async () => {
-    setFetchedCount(0);
-    setHasMore(true);
-    await fetchAnalystActions(false);
-  };
-
-  const loadMore = async () => {
-    if (!hasMore) return;
-    await fetchAnalystActions(true);
+    await fetchAnalystActions(); // Fetch fresh data
   };
 
   useEffect(() => {
-    fetchAnalystActions();
+    fetchAnalystActions(); // Initial load gets fresh data
   }, []);
 
   return {
@@ -144,7 +129,5 @@ export function useSnoopIdeas() {
     loading,
     error,
     refreshData,
-    loadMore,
-    hasMore,
   };
 }

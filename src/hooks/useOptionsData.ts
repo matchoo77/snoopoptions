@@ -1,12 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { OptionsActivity, FilterOptions } from '../types/options';
 import { usePolygonOptions } from './usePolygonOptions';
 import { useMarketStatus } from './useMarketStatus';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './useAuth';
 
 export function useOptionsData() {
   const marketStatus = useMarketStatus();
   
-  const [filters, setFilters] = useState<FilterOptions>({
+  const defaultFilters: FilterOptions = {
     minVolume: 1,
     minPremium: 1,
     maxDaysToExpiration: 365,
@@ -18,7 +20,78 @@ export function useOptionsData() {
     symbols: [],
     searchSymbol: '',
     showFavoritesOnly: false,
-  });
+  };
+
+  const { user } = useAuth();
+  const [filters, setFilters] = useState<FilterOptions>(defaultFilters);
+  const loadedRemote = useRef(false);
+  const saveTimeout = useRef<number | undefined>(undefined);
+
+  // Load persisted filters (server or local)
+  useEffect(() => {
+    const load = async () => {
+      try {
+        if (user) {
+          const { data, error } = await supabase
+            .from('filter_preferences')
+            .select('filters')
+            .eq('user_id', user.id)
+            .single();
+          if (error && error.code !== 'PGRST116') { // not found code
+            console.warn('[useOptionsData] load preferences error', error);
+          }
+          if (data?.filters) {
+            setFilters({ ...defaultFilters, ...data.filters });
+            console.log('[useOptionsData] Loaded server filter preferences');
+          } else {
+            // Initialize row
+            await supabase.from('filter_preferences').upsert({ user_id: user.id, filters: defaultFilters });
+            console.log('[useOptionsData] Created initial server filter preferences');
+          }
+          loadedRemote.current = true;
+        } else {
+          // Local storage fallback
+            const raw = localStorage.getItem('options_filters_v1');
+            if (raw) {
+              try {
+                const parsed = JSON.parse(raw);
+                setFilters({ ...defaultFilters, ...parsed });
+                console.log('[useOptionsData] Loaded local filter preferences');
+              } catch {}
+            }
+            loadedRemote.current = true;
+        }
+      } catch (e) {
+        console.warn('[useOptionsData] Failed to load persisted filters', e);
+        loadedRemote.current = true;
+      }
+    };
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Persist filters (debounced)
+  useEffect(() => {
+    if (!loadedRemote.current) return; // don't save during initial load
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = window.setTimeout(async () => {
+      try {
+        if (user) {
+          await supabase.from('filter_preferences').upsert({ user_id: user.id, filters });
+        } else {
+          localStorage.setItem('options_filters_v1', JSON.stringify(filters));
+        }
+      } catch (e) {
+        console.warn('[useOptionsData] Failed to persist filters', e);
+      }
+    }, 600); // 600ms debounce
+    return () => {
+      if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    };
+  }, [filters, user]);
+
+  // Expose a reset method (optional)
+  (window as any).__resetOptionFilters = () => setFilters(defaultFilters);
 
   // Use the new Polygon hook
   const {

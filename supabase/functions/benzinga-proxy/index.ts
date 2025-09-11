@@ -116,134 +116,131 @@ function isMarketHours(): boolean {
   return currentHour >= 9 && currentHour < 16;
 }
 
-async function fetchTodaysAnalystActions(limit: number = 50): Promise<any[]> {
+async function fetchTodaysAnalystActions(): Promise<any[]> {
   try {
     const apiKey = getPolygonApiKey();
+    if (!apiKey) return [];
 
-    // Helper to get ratings for a specific date, trying both known paths
-    const fetchForDate = async (dateStr: string): Promise<any[]> => {
-      await rateLimiter.throttle();
-      console.log(`Fetching Benzinga ratings for ${dateStr}...`);
-      const base = 'https://api.polygon.io';
-      const paths = [
-        `/v1/benzinga/ratings?date=${dateStr}&apikey=${apiKey}`,
-        `/benzinga/v1/ratings?date=${dateStr}&apikey=${apiKey}`,
-      ];
+    await rateLimiter.throttle();
 
-      for (const p of paths) {
-        const url = `${base}${p}`;
-        const res = await fetch(url);
-        if (!res.ok) {
-          console.warn(`Ratings fetch failed for path ${p}: ${res.status} ${res.statusText}`);
-          continue;
-        }
-        const data = await res.json();
-        const results = Array.isArray(data?.results) ? data.results : [];
-        if (results.length > 0) {
-          // Filter and limit the results to only important/meaningful actions
-          const filteredResults = results
-            .filter((rating: any) => {
-              // Keep broader set but still filter obvious noise (must have a ticker & firm)
-              const hasTicker = !!rating.ticker;
-              const hasFirm = !!rating.firm;
-              const hasSignal = rating.action_type || rating.rating_change || rating.price_target_change;
-              return hasTicker && hasFirm && hasSignal;
-            })
-            .slice(0, limit); // Respect dynamic limit from caller
-
-          const actions = filteredResults.map((rating: any, index: number) => ({
-            id: `benzinga_${rating.ticker}_${index}_${Date.now()}`,
-            ticker: rating.ticker || 'UNKNOWN',
-            actionType: formatActionType(rating), // Use the formatted action type always
-            analystFirm: rating.firm || 'Unknown Firm',
-            actionDate: rating.date || dateStr,
-            previousTarget: extractPreviousTarget(rating),
-            newTarget: extractNewTarget(rating),
-            rating: rating.rating_change || rating.action_type || 'Unknown',
-            previousRating: extractPreviousRating(rating),
-            newRating: extractNewRating(rating),
-            createdAt: new Date().toISOString(),
-          }));
-          console.log(`✅ [benzinga-proxy] Fetched ${actions.length} filtered meaningful ratings from ${p} for ${dateStr}`);
-          return actions;
-        }
-      }
-      console.log(`No Benzinga ratings found for ${dateStr}`);
+    // Official documented endpoint
+    const url = `https://api.polygon.io/benzinga/v1/ratings?limit=100&sort=date.desc&apiKey=${apiKey}`;
+    console.log(`🔗 [benzinga-proxy] Fetching analyst ratings: ${url}`);
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.warn(`❌ [benzinga-proxy] Ratings fetch failed: ${res.status} ${res.statusText}`);
       return [];
-    };
-
-    // Try today first, then yesterday only (not 5 days back)
-    const today = new Date();
-    const dates = [
-      today.toISOString().split('T')[0], // Today
-      new Date(today.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Yesterday
-    ];
-
-    for (const dateStr of dates) {
-      const actions = await fetchForDate(dateStr);
-      if (actions.length > 0) {
-        console.log(`🎯 [benzinga-proxy] Returning ${actions.length} meaningful actions from ${dateStr}`);
-        return actions;
-      }
     }
-    
-    console.log(`📭 [benzinga-proxy] No recent meaningful analyst actions found`);
-    return [];
+    const data = await res.json();
+    const results = Array.isArray(data?.results) ? data.results : [];
+    if (results.length === 0) {
+      console.log('[benzinga-proxy] No ratings returned');
+      return [];
+    }
 
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const yesterdayStr = new Date(now.getTime() - 24*60*60*1000).toISOString().split('T')[0];
+
+    // Keep only today & yesterday
+    const recent = results.filter((r: any) => r.date === todayStr || r.date === yesterdayStr);
+    console.log(`📊 [benzinga-proxy] ${recent.length} ratings after date filter (today + yesterday)`);
+
+    const actions = recent.map((r: any) => {
+      const classification = classifyRatingAction(r);
+      const previousTarget = r.previous_price_target ?? r.previous_adjusted_price_target ?? extractPreviousTarget(r);
+      const newTarget = r.price_target ?? r.adjusted_price_target ?? extractNewTarget(r);
+      const previousRating = r.previous_rating ?? extractPreviousRating(r);
+      const newRating = r.rating ?? extractNewRating(r);
+
+      return {
+        id: r.benzinga_id || `benzinga_${r.ticker}_${r.date}_${r.firm || 'firm'}`,
+        ticker: r.ticker || 'UNKNOWN',
+        companyName: r.company_name || r.ticker || 'Unknown Company',
+        actionType: classification, // concise type for UI
+        analystFirm: r.firm || 'Unknown Firm',
+        actionDate: r.date || todayStr,
+        previousTarget,
+        newTarget,
+        rating: newRating,
+        previousRating,
+        newRating,
+        ratingAction: r.rating_action || null,
+        priceTargetAction: r.price_target_action || null,
+        raw: {
+          rating_action: r.rating_action,
+          price_target_action: r.price_target_action,
+          rating: r.rating,
+          previous_rating: r.previous_rating,
+          price_target: r.price_target,
+          previous_price_target: r.previous_price_target,
+        },
+        createdAt: new Date().toISOString(),
+      };
+    });
+
+    console.log(`✅ [benzinga-proxy] Returning ${actions.length} analyst actions (unlimited up to API limit)`);
+    return actions;
   } catch (error) {
     console.error('Error fetching Benzinga data:', error);
     return [];
   }
 }
 
-function formatActionType(rating: any): string {
-  const actionType = rating.action_type?.toLowerCase() || '';
-  const ratingChange = rating.rating_change?.toLowerCase() || '';
-  const priceTargetChange = rating.price_target_change?.toLowerCase() || '';
-  const firm = rating.firm || 'Unknown Firm';
+function classifyRatingAction(rating: any): string {
+  // Priority: rating_action, price_target_action, combined context
+  const firm = rating.firm || '';
+  const ra = (rating.rating_action || '').toLowerCase();
+  const pta = (rating.price_target_action || '').toLowerCase();
+  const prevRating = rating.previous_rating;
+  const newRating = rating.rating;
+  const prevPT = rating.previous_price_target ?? rating.previous_adjusted_price_target;
+  const newPT = rating.price_target ?? rating.adjusted_price_target;
 
-  console.log(`🔍 [formatActionType] Raw data for ${rating.ticker}:`, { actionType, ratingChange, priceTargetChange, firm });
-
-  // Check for specific action types first
-  if (actionType.includes('upgrade') || ratingChange.includes('upgrade')) {
-    return `Upgrade by ${firm}`;
-  } else if (actionType.includes('downgrade') || ratingChange.includes('downgrade')) {
-    return `Downgrade by ${firm}`;
-  } else if (actionType.includes('initiated') || actionType.includes('coverage') || ratingChange.includes('initiated')) {
-    return `Coverage Initiated by ${firm}`;
-  } else if (actionType.includes('reiterat') || ratingChange.includes('reiterat')) {
-    return `Rating Reiterated by ${firm}`;
-  } else if (actionType.includes('maintain') || ratingChange.includes('maintain')) {
-    return `Rating Maintained by ${firm}`;
-  } else if (priceTargetChange.includes('raised') || priceTargetChange.includes('increase') || actionType.includes('raised')) {
-    return `Price Target Raised by ${firm}`;
-  } else if (priceTargetChange.includes('lowered') || priceTargetChange.includes('decrease') || actionType.includes('lowered')) {
-    return `Price Target Lowered by ${firm}`;
-  } else if (rating.price_target_change) {
-    return `Price Target Updated by ${firm}`;
-  } else if (rating.rating_change && (ratingChange.includes('buy') || ratingChange.includes('sell') || ratingChange.includes('hold'))) {
-    return `Rating Changed to ${rating.rating_change} by ${firm}`;
-  } else if (rating.rating_change) {
-    return `Rating Updated by ${firm}`;
-  } else {
-    // Provide more descriptive fallbacks
-    if (firm.includes('Goldman Sachs')) {
-      return `Goldman Sachs Research Note`;
-    } else if (firm.includes('Morgan Stanley')) {
-      return `Morgan Stanley Research Update`;
-    } else if (firm.includes('JP Morgan')) {
-      return `JP Morgan Analysis`;
-    } else if (firm.includes('Guggenheim')) {
-      return `Guggenheim Research`;
-    } else if (firm.includes('RBC')) {
-      return `RBC Capital Markets Update`;
-    } else if (firm.includes('Wells Fargo')) {
-      return `Wells Fargo Research`;
+  // Build components
+  let parts: string[] = [];
+  if (ra) {
+    if (ra.includes('maintain')) {
+      parts.push(`Maintains ${newRating || ''}`.trim());
+    } else if (ra.includes('upgrade')) {
+      if (prevRating && newRating) parts.push(`Upgrade ${prevRating} → ${newRating}`); else parts.push('Upgrade');
+    } else if (ra.includes('downgrade')) {
+      if (prevRating && newRating) parts.push(`Downgrade ${prevRating} → ${newRating}`); else parts.push('Downgrade');
+    } else if (ra.includes('initi')) {
+      parts.push(`Initiates ${newRating || 'Coverage'}`.trim());
+    } else if (ra.includes('reiterat')) {
+      parts.push(`Reiterates ${newRating || ''}`.trim());
     } else {
-      return `${firm} Research Note`;
+      parts.push(capitalizeFirst(ra));
     }
   }
+  if (pta) {
+    if (pta.includes('raise')) {
+      if (prevPT && newPT) parts.push(`Raises PT ${prevPT} → ${newPT}`); else parts.push('Raises PT');
+    } else if (pta.includes('lower')) {
+      if (prevPT && newPT) parts.push(`Lowers PT ${prevPT} → ${newPT}`); else parts.push('Lowers PT');
+    } else if (pta.includes('maintain')) {
+      parts.push('Maintains PT');
+    } else {
+      parts.push(capitalizeFirst(pta) + ' PT');
+    }
+  }
+  if (parts.length === 0) {
+    // Fallback to rating change style strings if available
+    if (prevRating && newRating && prevRating !== newRating) {
+      parts.push(`${prevRating} → ${newRating}`);
+    } else if (prevPT && newPT && prevPT !== newPT) {
+      parts.push(`PT ${prevPT} → ${newPT}`);
+    } else {
+      parts.push('Research Note');
+    }
+  }
+  return parts.join('; ');
 }
+
+function capitalizeFirst(str: string): string { return str.charAt(0).toUpperCase() + str.slice(1); }
+
+// Legacy formatActionType removed; using classifyRatingAction instead
 
 function extractPreviousTarget(rating: any): number | undefined {
   // Try to extract previous target from price_target_change field
@@ -546,15 +543,14 @@ Deno.serve(async (req) => {
       return corsResponse(null, 204);
     }
 
-  const { action, ticker, lookbackDays, limit } = await req.json();
-  console.log('[benzinga-proxy] request', { action, ticker, limit, hasKey: !!(apiKey && apiKey.trim()) });
+    const { action, ticker, lookbackDays } = await req.json();
+    console.log('[benzinga-proxy] request', { action, ticker, hasKey: !!(apiKey && apiKey.trim()) });
 
     if (action === 'analyst-actions') {
       if (!apiKey || apiKey.trim() === '') {
         return corsResponse({ actions: [] });
       }
-      const effectiveLimit = typeof limit === 'number' && limit > 0 && limit <= 200 ? limit : 50;
-      const actions = await fetchTodaysAnalystActions(effectiveLimit);
+      const actions = await fetchTodaysAnalystActions();
       return corsResponse({ actions });
     }
 

@@ -8,6 +8,11 @@ export interface BenzingaRating {
   date?: string;
 }
 
+interface PolygonBenzingaResponse {
+  results?: BenzingaRating[];
+  status: string;
+  count?: number;
+}
 
 export interface OptionsTradeResult {
   conditions: number[];
@@ -27,6 +32,12 @@ export interface OptionsTradeResult {
   };
 }
 
+interface PolygonOptionsTradesResponse {
+  results?: OptionsTradeResult[];
+  status: string;
+  count?: number;
+  next_url?: string;
+}
 
 import { getResolvedSupabaseUrl, getResolvedSupabaseAnonKey } from './supabase';
 
@@ -40,7 +51,7 @@ export class PolygonBenzingaService {
     this.supabaseAnonKey = getResolvedSupabaseAnonKey();
   }
 
-  async fetchTodaysBenzingaRatings(limit: number = 50): Promise<BenzingaRating[]> {
+  async fetchTodaysBenzingaRatings(): Promise<any[]> {
     try {
       const response = await fetch(`${this.supabaseUrl}/functions/v1/benzinga-proxy`, {
         method: 'POST',
@@ -48,27 +59,29 @@ export class PolygonBenzingaService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.supabaseAnonKey}`,
         },
-        body: JSON.stringify({ action: 'analyst-actions', noMock: true, limit }),
+        body: JSON.stringify({ action: 'analyst-actions', noMock: true }),
       });
 
       if (!response.ok) {
         throw new Error(`Benzinga proxy error: ${response.status} ${response.statusText}`);
       }
 
-  const data = await response.json();
-      const actions = (data.actions || []) as Array<{
-        ticker: string;
-        actionType: string;
-        analystFirm?: string;
-        actionDate?: string;
-      }>;
+      const data = await response.json();
+      const actions = (data.actions || []) as Array<any>;
 
-      // Map to a BenzingaRating-shaped object so formatActionType can still work if needed
-  return actions.map((a) => ({
+      return actions.map((a) => ({
+        id: a.id,
         ticker: a.ticker,
-        action_type: a.actionType,
+        company_name: a.companyName,
+        action_type: a.actionType, // normalized classification
         firm: a.analystFirm,
         date: a.actionDate,
+        previous_price_target: a.previousTarget,
+        price_target: a.newTarget,
+        previous_rating: a.previousRating,
+        rating: a.newRating,
+        rating_action: a.ratingAction,
+        price_target_action: a.priceTargetAction
       }));
     } catch (error) {
       console.warn('[PolygonBenzingaService] Error fetching Benzinga ratings via proxy:', error);
@@ -190,23 +203,7 @@ export class PolygonBenzingaService {
     }
   }
 
-  formatActionType(rating: BenzingaRating): string {
-    const actionType = rating.action_type?.toLowerCase() || '';
-    
-    if (actionType.includes('upgrade')) {
-      return `Upgrade by ${rating.firm || 'Unknown Firm'}`;
-    } else if (actionType.includes('downgrade')) {
-      return `Downgrade by ${rating.firm || 'Unknown Firm'}`;
-    } else if (actionType.includes('initiated') || actionType.includes('coverage')) {
-      return `Coverage Initiated by ${rating.firm || 'Unknown Firm'}`;
-    } else if (rating.price_target_change) {
-      return `Price Target ${rating.price_target_change} by ${rating.firm || 'Unknown Firm'}`;
-    } else if (rating.rating_change) {
-      return `Rating ${rating.rating_change} by ${rating.firm || 'Unknown Firm'}`;
-    } else {
-      return `${rating.action_type || 'Unknown Action'} by ${rating.firm || 'Unknown Firm'}`;
-    }
-  }
+  // formatActionType no longer needed (classification handled server-side)
 
   getTradeLocation(conditions: number[]): string {
     // Common condition codes for trade location
