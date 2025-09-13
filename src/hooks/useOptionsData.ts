@@ -97,10 +97,38 @@ export function useOptionsData() {
   // Dynamic symbol universe: if user selected symbols filter >0 use those, else use a broad default list.
   // This removes the previous hard-coded 10 symbol cap.
   const DEFAULT_SYMBOL_UNIVERSE = useMemo(() => [
-    'SPY','QQQ','AAPL','MSFT','GOOGL','AMZN','TSLA','NVDA','META','NFLX',
-    'AMD','INTC','CRM','ORCL','UBER','LYFT','SHOP','COIN','SNOW','PLTR',
-    'DIS','BABA','NFLX','F','GM','SOFI','PANW','SMCI','MU','ABNB',
-    'NVDA','AVGO','QCOM','AMD','ADBE','COST','PEP','WMT','JPM','BAC'
+    // Index & ETFs
+    'SPY', 'QQQ', 'IWM', 'DIA', 'ARKK',
+
+    // Big Tech
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA',
+
+    // Semiconductors
+    'AMD', 'INTC', 'QCOM', 'AVGO', 'MU', 'SMCI',
+
+    // Enterprise Software / Cloud
+    'CRM', 'ORCL', 'ADBE', 'SNOW', 'PLTR', 'SHOP',
+
+    // Consumer / Retail
+    'COST', 'WMT', 'PEP', 'HD', 'LOW', 'TGT', 'DIS', 'ABNB', 'NKE', 'SBUX',
+
+    // Finance / Banks / Fintech
+    'JPM', 'BAC', 'GS', 'MS', 'C', 'PYPL', 'SQ', 'COIN', 'SOFI',
+
+    // Autos / EVs
+    'F', 'GM', 'NIO', 'RIVN', 'LCID', 'UBER', 'LYFT',
+
+    // Energy
+    'XOM', 'CVX',
+
+    // Healthcare / Biotech
+    'UNH', 'JNJ', 'MRNA', 'PFE',
+
+    // Cybersecurity
+    'PANW',
+
+    // Streaming / Media
+    'NFLX'
   ], []);
 
   const activeSymbols = filters.symbols.length > 0 ? filters.symbols : DEFAULT_SYMBOL_UNIVERSE;
