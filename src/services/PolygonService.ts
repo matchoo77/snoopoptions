@@ -129,7 +129,7 @@ export class PolygonService {
       }
 
       if (!data.results || data.results.length === 0) {
-        return this.generateSampleOptionsActivity(symbol);
+        return []; // no fallback sample data
       }
 
       const activities: OptionsActivity[] = [];
@@ -179,11 +179,11 @@ export class PolygonService {
         activities.push(activity);
       }
 
-      return activities.sort((a, b) => b.premium - a.premium).slice(0, 20);
+  return activities.sort((a, b) => b.premium - a.premium).slice(0, 20);
 
     } catch (error) {
       console.error(`[PolygonService] Error fetching unusual options for ${symbol}:`, error);
-      return this.generateSampleOptionsActivity(symbol);
+  return []; // on error return empty
     }
   }
 
@@ -207,7 +207,7 @@ export class PolygonService {
 
       if (!data.tickers || data.tickers.length === 0) {
         console.log('[PolygonService] No tickers data received');
-        return this.generateSampleTopMovers();
+        return [];
       }
 
       console.log('[PolygonService] Received', data.tickers.length, 'tickers');
@@ -252,11 +252,11 @@ export class PolygonService {
 
       console.log('[PolygonService] Final movers count:', movers.length);
       console.log('[PolygonService] Sample movers:', movers.slice(0, 5));
-      return movers;
+  return movers;
 
     } catch (error) {
       console.error('[PolygonService] Error fetching top movers:', error);
-      return this.generateSampleTopMovers();
+  return [];
     }
   }
 
@@ -269,10 +269,10 @@ export class PolygonService {
     }
 
     try {
-      const allActivities: OptionsActivity[] = [];
+  const allActivities: OptionsActivity[] = [];
 
-      // Process symbols in batches to avoid rate limiting
-      const batchSize = 3;
+  // Process symbols in batches to avoid rate limiting. Batch size adaptive to list length.
+  const batchSize = symbols.length > 30 ? 8 : symbols.length > 15 ? 5 : 3;
       for (let i = 0; i < symbols.length; i += batchSize) {
         const batch = symbols.slice(i, i + batchSize);
 
@@ -288,12 +288,14 @@ export class PolygonService {
 
         // Small delay between batches
         if (i + batchSize < symbols.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Slightly longer delay for large universes to ease pressure on API
+            const delay = symbols.length > 30 ? 900 : 500;
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
 
-      // Sort by timestamp descending (newest first) and premium
-      return allActivities
+      // Sort by timestamp descending (newest first) and premium; allow larger result set
+  return allActivities
         .sort((a, b) => {
           // First sort by timestamp (newest first)
           const timeA = new Date(a.timestamp).getTime();
@@ -302,11 +304,11 @@ export class PolygonService {
           // Then by premium (highest first)
           return b.premium - a.premium;
         })
-        .slice(0, 50);
+        .slice(0, 250); // increased cap
 
     } catch (error) {
       console.error('[PolygonService] Error in multi-symbol unusual activity:', error);
-      return this.generateSampleMultiSymbolActivity(symbols);
+  return [];
     }
   }
 
@@ -331,75 +333,7 @@ export class PolygonService {
     return 'neutral';
   }
 
-  private generateSampleOptionsActivity(symbol: string): OptionsActivity[] {
-    const activities: OptionsActivity[] = [];
-    const numActivities = 3 + Math.floor(Math.random() * 5);
-    
-    for (let i = 0; i < numActivities; i++) {
-      const type = Math.random() > 0.6 ? 'call' : 'put';
-      const strike = 100 + Math.floor(Math.random() * 300);
-      const volume = 50 + Math.floor(Math.random() * 500);
-      const price = 1 + Math.random() * 20;
-      const premium = volume * price * 100;
-      
-      activities.push({
-        id: `sample_${symbol}_${i}_${Date.now()}`,
-        symbol,
-        type,
-        strike,
-        expiration: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        lastPrice: Math.round(price * 100) / 100,
-        volume,
-        premium,
-        openInterest: Math.floor(volume * (0.5 + Math.random())),
-        bid: Math.round((price * 0.95) * 100) / 100,
-        ask: Math.round((price * 1.05) * 100) / 100,
-        tradeLocation: 'at-ask',
-        impliedVolatility: 0.2 + Math.random() * 0.8,
-        delta: type === 'call' ? 0.3 + Math.random() * 0.4 : -0.7 + Math.random() * 0.4,
-        gamma: 0.01 + Math.random() * 0.05,
-        theta: -0.05 - Math.random() * 0.1,
-        vega: 0.1 + Math.random() * 0.3,
-        timestamp: new Date().toISOString(),
-        unusual: true,
-        blockTrade: volume > 200,
-        sentiment: type === 'call' ? 'bullish' : 'bearish',
-      });
-    }
-    
-    return activities;
-  }
-
-  private generateSampleTopMovers(): TopMover[] {
-    const tickers = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'GOOGL', 'AMZN', 'META', 'AMD', 'NFLX', 'CRM'];
-    
-    return tickers.map(symbol => {
-      const price = 50 + Math.random() * 400;
-      const changePercent = (Math.random() - 0.5) * 20; // -10% to +10%
-      const change = price * (changePercent / 100);
-      
-      return {
-        symbol,
-        price: Math.round(price * 100) / 100,
-        change: Math.round(change * 100) / 100,
-        changePercent: Math.round(changePercent * 100) / 100,
-        volume: Math.floor(1000000 + Math.random() * 10000000)
-      };
-    }).sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
-  }
-
-  private generateSampleMultiSymbolActivity(symbols: string[]): OptionsActivity[] {
-    const allActivities: OptionsActivity[] = [];
-    
-    symbols.forEach(symbol => {
-      const activities = this.generateSampleOptionsActivity(symbol);
-      allActivities.push(...activities);
-    });
-    
-    return allActivities
-      .sort((a, b) => b.premium - a.premium)
-      .slice(0, 50);
-  }
+  // Sample data generation removed to ensure only real API data (or empty arrays) propagate.
 }
 
 // Export singleton instance

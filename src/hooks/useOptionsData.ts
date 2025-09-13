@@ -7,7 +7,7 @@ import { useAuth } from './useAuth';
 
 export function useOptionsData() {
   const marketStatus = useMarketStatus();
-  
+
   const defaultFilters: FilterOptions = {
     minVolume: 1,
     minPremium: 1,
@@ -51,15 +51,15 @@ export function useOptionsData() {
           loadedRemote.current = true;
         } else {
           // Local storage fallback
-            const raw = localStorage.getItem('options_filters_v1');
-            if (raw) {
-              try {
-                const parsed = JSON.parse(raw);
-                setFilters({ ...defaultFilters, ...parsed });
-                console.log('[useOptionsData] Loaded local filter preferences');
-              } catch {}
-            }
-            loadedRemote.current = true;
+          const raw = localStorage.getItem('options_filters_v1');
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              setFilters({ ...defaultFilters, ...parsed });
+              console.log('[useOptionsData] Loaded local filter preferences');
+            } catch { }
+          }
+          loadedRemote.current = true;
         }
       } catch (e) {
         console.warn('[useOptionsData] Failed to load persisted filters', e);
@@ -94,6 +94,17 @@ export function useOptionsData() {
   (window as any).__resetOptionFilters = () => setFilters(defaultFilters);
 
   // Use the new Polygon hook
+  // Dynamic symbol universe: if user selected symbols filter >0 use those, else use a broad default list.
+  // This removes the previous hard-coded 10 symbol cap.
+  const DEFAULT_SYMBOL_UNIVERSE = useMemo(() => [
+    'SPY','QQQ','AAPL','MSFT','GOOGL','AMZN','TSLA','NVDA','META','NFLX',
+    'AMD','INTC','CRM','ORCL','UBER','LYFT','SHOP','COIN','SNOW','PLTR',
+    'DIS','BABA','NFLX','F','GM','SOFI','PANW','SMCI','MU','ABNB',
+    'NVDA','AVGO','QCOM','AMD','ADBE','COST','PEP','WMT','JPM','BAC'
+  ], []);
+
+  const activeSymbols = filters.symbols.length > 0 ? filters.symbols : DEFAULT_SYMBOL_UNIVERSE;
+
   const {
     activities: polygonActivities,
     loading,
@@ -102,9 +113,9 @@ export function useOptionsData() {
     refreshAll,
     fetchSingleSymbol
   } = usePolygonOptions({
-    symbols: ['SPY', 'QQQ', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX'],
+    symbols: activeSymbols,
     autoRefresh: true,
-    refreshInterval: 30000 // Update every 30 seconds per request
+    refreshInterval: 50000 // ~50s stagger to reduce rate limiting
   });
 
   // Trigger single symbol search when searchSymbol changes
