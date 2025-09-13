@@ -57,7 +57,7 @@ export function FilterPanel({ filters, onFiltersChange }: FilterPanelProps) {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* Symbol Search */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -146,7 +146,7 @@ export function FilterPanel({ filters, onFiltersChange }: FilterPanelProps) {
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+  <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Option Types */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -243,6 +243,30 @@ export function FilterPanel({ filters, onFiltersChange }: FilterPanelProps) {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Custom Symbol Universe */}
+      <div className="mt-4">
+        <label className="block text-xs font-medium text-gray-700 mb-1">
+          Symbols Universe (comma or newline separated)
+        </label>
+        <textarea
+          value={filters.symbols.join('\n')}
+          onChange={(e) => {
+            const raw = e.target.value;
+            const parts = raw
+              .split(/[,\n\s]+/)
+              .map(s => s.trim().toUpperCase())
+              .filter(Boolean);
+            updateFilter('symbols', Array.from(new Set(parts)));
+          }}
+          rows={3}
+          placeholder="AAPL, MSFT, NVDA, TSLA"
+          className="w-full text-xs font-mono px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y"
+        />
+        <p className="mt-1 text-[10px] text-gray-500">
+          Leave empty to use default universe. Currently {filters.symbols.length} custom symbol{filters.symbols.length===1?'':'s'}.
+        </p>
       </div>
     </div>
   );

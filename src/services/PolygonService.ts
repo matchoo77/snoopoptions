@@ -1,6 +1,11 @@
 import { OptionsActivity, TopMover } from '../types/options';
 import { marketDataService } from '../lib/marketDataService';
 
+// Simple logger with environment gate
+const DEBUG = (typeof window !== 'undefined' ? (window as any).__SNOOP_DEBUG : false) || import.meta.env.DEV;
+const log = (...args: any[]) => { if (DEBUG) console.log('[PolygonService]', ...args); };
+const errorLog = (...args: any[]) => console.error('[PolygonService]', ...args);
+
 // Polygon API Response Types based on the documentation
 export interface PolygonOptionsChainSnapshot {
   underlying_ticker: string;
@@ -65,14 +70,10 @@ export interface PolygonStockTicker {
 }
 
 export class PolygonService {
-  private apiKey: string;
-  private baseUrl = 'https://api.polygon.io';
-  private useProxy: boolean;
+  // Removed unused api configuration fields after refactor
 
   constructor() {
-    this.apiKey = 'K95sJvRRPEyVT_EMrTip0aAAlvrkHp8X';
-    // Use proxy if Supabase URL is configured
-    this.useProxy = !!import.meta.env.VITE_SUPABASE_URL;
+  // Constructor left intentionally minimal after removal of legacy fields
   }
 
   private isMarketClosed(): boolean {
@@ -93,28 +94,13 @@ export class PolygonService {
     return !isWeekday || currentTimeInMinutes < preMarketStart || currentTimeInMinutes >= afterHoursEnd;
   }
 
-  private async makeRequest(url: string): Promise<any> {
-    try {
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      return data;
-    } catch (error) {
-      console.error('[PolygonService] Request failed:', error);
-      throw error;
-    }
-  }
+  // makeRequest removed (unused)
 
   // Get unusual options activity using the snapshot endpoint
   async getUnusualOptionsActivity(symbol: string): Promise<OptionsActivity[]> {
     // Early return if market is closed
     if (this.isMarketClosed()) {
-      console.log('[PolygonService] Market is closed, returning empty activities for', symbol);
+  log('Market closed, skip unusual for', symbol);
       return [];
     }
 
@@ -124,7 +110,7 @@ export class PolygonService {
 
       // Check if the response indicates market is closed
       if (data.market_status && data.market_status.currentPeriod === 'closed') {
-        console.log('[PolygonService] Market is closed, returning empty activities for', symbol);
+  log('Market closed (response), empty for', symbol);
         return [];
       }
 
@@ -182,7 +168,7 @@ export class PolygonService {
   return activities.sort((a, b) => b.premium - a.premium).slice(0, 20);
 
     } catch (error) {
-      console.error(`[PolygonService] Error fetching unusual options for ${symbol}:`, error);
+  errorLog('Error fetching unusual options for', symbol, error);
   return []; // on error return empty
     }
   }
@@ -191,7 +177,7 @@ export class PolygonService {
   async getTopMovers(): Promise<TopMover[]> {
     // Early return if market is closed
     if (this.isMarketClosed()) {
-      console.log('[PolygonService] Market is closed, returning empty top movers');
+  log('Market closed, skip top movers');
       return [];
     }
 
@@ -201,21 +187,20 @@ export class PolygonService {
 
       // Check if the response indicates market is closed
       if (data.market_status && data.market_status.currentPeriod === 'closed') {
-        console.log('[PolygonService] Market is closed, returning empty top movers');
+  log('Market closed (response), empty top movers');
         return [];
       }
 
       if (!data.tickers || data.tickers.length === 0) {
-        console.log('[PolygonService] No tickers data received');
+  log('No tickers data received');
         return [];
       }
 
-      console.log('[PolygonService] Received', data.tickers.length, 'tickers');
-      console.log('[PolygonService] Sample ticker:', data.tickers[0]);
+  log('Received', data.tickers.length, 'tickers');
 
       // Process all tickers and find ones with meaningful data
       const movers = data.tickers
-        .filter(ticker => {
+  .filter((ticker: any) => {
           // Include stocks that have current trading data OR previous day data
           const hasCurrentPrice = ticker.day?.c && ticker.day.c > 0;
           const hasPrevPrice = ticker.prevDay?.c && ticker.prevDay.c > 0;
@@ -224,7 +209,7 @@ export class PolygonService {
           
           return (hasCurrentPrice || hasPrevPrice) && (hasChange || hasVolume);
         })
-        .map(ticker => {
+  .map((ticker: any) => {
           // Use current day data if available, otherwise use previous day
           let price = ticker.day?.c && ticker.day.c > 0 ? ticker.day.c : ticker.prevDay?.c || 0;
           let change = ticker.todaysChange || 0;
@@ -246,16 +231,15 @@ export class PolygonService {
             volume: volume
           };
         })
-        .filter(mover => mover.price > 0 && (Math.abs(mover.changePercent) > 0 || mover.volume > 0))
-        .sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent))
+  .filter((mover: any) => mover.price > 0 && (Math.abs(mover.changePercent) > 0 || mover.volume > 0))
+  .sort((a: any, b: any) => Math.abs(b.changePercent) - Math.abs(a.changePercent))
         .slice(0, 20);
 
-      console.log('[PolygonService] Final movers count:', movers.length);
-      console.log('[PolygonService] Sample movers:', movers.slice(0, 5));
+  log('Final movers count:', movers.length);
   return movers;
 
     } catch (error) {
-      console.error('[PolygonService] Error fetching top movers:', error);
+  errorLog('Error fetching top movers:', error);
   return [];
     }
   }
@@ -264,7 +248,7 @@ export class PolygonService {
   async getMultiSymbolUnusualActivity(symbols: string[]): Promise<OptionsActivity[]> {
     // Early return if market is closed
     if (this.isMarketClosed()) {
-      console.log('[PolygonService] Market is closed, returning empty multi-symbol activities');
+  log('Market closed, skip multi-symbol unusual');
       return [];
     }
 
@@ -304,10 +288,10 @@ export class PolygonService {
           // Then by premium (highest first)
           return b.premium - a.premium;
         })
-        .slice(0, 250); // increased cap
+  .slice(0, 1000); // increased cap for virtualization
 
     } catch (error) {
-      console.error('[PolygonService] Error in multi-symbol unusual activity:', error);
+  errorLog('Error in multi-symbol unusual activity:', error);
   return [];
     }
   }
